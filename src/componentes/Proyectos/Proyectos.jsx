@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../supabase";
-import { Pencil, Trash2, Save, X, XCircle } from "lucide-react";
+import { Pencil, Trash, Save, X, XCircle } from "lucide-react";
 
 export default function Proyectos() {
   const [proyectos, setProyectos] = useState([]);
