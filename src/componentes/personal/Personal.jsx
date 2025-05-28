@@ -7,11 +7,15 @@ import VerPlanilla from "./VerPlanilla";
 import VerPersonal from "./VerPersonal";
 import ReportarAsistencia from "./ReportarAsistencia";
 import CajaChica from "../contabilidad/CajaChica";
+import ModificarTrabajos from "./ModificarTrabajos";
 
 export default function Personal() {
   const [vista, setVista] = useState("formulario");
   const [mostrarFormularioCajaChica, setMostrarFormularioCajaChica] = useState(false);
   const [personal, setPersonal] = useState([]);
+  const [personaSeleccionada, setPersonaSeleccionada] = useState(null);
+  const [recargarTabla, setRecargarTabla] = useState(false); // ✅ Estado trigger para recargar la tabla
+
   const usuario = {
     id: 4,
     usuario: "super1",
@@ -32,11 +36,18 @@ export default function Personal() {
     }
   };
 
+  // ✅ Ahora recarga cuando cambia la vista o cuando guardas en ModificarTrabajos
   useEffect(() => {
-    if (vista === "planilla" || vista === "ver_personal") {
-      obtenerPersonal();
-    }
-  }, [vista]);
+    obtenerPersonal();
+  }, [vista, recargarTabla]);
+
+  const abrirModificar = (persona) => {
+    setPersonaSeleccionada(persona);
+  };
+
+  const cerrarModificar = () => {
+    setPersonaSeleccionada(null);
+  };
 
   return (
     <div className="mt-6 max-w-7xl mx-auto bg-white/10 backdrop-blur-xl p-6 rounded-2xl">
@@ -86,18 +97,24 @@ export default function Personal() {
       </div>
 
       {/* Formulario de caja chica */}
-     {mostrarFormularioCajaChica && (
-          <CajaChica onCerrar={() => {
+      {mostrarFormularioCajaChica && (
+        <CajaChica
+          onCerrar={() => {
             setMostrarFormularioCajaChica(false);
             setVista("formulario");
-          }} />
-        )}
+          }}
+        />
+      )}
 
       {/* Vistas dinámicas */}
       <div className="mt-4">
         {vista === "formulario" && <AgregarPersonal />}
-        {vista === "planilla" && <VerPlanilla personal={personal} />}
-        {vista === "ver_personal" && <VerPersonal personal={personal} />}
+        {vista === "planilla" && (
+          <VerPlanilla personal={personal} onModificar={abrirModificar} />
+        )}
+        {vista === "ver_personal" && (
+          <VerPersonal personal={personal} onModificar={abrirModificar} />
+        )}
         {vista === "asistencia" && (
           <ReportarAsistencia
             usuario={usuario}
@@ -105,6 +122,15 @@ export default function Personal() {
           />
         )}
       </div>
+
+      {/* Modal para modificar datos */}
+      {personaSeleccionada && (
+        <ModificarTrabajos
+          persona={personaSeleccionada}
+          onCerrar={cerrarModificar}
+          onRecargar={() => setRecargarTabla(!recargarTabla)} // 🔄 Fuerza recarga de tabla
+        />
+      )}
     </div>
   );
 }

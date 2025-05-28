@@ -1,7 +1,8 @@
+// ModificarTrabajos.jsx
 import React, { useState, useEffect } from "react";
 import { supabase } from "../../supabase";
 
-export default function ModificarTrabajos({ persona, onCerrar }) {
+export default function ModificarTrabajos({ persona, onCerrar, onRecargar }) {
   const [datosFormulario, setDatosFormulario] = useState({
     salarioBase: "",
     bonoAsistencia: "",
@@ -10,22 +11,21 @@ export default function ModificarTrabajos({ persona, onCerrar }) {
     salarioDia: "",
   });
 
-useEffect(() => {
-  if (persona.modalidad === "fijo") {
-    setDatosFormulario({
-      salarioBase: persona.salarioporquincena || "",
-      bonoAsistencia: persona.bonificacion || "",
-      viaticos: persona.viaticos_diarios || "",
-      pagoHoraExtra: persona.pagoporhoraextra || "",
-    });
-  } else if (persona.modalidad === "temporal") {
-    setDatosFormulario({
-      salarioDia: persona.salariopordia || "",
-      pagoHoraExtra: persona.pagoporhoraextra || "",
-    });
-  }
-}, [persona]);
-
+  useEffect(() => {
+    if (persona.modalidad === "fijo") {
+      setDatosFormulario({
+        salarioBase: persona.salarioporquincena || "",
+        bonoAsistencia: persona.bonificacion || "",
+        viaticos: persona.viaticos_diarios || "",
+        pagoHoraExtra: persona.pagoporhoraextra || "",
+      });
+    } else if (persona.modalidad === "temporal") {
+      setDatosFormulario({
+        salarioDia: persona.salariopordia || "",
+        pagoHoraExtra: persona.pagoporhoraextra || "",
+      });
+    }
+  }, [persona]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -42,7 +42,7 @@ useEffect(() => {
       updateData = {
         salarioporquincena: datosFormulario.salarioBase || null,
         bonificacion: datosFormulario.bonoAsistencia || null,
-        viaticos: datosFormulario.viaticos || null,
+        viaticos_diarios: datosFormulario.viaticos || null,
         horas_extras: datosFormulario.pagoHoraExtra || null,
       };
     } else if (persona.modalidad === "temporal") {
@@ -62,6 +62,10 @@ useEffect(() => {
       alert("Ocurrió un error al actualizar los datos.");
     } else {
       alert("Datos actualizados correctamente.");
+      // 🔄 Llama a la función para recargar la tabla donde sea
+      if (onRecargar) {
+        onRecargar();
+      }
       onCerrar();
     }
   };
