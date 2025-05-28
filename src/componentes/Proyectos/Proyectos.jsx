@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../supabase";
-import { Pencil, Trash, Save, X, XCircle } from "lucide-react";
+import { Pencil, Save, X, XCircle } from "lucide-react";
+import { Trash2 } from "lucide-react";
+import ResumenFinanciero from "../contabilidad/ResumenFinanciero";
 
 export default function Proyectos() {
   const [proyectos, setProyectos] = useState([]);
@@ -19,27 +21,36 @@ export default function Proyectos() {
   const [personalAsignado, setPersonalAsignado] = useState([]);
   const [gastosProyecto, setGastosProyecto] = useState([]);
 
+   useEffect(() => {
+    if (proyectoSeleccionado) {
+      cargarDatosProyecto(proyectoSeleccionado);
+    }
+  }, [proyectoSeleccionado]);
 
 const cargarDatosProyecto = async (proyecto) => {
   setProyectoSeleccionado(proyecto);
+  console.log("UUID del proyecto:", proyecto.id);
   setModoEdicion(false);
 
   const { data: trabajosCargados, error: errorTrabajos } = await supabase
     .from("proyectos_trabajos")
-    .select("nombre_trabajo, unidades_totales, costo_unitario")
+    .select("nombre_trabajo, unidades_totales")
     .eq("proyecto_id", proyecto.id);
+
+  console.log("🚀 Trabajos cargados:", trabajosCargados);
 
   if (errorTrabajos) {
     console.error("Error al cargar trabajos:", errorTrabajos);
   }
 
-  const trabajosConFormato = (trabajosCargados || []).map((t) => ({
-    nombre: t.nombre_trabajo,
-    unidades: t.unidades_totales,
-    costo_unitario: t.costo_unitario || 0,
-    instaladas: 0,
-  }));
-  setTrabajosProyecto(trabajosConFormato);
+  setTrabajos(
+    (trabajosCargados && trabajosCargados.length > 0)
+      ? trabajosCargados.map((t) => ({
+          nombre: t.nombre_trabajo,
+          unidades: t.unidades_totales
+        }))
+      : [{ nombre: "", unidades: "" }]
+  );
 
   const { data: sup } = await supabase
     .from("proyectos_personal")
@@ -62,19 +73,32 @@ const cargarDatosProyecto = async (proyecto) => {
       "id",
       [
         ...(sup?.map((s) => s.trabajador_id) || []),
-        ...(trab?.map((t) => t.trabajador_id) || []),
+        ...(trab?.map((t) => t.trabajador_id) || [])
       ]
     );
   setPersonalAsignado(personal || []);
 
-  const { data: egresos } = await supabase
+  // ⚠️ Primero revisamos si existe y tiene nombre antes de la consulta de egresos
+  if (!proyecto || !proyecto.nombre) {
+    console.warn("⚠️ El proyecto recibido no tiene nombre o es null:", proyecto);
+    return;
+  }
+
+  console.log("📦 Nombre del proyecto:", proyecto.nombre);
+
+  // Ahora sí podemos hacer la consulta
+  const { data: egresos, error: errorEgresos } = await supabase
     .from("contabilidad")
     .select("monto")
-    .eq("proyecto", proyecto.nombre);
+    .eq("proyecto_id", proyecto.id); // ¡Usamos proyecto_id en vez de nombre!
+
+  if (errorEgresos) {
+    console.error("Error al obtener egresos:", errorEgresos);
+  }
+
   setGastosProyecto(egresos || []);
 
-  // 👇 Aquí corregido: le paso el proyecto actual a la función para evitar el error
-  await obtenerPersonal(proyecto);
+  await obtenerPersonal(proyecto); // 👈 Ya podemos llamar a obtenerPersonal
 };
 
 
@@ -348,7 +372,10 @@ if (error || !data?.length) {
   </div>
 
   {(() => {
-    const listaTrabajos = (modoEdicion || mostrarFormulario) ? trabajos : trabajosProyecto;
+   const listaTrabajos = (modoEdicion || mostrarFormulario) ? trabajos : trabajosProyecto;
+
+
+
     return listaTrabajos.map((trabajo, index) => {
       const nombre = trabajo.nombre ?? trabajo.nombre_trabajo ?? "";
       const unidades = parseInt(trabajo.unidades ?? trabajo.unidades_totales ?? 0, 10);
@@ -494,9 +521,11 @@ if (error || !data?.length) {
 {proyectoSeleccionado && (
   <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-start z-50 pt-20 px-4">
     <div className="bg-white p-6 rounded-xl shadow-lg max-w-3xl w-full relative">
+
       <button
-        className="absolute top-2 right-3 text-red-600 font-bold text-xl"
-        onClick={() => {
+         className="absolute top-2 right-3 text-red-600 font-bold text-xl"
+          
+          onClick={() => {
           setProyectoSeleccionado(null);
           setModoEdicion(false);
         }}
@@ -534,6 +563,7 @@ if (error || !data?.length) {
       const estaEnTrabajadores = trabajadoresSeleccionados.includes(persona.id);
       const seleccionado = supervisoresSeleccionados.includes(persona.id);
       return (
+        
         <button
           key={persona.id}
           type="button"
@@ -611,74 +641,73 @@ if (error || !data?.length) {
     <div></div>
   </div>
 
+
  
-  {(() => {
-    const listaTrabajos = modoEdicion || mostrarFormulario ? trabajos : trabajosProyecto;
-     console.log("modoEdicion:", modoEdicion, "mostrarFormulario:", mostrarFormulario, "listaTrabajos:", listaTrabajos);
-    return listaTrabajos.map((trabajo, index) => {
-      const nombre = trabajo.nombre ?? trabajo.nombre_trabajo ?? "";
-      const unidades = parseInt(trabajo.unidades ?? trabajo.unidades_totales ?? 0, 10);
-      const instaladas = parseInt(trabajo.instaladas ?? 0, 10);
-      const faltan = Number.isFinite(unidades - instaladas) ? unidades - instaladas : 0;
+ {(() => {
+  const listaTrabajos = trabajosProyecto.length > 0 ? trabajosProyecto : trabajos;
+
+  return listaTrabajos.map((trabajo, index) => {
+    const nombre = trabajo.nombre ?? trabajo.nombre_trabajo ?? "";
+    const unidades = parseInt(trabajo.unidades ?? trabajo.unidades_totales ?? 0, 10);
+    const instaladas = parseInt(trabajo.instaladas ?? 0, 10);
+    const faltan = Number.isFinite(unidades - instaladas) ? unidades - instaladas : 0;
+
+    return (
+      <div key={index} className="grid grid-cols-[1fr_1fr_80px_80px_auto] gap-4 mb-2 items-center">
+        {modoEdicion ? (
+          <>
+            <input
+              type="text"
+              value={nombre}
+              onChange={(e) => {
+                const nuevos = [...trabajos];
+                nuevos[index].nombre = e.target.value;
+                setTrabajos(nuevos);
+              }}
+              className="p-2 border rounded-xl"
+            />
+            <input
+              type="number"
+              value={Number.isNaN(unidades) ? "" : unidades}
+              onChange={(e) => {
+                const nuevos = [...trabajos];
+                const valor = parseInt(e.target.value, 10);
+                nuevos[index].unidades = Number.isNaN(valor) ? 0 : valor;
+                setTrabajos(nuevos);
+              }}
+              className="p-2 border rounded-xl"
+            />
+          </>
+        ) : (
+          <>
+            <div className="p-2 bg-gray-100 rounded-xl text-center">{nombre}</div>
+            <div className="p-2 bg-gray-100 rounded-xl text-center">{unidades}</div>
+          </>
+        )}
+        <div className="p-2 bg-gray-100 rounded-xl text-center">{instaladas}</div>
+        <div className="p-2 bg-gray-100 rounded-xl text-center">{faltan}</div>
+
+        {modoEdicion ? (
+          <div className="text-center">
+            <button
+              onClick={() => {
+                const nuevos = trabajos.filter((_, i) => i !== index);
+                setTrabajos(nuevos);
+              }}
+              className="text-red-600 hover:text-red-800 font-bold text-lg"
+            >
+              ❌
+            </button>
+          </div>
+        ) : (
+          <div></div>
+        )}
+      </div>
+    );
+  });
+})()}
 
 
-      return (
-        <div key={index} className="grid grid-cols-[1fr_1fr_80px_80px_auto] gap-4 mb-2 items-center">
-          {(modoEdicion || mostrarFormulario) ? (
-            <>
-              <input
-  type="text"
-  value={nombre ?? ""}
-  onChange={(e) => {
-    const nuevos = [...trabajos];
-    nuevos[index].nombre = e.target.value;
-    setTrabajos(nuevos);
-  }}
-  className="p-2 border rounded-xl"
-/>
-<input
-  type="number"
-  value={Number.isNaN(unidades) ? "" : unidades}
-  onChange={(e) => {
-    const nuevos = [...trabajos];
-    const valor = parseInt(e.target.value, 10);
-    nuevos[index].unidades = Number.isNaN(valor) ? 0 : valor;
-    setTrabajos(nuevos);
-  }}
-  className="p-2 border rounded-xl"
-/>
-
-
-            </>
-          ) : (
-            <>
-              <div className="p-2 bg-gray-100 rounded-xl text-center">{nombre}</div>
-              <div className="p-2 bg-gray-100 rounded-xl text-center">{unidades}</div>
-            </>
-          )}
-
-          <div className="p-2 bg-gray-100 rounded-xl text-center">{instaladas}</div>
-          <div className="p-2 bg-gray-100 rounded-xl text-center">{faltan}</div>
-
-          {(modoEdicion || mostrarFormulario) ? (
-            <div className="text-center">
-              <button
-                onClick={() => {
-                  const nuevos = trabajos.filter((_, i) => i !== index);
-                  setTrabajos(nuevos);
-                }}
-                className="text-red-600 hover:text-red-800 font-bold text-lg"
-              >
-                ❌
-              </button>
-            </div>
-          ) : (
-            <div></div>
-          )}
-        </div>
-      );
-    });
-  })()}
    {/* 🔥 Botón para agregar otro trabajo */}
   {(modoEdicion || mostrarFormulario) && (
         <button
@@ -693,49 +722,11 @@ if (error || !data?.length) {
 </div>
 
 
-<div className="mt-6">
-  <h3 className="text-lg font-bold text-purple-800 mb-3">🧾 Resumen financiero del proyecto</h3>
-  <div className="bg-white shadow rounded-xl p-4 space-y-2 text-sm text-gray-800">
-    <div className="flex justify-between border-b pb-1">
-      <span>Costo por trabajos asignados</span>
-      <span className="font-semibold">
-        Q{trabajosProyecto.reduce((acc, t) => acc + (t.unidades || 0) * (t.costo_unitario || 0), 0).toFixed(2)}
-      </span>
-    </div>
-    <div className="flex justify-between border-b pb-1">
-      <span>Costo de planilla (personal)</span>
-      <span className="font-semibold">
-        Q{personalAsignado.reduce((acc, p) => acc + (p.salariopordia || 0), 0).toFixed(2)}
-      </span>
-    </div>
-    <div className="flex justify-between border-b pb-1">
-      <span>Costo de liquidaciones / caja chica</span>
-      <span className="font-semibold">
-        Q{gastosProyecto.reduce((acc, g) => acc + (g.monto || 0), 0).toFixed(2)}
-      </span>
-    </div>
-    <div className="flex justify-between pt-2 border-t text-lg text-purple-900 font-bold">
-      <span>
-  Q{isNaN(
-      trabajosProyecto.reduce((acc, t) => acc + (t.unidades || 0) * (t.costo_unitario || 0), 0) +
-      personalAsignado.reduce((acc, p) => acc + (p.salariopordia || 0), 0) +
-      gastosProyecto.reduce((acc, g) => acc + (g.monto || 0), 0)
-    )
-    ? "0.00"
-    : (
-      trabajosProyecto.reduce((acc, t) => acc + (t.unidades || 0) * (t.costo_unitario || 0), 0) +
-      personalAsignado.reduce((acc, p) => acc + (p.salariopordia || 0), 0) +
-      gastosProyecto.reduce((acc, g) => acc + (g.monto || 0), 0)
-    ).toFixed(2)
-  }
-</span>
-
-    </div>
-  </div>
-</div>
-
-
-
+<ResumenFinanciero
+  trabajosProyecto={trabajosProyecto}
+  personalAsignado={personalAsignado}
+  gastosProyecto={gastosProyecto}
+/>
 
       <div className="flex justify-end mt-4 gap-2">
   {modoEdicion ? (
@@ -866,7 +857,7 @@ if (error || !data?.length) {
     }))
   );
 
-  await obtenerPersonal(p); // Recarga la lista filtrada de personal
+  await obtenerPersonal(proyectoSeleccionado); // Recarga la lista filtrada de personal
 
 }}
 
