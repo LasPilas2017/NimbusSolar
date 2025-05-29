@@ -33,28 +33,40 @@ export default function PrecioTrabajos() {
   }, []);
 
   const handleGuardarPrecios = async (proyectoId) => {
-    const trabajos = trabajosPorProyecto[proyectoId];
-    for (const trabajo of trabajos) {
-      if (nuevosPrecios[trabajo.id] !== undefined) {
-        await supabase
+  const trabajos = trabajosPorProyecto[proyectoId];
+  for (const trabajo of trabajos) {
+    if (nuevosPrecios[trabajo.id] !== undefined) {
+      const nuevoPrecio = parseFloat(nuevosPrecios[trabajo.id]);
+
+      if (!isNaN(nuevoPrecio) && trabajo.id) {
+        const { error } = await supabase
           .from("proyectos_trabajos")
-          .update({ precio_unitario: parseFloat(nuevosPrecios[trabajo.id]) })
+          .update({
+            precio_unitario: nuevoPrecio
+          })
           .eq("id", trabajo.id);
+
+        if (error) {
+          console.error("Error al actualizar:", error);
+        }
       }
     }
-    // Refrescar la vista
-    const actualizados = { ...trabajosPorProyecto };
-    actualizados[proyectoId] = actualizados[proyectoId].map((trabajo) => ({
-      ...trabajo,
-      precio_unitario:
-        nuevosPrecios[trabajo.id] !== undefined
-          ? parseFloat(nuevosPrecios[trabajo.id])
-          : trabajo.precio_unitario,
-    }));
-    setTrabajosPorProyecto(actualizados);
-    setEditandoProyectoId(null);
-    setNuevosPrecios({});
-  };
+  }
+
+  // Refrescar la vista
+  const actualizados = { ...trabajosPorProyecto };
+  actualizados[proyectoId] = actualizados[proyectoId].map((trabajo) => ({
+    ...trabajo,
+    precio_unitario:
+      nuevosPrecios[trabajo.id] !== undefined
+        ? parseFloat(nuevosPrecios[trabajo.id])
+        : trabajo.precio_unitario
+  }));
+  setTrabajosPorProyecto(actualizados);
+  setEditandoProyectoId(null);
+  setNuevosPrecios({});
+};
+
 
   return (
     <div className="p-4">
@@ -159,7 +171,12 @@ export default function PrecioTrabajos() {
                 {/* Total Instalado */}
                 <div className="flex flex-col items-center flex-1 min-w-[100px]">
                   <p className="text-sm font-semibold text-gray-700">🔹 Total Instalado</p>
-                  <p className="text-lg font-bold text-gray-800">Q{trabajo.total_instalado?.toFixed(2) ?? "0.00"}</p>
+                  <p className="text-lg font-bold text-gray-800">
+                    Q
+                    {(trabajo.precio_unitario && trabajo.unidades_instaladas)
+                      ? (trabajo.precio_unitario * trabajo.unidades_instaladas).toFixed(2)
+                      : "0.00"}
+                  </p>
                 </div>
               </div>
             ))

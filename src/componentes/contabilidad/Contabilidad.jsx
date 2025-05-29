@@ -5,6 +5,7 @@ import BalanceGeneral from "./BalanceGeneral";
 import TotalIngresos from "./TotalIngresos";
 import TotalEgresos from "./TotalEgresos";
 import CalculosFinancieros from "./CalculosFinancieros";
+import PrecioTrabajos from "./PrecioTrabajos";
 
 export default function Contabilidad() {
   const [vista, setVista] = useState("general");
@@ -220,11 +221,14 @@ export default function Contabilidad() {
         )}
 
         {vistaDetalle === "ingresos" && (
-          <TotalIngresos
-            ampliaciones={ampliaciones}
-            onCerrar={() => setVistaDetalle(null)}
-          />
-        )}
+            <TotalIngresos
+              ampliaciones={ampliaciones}
+              proyectos={proyectos} // 👈 Le pasas la prop con todos los proyectos
+              onCerrar={() => setVistaDetalle(null)}
+            />
+          )}
+
+
 
         {vistaDetalle === "egresos" && (
           <TotalEgresos
@@ -233,21 +237,51 @@ export default function Contabilidad() {
           />
         )}
 
-        <div className="flex justify-center mt-8">
-          <div
-            onClick={() => setVista("proyectos")}
-            className="cursor-pointer bg-white shadow-lg rounded-2xl p-6 text-center max-w-xs hover:shadow-xl"
-          >
-            <p className="text-xl font-bold text-purple-700">
-              📦 Proyectos en curso
-            </p>
-            <p className="text-sm text-gray-500 mt-2">
-              Haz clic para ver el resumen por proyecto
-            </p>
-          </div>
-        </div>
+       <div className="flex justify-center gap-4 mt-8">
+  {/* Tarjeta de Proyectos en curso */}
+  <div
+    onClick={() => setVista("proyectos")}
+    className="cursor-pointer bg-white shadow-lg rounded-2xl p-6 text-center max-w-xs hover:shadow-xl"
+  >
+    <p className="text-xl font-bold text-purple-700">
+      📦 Proyectos en curso
+    </p>
+    <p className="text-sm text-gray-500 mt-2">
+      Haz clic para ver el resumen por proyecto.
+    </p>
+  </div>
+
+  {/* Tarjeta de Precios de Trabajos */}
+  <div
+    onClick={() => setVista("preciosTrabajos")}
+    className="cursor-pointer bg-white shadow-lg rounded-2xl p-6 text-center max-w-xs hover:shadow-xl"
+  >
+    <p className="text-xl font-bold text-green-700">
+      💰 Precios de Trabajos
+    </p>
+    <p className="text-sm text-gray-500 mt-2">
+      Haz clic para ver el detalle de precios de cada trabajo.
+    </p>
+  </div>
+</div>
       </>
     )}
+    {/* Aquí renderiza el componente cuando la vista es preciosTrabajos */}
+{vista === "preciosTrabajos" && (
+  <div className="mt-8">
+    <PrecioTrabajos />
+
+    <div className="mt-4 flex justify-center">
+      <button
+        onClick={() => setVista("general")}
+        className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded-xl shadow"
+      >
+        Cerrar
+      </button>
+    </div>
+  </div>
+)}
+
 {vista === "proyectos" && (
   <>
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 my-6">
@@ -341,40 +375,6 @@ export default function Contabilidad() {
     )}
   </>
 )}
-<div className="bg-white mt-10 p-6 rounded-xl shadow">
-  <h3 className="text-xl font-bold text-gray-800 mb-4">
-    💹 Resumen de Ampliaciones
-  </h3>
-  <div className="overflow-x-auto">
-    <table className="min-w-full text-sm border border-gray-200 rounded-xl">
-      <thead className="bg-gray-100 text-gray-700">
-        <tr>
-          <th className="py-2 px-4 text-left">Proyecto</th>
-          <th className="py-2 px-4 text-left">Documento</th>
-          <th className="py-2 px-4 text-left">Medio</th>
-          <th className="py-2 px-4 text-left">Fecha</th>
-          <th className="py-2 px-4 text-left">Monto</th>
-        </tr>
-      </thead>
-      <tbody>
-        {ampliaciones.map((a) => {
-          const proyecto = proyectos.find((p) => p.id === a.proyecto_id);
-          return (
-            <tr key={a.id} className="border-t">
-              <td className="py-2 px-4">
-                {proyecto ? proyecto.nombre : "Sin nombre"}
-              </td>
-              <td className="py-2 px-4">{a.documento}</td>
-              <td className="py-2 px-4 capitalize">{a.medio}</td>
-              <td className="py-2 px-4">{a.fecha}</td>
-              <td className="py-2 px-4">Q{Number(a.monto).toFixed(2)}</td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
-  </div>
-</div>
 
 {formularioActivo === "ampliacion" && (
   <div className="mt-4 bg-white rounded-xl shadow-lg p-6 max-w-3xl mx-auto">

@@ -1,12 +1,11 @@
 import Login from './Login';
 import Personal from './componentes/personal/Personal';
-import PrecioTrabajos from './componentes/contabilidad/PrecioTrabajos';
 import Proyectos from './componentes/Proyectos/Proyectos';
 import Contabilidad from './componentes/contabilidad/Contabilidad';
-import React, { useState } from 'react';
-import { supabase } from './supabase';
 import Supervisor from './componentes/Supervisor';
-function App() {
+import React, { useState } from 'react';
+
+export default function App() {
   const [usuario, setUsuario] = useState(null);
   const [tab, setTab] = useState("personal");
 
@@ -21,67 +20,74 @@ function App() {
         backgroundImage: "url('/fondo.png')",
         backgroundSize: "cover",
         backgroundRepeat: "no-repeat",
-        backgroundPosition: "center"
+        backgroundPosition: "center",
+        backgroundAttachment: "fixed"
       }}
     >
-      <h1 className="text-2xl font-bold text-center mt-4 text-white drop-shadow-md">
-        Bienvenido {esAdmin ? 'Administrador' : usuario.rol === 'contabilidad' ? 'Usuario de Contabilidad' : usuario.rol === 'reportador' ? 'Reportador' : 'Usuario'}
-      </h1>
+      {/* Cuadro difuminado que contiene todo el contenido */}
+      <div className="flex flex-col items-center justify-center w-full h-full p-6 bg-white/40 backdrop-blur-lg rounded-2xl shadow-lg max-w-6xl mx-auto mt-6">
+        <h1 className="text-2xl font-bold text-center text-gray-800 mb-4">
+          Bienvenido {esAdmin ? 'Administrador' : usuario.rol === 'contabilidad' ? 'Usuario de Contabilidad' : usuario.rol === 'reportador' ? 'Reportador' : 'Usuario'}
+        </h1>
 
-      {esAdmin && (
-        <div className="bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-lg mt-6">
-          <h2 className="text-2xl font-bold text-center text-gray-800 mb-4">Panel de Control</h2>
-          <nav className="flex flex-wrap justify-center gap-6 text-lg font-medium text-gray-700">
-            <button
-              onClick={() => setTab("personal")}
-              className={`pb-1 border-b-4 transition-all ${
-                tab === "personal" ? "border-blue-600 text-blue-700 font-bold" : "border-transparent hover:text-blue-600"
-              }`}
-            >
-              Personal
-            </button>
+        {esAdmin && (
+          <div className="w-full">
+            <h2 className="text-2xl font-bold text-center text-gray-800 mb-4">Panel de Control</h2>
+            <nav className="flex flex-wrap justify-center gap-6 text-lg font-medium text-gray-700 mb-6">
+              <button
+                onClick={() => setTab("personal")}
+                className={`pb-1 border-b-4 transition-all ${tab === "personal" ? "border-blue-600 text-blue-700 font-bold" : "border-transparent hover:text-blue-600"}`}
+              >
+                Personal
+              </button>
+              <button
+                onClick={() => setTab("proyectos")}
+                className={`pb-1 border-b-4 transition-all ${tab === "proyectos" ? "border-blue-600 text-blue-700 font-bold" : "border-transparent hover:text-blue-600"}`}
+              >
+                Proyectos
+              </button>
+              <button
+                onClick={() => setTab("Liquidez")}
+                className={`pb-1 border-b-4 transition-all ${tab === "Liquidez" ? "border-blue-600 text-blue-700 font-bold" : "border-transparent hover:text-blue-600"}`}
+              >
+                Liquidez
+              </button>
+            </nav>
+          </div>
+        )}
 
-            <button
-              onClick={() => setTab("proyectos")}
-              className={`pb-1 border-b-4 transition-all ${
-                tab === "proyectos" ? "border-blue-600 text-blue-700 font-bold" : "border-transparent hover:text-blue-600"
-              }`}
-            >
-              Proyectos
-            </button>
+        {/* Secciones adaptables para todas las pestañas */}
+        <div className="w-full flex flex-col gap-4">
+          {esAdmin && tab === "personal" && (
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="w-full">
+                <Personal usuario={usuario} />
+              </div>
+            </div>
+          )}
 
-            <button
-              onClick={() => setTab("contabilidad")}
-              className={`pb-1 border-b-4 transition-all ${
-                tab === "contabilidad" ? "border-blue-600 text-blue-700 font-bold" : "border-transparent hover:text-blue-600"
-              }`}
-            >
-              Contabilidad
-            </button>
+          {esAdmin && tab === "proyectos" && (
+            <div className="flex flex-col gap-4">
+              <Proyectos />
+            </div>
+          )}
 
-            {/* 🚀 NUEVA PESTAÑA */}
-            <button
-              onClick={() => setTab("precios")}
-              className={`pb-1 border-b-4 transition-all ${
-                tab === "precios" ? "border-blue-600 text-blue-700 font-bold" : "border-transparent hover:text-blue-600"
-              }`}
-            >
-              Precios Trabajos
-            </button>
-          </nav>
+          {esAdmin && tab === "Liquidez" && (
+            <div className="flex flex-col gap-4">
+              <Contabilidad />
+            </div>
+          )}
         </div>
-      )}
 
-      {esAdmin && tab === "personal" && <Personal usuario={usuario} />}
-      {esAdmin && tab === "precios" && <PrecioTrabajos />}
-      {esAdmin && tab === "proyectos" && <Proyectos />}
-      {esAdmin && tab === "contabilidad" && <Contabilidad />}
-
-      {usuario.rol === 'contabilidad' && <div className="mt-6 text-center text-white">Aquí irán las funciones de contabilidad.</div>}
-      {usuario.rol === 'reportador' && <div className="mt-6 text-center text-white">Aquí irán las funciones del reportador.</div>}
-      {usuario.rol === 'supervisor' && <Supervisor />}
+        {/* Vistas para otros roles */}
+        {usuario.rol === 'contabilidad' && (
+          <div className="mt-6 text-center text-gray-800">Aquí irán las funciones de contabilidad.</div>
+        )}
+        {usuario.rol === 'reportador' && (
+          <div className="mt-6 text-center text-gray-800">Aquí irán las funciones del reportador.</div>
+        )}
+        {usuario.rol === 'supervisor' && <Supervisor />}
+      </div>
     </div>
   );
 }
-
-export default App;
