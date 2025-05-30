@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../supabase";
-
-export default function PrecioTrabajos() {
+import { guardarLog } from "../../utils";
+export default function PrecioTrabajos({ usuario }) {
   const [proyectos, setProyectos] = useState([]);
   const [trabajosPorProyecto, setTrabajosPorProyecto] = useState({});
   const [editandoProyectoId, setEditandoProyectoId] = useState(null);
@@ -52,7 +52,11 @@ export default function PrecioTrabajos() {
       }
     }
   }
-
+    await guardarLog(
+      usuario,
+      "Actualización de precios",
+      `El usuario actualizó los precios del proyecto ID: ${proyectoId}`
+    );
   // Refrescar la vista
   const actualizados = { ...trabajosPorProyecto };
   actualizados[proyectoId] = actualizados[proyectoId].map((trabajo) => ({

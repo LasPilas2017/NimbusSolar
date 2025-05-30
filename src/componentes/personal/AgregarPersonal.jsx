@@ -1,8 +1,8 @@
 // AgregarPersonal.jsx
 import { useState } from "react";
 import { supabase } from "../../supabase";
-
-export default function AgregarPersonal() {
+import { guardarLog } from "../../utils";
+export default function AgregarPersonal({ usuario }) {
   const [tipoPersonal, setTipoPersonal] = useState("");
   const [datos, setDatos] = useState({
     nombre: "",
@@ -71,6 +71,12 @@ export default function AgregarPersonal() {
 
     if (!error) {
       alert("¡Personal agregado correctamente!");
+      await guardarLog(
+        usuario,
+        "Registro de nuevo personal",
+        `Se agregó al trabajador: ${datos.nombre}`
+      );
+
       setDatos({
         nombre: "",
         salarioQuincena: "",

@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "../../supabase";
+import { guardarLog } from "../../utils"; // 👈 Importar el log
 
-export default function CalculosFinancieros({ proyectoId }) {
+export default function CalculosFinancieros({ usuario, proyectoId }) { // 👈 Recibe usuario real
   const [produccion, setProduccion] = useState(0);
   const [gastado, setGastado] = useState(0);
   const [ingresos, setIngresos] = useState(0);
@@ -49,31 +50,41 @@ export default function CalculosFinancieros({ proyectoId }) {
     }
   }, [proyectoId]);
 
-// Calcular Ingresos
-useEffect(() => {
-  const calcularIngresos = async () => {
-    const { data: ampliacionesData } = await supabase
-      .from("ampliaciones_proyectos")
-      .select("monto, medio")
-      .eq("proyecto_id", proyectoId);
+  // Calcular Ingresos
+  useEffect(() => {
+    const calcularIngresos = async () => {
+      const { data: ampliacionesData } = await supabase
+        .from("ampliaciones_proyectos")
+        .select("monto, medio")
+        .eq("proyecto_id", proyectoId);
 
-    const total = ampliacionesData
-      ? ampliacionesData
-          .filter((a) => {
-            const medio = a.medio ? a.medio.toLowerCase() : "";
-            return medio === "transferencia" || medio === "deposito";
-          })
-          .reduce((sum, a) => sum + (a.monto ?? 0), 0)
-      : 0;
+      const total = ampliacionesData
+        ? ampliacionesData
+            .filter((a) => {
+              const medio = a.medio ? a.medio.toLowerCase() : "";
+              return medio === "transferencia" || medio === "deposito";
+            })
+            .reduce((sum, a) => sum + (a.monto ?? 0), 0)
+        : 0;
 
-    setIngresos(total);
-  };
+      setIngresos(total);
+    };
 
-  if (proyectoId) {
-    calcularIngresos();
-  }
-}, [proyectoId]);
+    if (proyectoId) {
+      calcularIngresos();
+    }
+  }, [proyectoId]);
 
+  // 👉 Registrar log cuando se consulta este resumen financiero
+  useEffect(() => {
+    if (usuario && proyectoId) {
+      guardarLog(
+        usuario,
+        "Consulta resumen financiero",
+        `El usuario consultó el resumen financiero del proyecto ID: ${proyectoId}`
+      );
+    }
+  }, [usuario, proyectoId]);
 
   const utilidad = produccion - gastado;
   const liquidez = ingresos - gastado;

@@ -3,7 +3,9 @@ import React, { useState, useEffect } from "react";
 import { PlusCircle, MinusCircle } from "lucide-react";
 import { supabase } from "../../supabase";
 import ModificarTrabajos from "./ModificarTrabajos";
-export default function VerPlanilla() {
+import { guardarLog } from "../../utils";
+export default function VerPlanilla({ usuario }) {
+
   const [mostrarFormularioModificar, setMostrarFormularioModificar] = useState(false);
   const [personal, setPersonal] = useState([]);
   const [personaSeleccionada, setPersonaSeleccionada] = useState(null);
@@ -80,6 +82,7 @@ const cargarReportesDiarios = async (nombreTrabajador) => {
     console.error("Error cargando personal:", personalError);
     return;
   }
+ await guardarLog(usuario, "Vista de Planilla", "El usuario visualizó la planilla de personal.");
 
   // 2️⃣ Traer suma de pagos totales por trabajador
   const { data: pagosData, error: pagosError } = await supabase

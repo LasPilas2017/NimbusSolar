@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../supabase";
-
+import { guardarLog } from "../../utils";
 export default function ReportarAsistencia({ usuario, onCerrar }) {
   const [datosSupervisor, setDatosSupervisor] = useState(null);
   const [modoEntrada, setModoEntrada] = useState(true); // true = Entrada, false = Salida
@@ -9,8 +9,6 @@ export default function ReportarAsistencia({ usuario, onCerrar }) {
   const [horasExtras, setHorasExtras] = useState(0);
   const [razonHorasExtras, setRazonHorasExtras] = useState("");
   const [formularioBloqueado, setFormularioBloqueado] = useState(false);
-
-  // ... tu lógica y componentes internos
 
 
 
@@ -67,74 +65,89 @@ export default function ReportarAsistencia({ usuario, onCerrar }) {
   };
 
   const handleEntrada = async () => {
-    setGuardando(true);
-    const ubicacion = await obtenerUbicacion();
+  setGuardando(true);
+  const ubicacion = await obtenerUbicacion();
 
-    const nuevoReporte = {
-      nombretrabajador: datosSupervisor.nombrecompleto,
-      bono: datosSupervisor.bonificacion,
-      viaticos_diarios: datosSupervisor.viaticos_diarios,
-      horas_extras: 0,
-      fechareporte: new Date().toISOString().slice(0, 10),
-      hora_entrada: new Date().toLocaleTimeString(),
-      ubicacion_entrada: ubicacion,
-      reportadopor: usuario.usuario,
-      id_usuario: usuario.id,
-    };
-
-    const { data, error } = await supabase.from("reportesdiarios").insert([nuevoReporte]).select();
-
-    if (!error && data && data.length > 0) {
-      alert("Entrada registrada ✅");
-      setReporteId(data[0].id);
-      setModoEntrada(false);
-    } else {
-      console.error(error);
-      alert("Hubo un error al guardar la entrada");
-    }
-
-    setGuardando(false);
+  const nuevoReporte = {
+    nombretrabajador: datosSupervisor.nombrecompleto,
+    bono: datosSupervisor.bonificacion,
+    viaticos_diarios: datosSupervisor.viaticos_diarios,
+    horas_extras: 0,
+    fechareporte: new Date().toISOString().slice(0, 10),
+    hora_entrada: new Date().toLocaleTimeString(),
+    ubicacion_entrada: ubicacion,
+    reportadopor: usuario.usuario,
+    id_usuario: usuario.id,
   };
 
-  const handleSalida = async () => {
-    if (!reporteId) {
-      alert("No se encontró el reporte para registrar la salida");
-      return;
-    }
+  const { data, error } = await supabase.from("reportesdiarios").insert([nuevoReporte]).select();
 
-    // Validar que si hay horas extras, se ingrese la razón
-    if (horasExtras > 0 && razonHorasExtras.trim() === "") {
-      alert("Por favor, ingresa la razón de las horas extras");
-      return;
-    }
+  if (!error && data && data.length > 0) {
+    alert("Entrada registrada ✅");
+    setReporteId(data[0].id);
+    setModoEntrada(false);
 
-    setGuardando(true);
-    const ubicacion = await obtenerUbicacion();
+    // ✅ Guardar log de entrada
+    await guardarLog(
+      usuario,
+      "Registro de entrada",
+      `Entrada registrada para ${datosSupervisor.nombrecompleto}`
+    );
+  } else {
+    console.error(error);
+    alert("Hubo un error al guardar la entrada");
+  }
 
-    const { error } = await supabase
-      .from("reportesdiarios")
-      .update({
-        hora_salida: new Date().toLocaleTimeString(),
-        ubicacion_salida: ubicacion,
-        horas_extras: horasExtras,
-        razon_horas_extras: horasExtras > 0 ? razonHorasExtras : null,
-      })
-      .eq("id", reporteId);
+  setGuardando(false);
+};
 
-    if (!error) {
-      alert("Salida registrada ✅");
-      setModoEntrada(true);
-      setReporteId(null);
-      setHorasExtras(0);
-      setRazonHorasExtras("");
-      setFormularioBloqueado(true);
-    } else {
-      console.error(error);
-      alert("Hubo un error al registrar la salida");
-    }
+const handleSalida = async () => {
+  if (!reporteId) {
+    alert("No se encontró el reporte para registrar la salida");
+    return;
+  }
 
-    setGuardando(false);
-  };
+  // Validar que si hay horas extras, se ingrese la razón
+  if (horasExtras > 0 && razonHorasExtras.trim() === "") {
+    alert("Por favor, ingresa la razón de las horas extras");
+    return;
+  }
+
+  setGuardando(true);
+  const ubicacion = await obtenerUbicacion();
+
+  const { error } = await supabase
+    .from("reportesdiarios")
+    .update({
+      hora_salida: new Date().toLocaleTimeString(),
+      ubicacion_salida: ubicacion,
+      horas_extras: horasExtras,
+      razon_horas_extras: horasExtras > 0 ? razonHorasExtras : null,
+    })
+    .eq("id", reporteId);
+
+  if (!error) {
+    alert("Salida registrada ✅");
+    setModoEntrada(true);
+    setReporteId(null);
+    setHorasExtras(0);
+    setRazonHorasExtras("");
+    setFormularioBloqueado(true);
+
+    // ✅ Guardar log de salida
+    await guardarLog(
+      usuario,
+      "Registro de salida",
+      `Salida registrada para ${datosSupervisor.nombrecompleto} (Horas extras: ${horasExtras})`
+    );
+  } else {
+    console.error(error);
+    alert("Hubo un error al registrar la salida");
+  }
+
+  setGuardando(false);
+};
+
 
   const cerrarFormulario = () => {
     if (onCerrar) {

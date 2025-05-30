@@ -1,144 +1,108 @@
+// AgregarReporte.jsx
 import { useState, useEffect } from "react";
 import { supabase } from "../supabase";
+import { guardarLog } from "../utils"; // 👈 Agregado para guardar los logs
 import { Plus, Pencil, FileText } from "lucide-react";
 
-export default function AgregarReporte({ trabajador, usuario, onGuardar }) {
-  const [presento, setPresento] = useState("Sí");
-  const [meta, setMeta] = useState("");
-  const [comentario, setComentario] = useState("");
-  const [numerogrupo, setNumeroGrupo] = useState("");
-  const [guardando, setGuardando] = useState(false);
+export default function App() {
+  const [usuario, setUsuario] = useState(null);
+  const [tab, setTab] = useState("personal");
 
-  useEffect(() => {
-    const cargarUltimoGrupo = async () => {
-      const { data, error } = await supabase
-        .from("reportesdiarios")
-        .select("numerogrupo, fechareporte")
-        .eq("nombretrabajador", trabajador.nombrecompleto)
-        .order("fechareporte", { ascending: false })
-        .limit(1);
-
-      if (!error && data.length > 0) {
-        setNumeroGrupo(data[0].numerogrupo || "");
-      }
-    };
-
-    if (trabajador?.nombrecompleto) {
-      cargarUltimoGrupo();
-    }
-  }, [trabajador]);
-  
-  const handleGuardar = async () => {
-  if (!trabajador?.nombrecompleto) {
-    alert("Error: trabajador no definido");
-    return;
+  if (!usuario) {
+    return (
+      <Login
+        onLogin={async (user) => {
+          await guardarLog(user, "Inicio de sesión", "El usuario ingresó al sistema");
+          setUsuario(user);
+        }}
+      />
+    );
   }
 
-  const fechaHoy = new Date().toISOString().slice(0, 10);
-  const cantidad = presento === "Sí" ? parseInt(meta) : 0;
+  const esAdmin = usuario.rol === 'admin';
 
-  if (presento === "Sí" && isNaN(cantidad)) {
-    alert("Debes ingresar una meta válida.");
-    return;
-  }
-
-  const registro = {
-    fechareporte: fechaHoy,
-    nombretrabajador: trabajador.nombrecompleto,
-    cantidad,
-    viaticos_diarios: presento === "Sí" ? parseFloat(trabajador.viaticos_diarios|| 0) : 0,
-    comentario: comentario || "--",
-    reportadopor: usuario?.usuario || "Desconocido",
-    sepresentoatrabajar: presento,
-    numerogrupo: numerogrupo || null,
-    salariopordia: trabajador.salariopordia ?? 0,
-    metaestablecida: trabajador.metaestablecida ?? 0,
-    bonificacion: trabajador.bonificacion ?? 0,
-    modalidad: trabajador.modalidad || "día",
-    precioporcantidad: trabajador.precioporcantidad ?? 0,
-    proyecto: trabajador.proyecto || ""
+  const cambiarTab = async (nuevoTab) => {
+    setTab(nuevoTab);
+    await guardarLog(usuario, "Cambio de pestaña", `Se cambió a la pestaña: ${nuevoTab}`);
   };
 
-  console.log("Registro a guardar:", registro); // 👀 VERIFICACIÓN
-
-  setGuardando(true);
-  const { error } = await supabase.from("reportesdiarios").insert([registro]);
-  setGuardando(false);
-
-  if (error) {
-    console.error("Error Supabase:", error);
-    alert("Error al guardar el reporte");
-  } else {
-    alert("Reporte guardado con éxito");
-    setMeta("");
-    setComentario("");
-    setNumeroGrupo("");
-    if (onGuardar) onGuardar();
-  }
-};
-
-
+  const handleLogout = async () => {
+    await guardarLog(usuario, "Cierre de sesión", "El usuario salió del sistema");
+    setUsuario(null);
+  };
 
   return (
-    <div className="mt-4 bg-gray-100 p-4 rounded shadow">
-      <h4 className="font-semibold mb-2">📋 Agregar reporte diario</h4>
+    <div
+      className="min-h-screen bg-cover bg-center p-4"
+      style={{
+        backgroundImage: "url('/fondo.png')",
+        backgroundSize: "cover",
+        backgroundRepeat: "no-repeat",
+        backgroundPosition: "center",
+        backgroundAttachment: "fixed"
+      }}
+    >
+      <div className="flex flex-col items-center justify-center w-full h-full p-6 bg-white/40 backdrop-blur-lg rounded-2xl shadow-lg max-w-6xl mx-auto mt-6">
+        <h1 className="text-2xl font-bold text-center text-gray-800 mb-4">
+          Bienvenido {esAdmin ? 'Administrador' : 'Usuario'}
+        </h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="text-sm font-semibold">Se presentó a trabajar:</label>
-          <select
-            value={presento}
-            onChange={(e) => setPresento(e.target.value)}
-            className="border p-2 rounded w-full"
-          >
-            <option value="Sí">Sí</option>
-            <option value="No">No</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="text-sm font-semibold">No. de grupo:</label>
-          <input
-            type="text"
-            placeholder="Ej: 1, 2, 3..."
-            value={numerogrupo}
-            onChange={(e) => setNumeroGrupo(e.target.value)}
-            className="border p-2 rounded w-full"
-          />
-        </div>
-
-        {presento === "Sí" && (
-          <div>
-            <label className="text-sm font-semibold">Meta diaria alcanzada:</label>
-            <input
-              type="number"
-              value={meta}
-              onChange={(e) => setMeta(e.target.value)}
-              className="border p-2 rounded w-full"
-              placeholder="Ej: 120"
-            />
+        {esAdmin && (
+          <div className="w-full">
+            <h2 className="text-2xl font-bold text-center text-gray-800 mb-4">Panel de Control</h2>
+            <nav className="flex flex-wrap justify-center gap-6 text-lg font-medium text-gray-700 mb-6">
+              <button
+                onClick={() => cambiarTab("personal")}
+                className={`pb-1 border-b-4 transition-all ${tab === "personal" ? "border-blue-600 text-blue-700 font-bold" : "border-transparent hover:text-blue-600"}`}
+              >
+                Personal
+              </button>
+              <button
+                onClick={() => cambiarTab("verPlanilla")}
+                className={`pb-1 border-b-4 transition-all ${tab === "verPlanilla" ? "border-blue-600 text-blue-700 font-bold" : "border-transparent hover:text-blue-600"}`}
+              >
+                Planilla
+              </button>
+              <button
+                onClick={() => cambiarTab("precioTrabajos")}
+                className={`pb-1 border-b-4 transition-all ${tab === "precioTrabajos" ? "border-blue-600 text-blue-700 font-bold" : "border-transparent hover:text-blue-600"}`}
+              >
+                Precio Trabajos
+              </button>
+              <button
+                onClick={() => cambiarTab("Liquidez")}
+                className={`pb-1 border-b-4 transition-all ${tab === "Liquidez" ? "border-blue-600 text-blue-700 font-bold" : "border-transparent hover:text-blue-600"}`}
+              >
+                Liquidez
+              </button>
+              <button
+                onClick={handleLogout}
+                className="pb-1 border-b-4 border-transparent text-red-600 hover:border-red-600 hover:text-red-700 font-medium"
+              >
+                Cerrar Sesión
+              </button>
+            </nav>
           </div>
         )}
-            
-        <div className="md:col-span-2">
-          <label className="text-sm font-semibold">Comentario:</label>
-          <input
-            type="text"
-            value={comentario}
-            onChange={(e) => setComentario(e.target.value)}
-            className="border p-2 rounded w-full"
-            placeholder="Observaciones (opcional)"
-          />
-        </div>
 
-        <button
-          onClick={handleGuardar}
-          disabled={guardando}
-          className="bg-blue-600 text-white py-2 rounded mt-2 md:col-span-2 hover:bg-blue-700"
-        >
-          {guardando ? "Guardando..." : "Guardar reporte"}
-        </button>
+        <div className="w-full flex flex-col gap-4">
+          {esAdmin && tab === "personal" && (
+            <Personal usuario={usuario} />
+          )}
+
+          {esAdmin && tab === "verPlanilla" && (
+            <VerPlanilla />
+          )}
+
+          {esAdmin && tab === "precioTrabajos" && (
+            <PrecioTrabajos usuario={usuario} />
+          )}
+
+          {esAdmin && tab === "Liquidez" && (
+            <Contabilidad usuario={usuario} />
+          )}
         </div>
+      </div>
     </div>
   );
 }

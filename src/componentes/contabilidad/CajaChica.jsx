@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { guardarLog } from "../../utils";
 
-export default function CajaChica({ onCerrar }) {
+export default function CajaChica({ usuario, onCerrar }) {
   const [proyectoSeleccionado, setProyectoSeleccionado] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [fecha, setFecha] = useState("");
@@ -8,7 +9,7 @@ export default function CajaChica({ onCerrar }) {
   const [factura, setFactura] = useState("no");
   const [noFactura, setNoFactura] = useState("");
   const [fotoFactura, setFotoFactura] = useState(null);
-  const [cajaChicaRestante, setCajaChicaRestante] = useState(1000); // Valor de ejemplo
+  const [cajaChicaRestante, setCajaChicaRestante] = useState(1000);
 
   const handleGuardarCajaChica = () => {
     console.log({
@@ -21,9 +22,12 @@ export default function CajaChica({ onCerrar }) {
       fotoFactura: factura === "si" ? fotoFactura : null,
     });
 
-    // Aquí podrías enviar los datos a la base de datos
+    guardarLog(
+      usuario,
+      "Registro de Caja Chica",
+      `Proyecto: ${proyectoSeleccionado}, Monto: Q${monto}, Fecha: ${fecha}`
+    );
 
-    // Reiniciar campos
     setProyectoSeleccionado("");
     setDescripcion("");
     setFecha("");
@@ -39,7 +43,6 @@ export default function CajaChica({ onCerrar }) {
     <div className="bg-white/90 p-6 rounded-2xl shadow-xl max-w-md mx-auto mt-4 relative">
       <h2 className="text-xl font-bold text-gray-800 mb-4">💰 Registro de Caja Chica</h2>
 
-      {/* Caja chica restante */}
       <div className="absolute top-2 right-4 text-xs bg-green-100 text-green-800 font-semibold rounded px-2 py-1">
         Q{cajaChicaRestante} restante
       </div>
@@ -53,7 +56,6 @@ export default function CajaChica({ onCerrar }) {
           <option value="">Selecciona un proyecto</option>
           <option value="Proyecto A">Proyecto A</option>
           <option value="Proyecto B">Proyecto B</option>
-          {/* Agrega más proyectos si lo deseas */}
         </select>
 
         <input
@@ -127,7 +129,6 @@ export default function CajaChica({ onCerrar }) {
           Guardar
         </button>
 
-        {/* Botón de Cerrar */}
         <button
           onClick={onCerrar}
           className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500 transition"

@@ -1,7 +1,12 @@
 // VerPersonal.jsx
 import React from "react";
+import { useEffect } from "react";
+import { guardarLog } from "../../utils";
 
-export default function VerPersonal({ personal }) {
+export default function VerPersonal({ personal, usuario }) {
+  useEffect(() => {
+    guardarLog(usuario, "Vista de Personal", "El usuario visualizó la lista de personal.");
+  }, [usuario]);
   return (
     <div className="overflow-x-auto bg-white/70 backdrop-blur-md p-6 rounded-xl shadow-xl mt-6">
       <h3 className="text-xl font-bold mb-4 text-gray-800">👤 Todos los Trabajadores</h3>

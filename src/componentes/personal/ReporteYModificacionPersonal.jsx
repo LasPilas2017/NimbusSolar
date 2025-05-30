@@ -1,12 +1,46 @@
 // ReporteYModificacionPersonal.jsx
 import { useState } from "react";
 import { Plus, Pencil, FileText } from "lucide-react";
+import { supabase } from "../../supabase";
+import { guardarLog } from "../../utils";
 
 export default function ReporteYModificacionPersonal({ persona }) {
   const [mostrarResumen, setMostrarResumen] = useState(false);
   const [presento, setPresento] = useState("Sí");
   const [unidades, setUnidades] = useState(0);
   const [unidadesMeta, setUnidadesMeta] = useState(0);
+
+  const handleGuardarReporte = async () => {
+    if (presento === "No") {
+      alert("Se registró que el trabajador no se presentó hoy.");
+      return;
+    }
+
+    const nuevoReporte = {
+      nombretrabajador: persona.nombrecompleto,
+      id_usuario: persona.id_usuario,
+      cantidad: unidades,
+      metaestablecida: unidadesMeta,
+      sepresentoatrabajar: presento,
+      fechareporte: new Date().toISOString().slice(0, 10),
+      reportadopor: "super1", 
+    };
+
+    const { error } = await supabase.from("reportesdiarios").insert([nuevoReporte]);
+
+    if (!error) {
+      alert("✅ Reporte diario guardado exitosamente.");
+      await guardarLog(
+        { nombre: "super1" }, // Cámbialo por usuario real si lo tienes
+        "Registro diario de personal",
+        `Se registró el reporte del día para ${persona.nombrecompleto}`
+      );
+    } else {
+      console.error(error);
+      alert("❌ Hubo un error al guardar el reporte diario.");
+    }
+  };
+
   return (
     <div className="p-4 border border-gray-300 rounded-2xl shadow bg-white mb-4">
       <div className="flex justify-between items-center">
@@ -29,7 +63,10 @@ export default function ReporteYModificacionPersonal({ persona }) {
             <button className="flex items-center gap-1 bg-yellow-400 hover:bg-yellow-500 text-black font-medium rounded-xl px-3 py-1 transition">
               <Pencil size={16} /> Modificar trabajos
             </button>
-            <button className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl px-3 py-1 transition">
+            <button
+              onClick={handleGuardarReporte}
+              className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl px-3 py-1 transition"
+            >
               <FileText size={16} /> Reportar día
             </button>
           </div>

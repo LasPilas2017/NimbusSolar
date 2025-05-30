@@ -6,8 +6,9 @@ import TotalIngresos from "./TotalIngresos";
 import TotalEgresos from "./TotalEgresos";
 import CalculosFinancieros from "./CalculosFinancieros";
 import PrecioTrabajos from "./PrecioTrabajos";
+import { guardarLog } from "../../utils";
 
-export default function Contabilidad() {
+export default function Contabilidad({ usuario }) { 
   const [vista, setVista] = useState("general");
   const [formularioActivo, setFormularioActivo] = useState(null);
   const [tipoGastoNuevo, setTipoGastoNuevo] = useState("");
@@ -129,6 +130,7 @@ export default function Contabilidad() {
     ]);
 
     if (!error) {
+       guardarLog(usuario, "Gasto registrado", `Proyecto ID: ${proyectoSeleccionado}, Monto: Q${monto}, Fecha: ${fecha}`);
       fetchProyectos();
       if (!categoriasUsadas.includes(tipoGastoNuevo)) {
         setCategoriasUsadas([...categoriasUsadas, tipoGastoNuevo]);
@@ -160,6 +162,7 @@ export default function Contabilidad() {
     ]);
 
     if (!error) {
+        guardarLog(usuario, "Ampliación de presupuesto", `Proyecto ID: ${proyectoSeleccionado}, Monto: Q${monto}, Medio: ${medioAmpliacion}`);
       fetchProyectos();
       setFormularioActivo(null);
       setProyectoSeleccionado(null);
@@ -373,157 +376,7 @@ export default function Contabilidad() {
         </div>
       </div>
     )}
-  </>
-)}
-
-{formularioActivo === "ampliacion" && (
-  <div className="mt-4 bg-white rounded-xl shadow-lg p-6 max-w-3xl mx-auto">
-    <h3 className="text-xl font-bold text-gray-800 mb-4">
-      💰 Ingreso de Capital
-    </h3>
-    <div className="grid md:grid-cols-2 gap-4">
-      <select
-        className="p-2 border rounded"
-        value={proyectoSeleccionado || ""}
-        onChange={(e) => setProyectoSeleccionado(e.target.value)}
-      >
-        <option value="">Selecciona un proyecto</option>
-        {proyectos.map((p) => (
-          <option key={p.id} value={p.id}>
-            {p.nombre}
-          </option>
-        ))}
-      </select>
-
-      <select
-        className="p-2 border rounded"
-        value={medioAmpliacion}
-        onChange={(e) => setMedioAmpliacion(e.target.value)}
-      >
-        <option value="">Medio de ampliación</option>
-        <option value="transferencia">Transferencia</option>
-        <option value="deposito">Depósito</option>
-        <option value="efectivo">Efectivo</option>
-      </select>
-
-      <input
-        type="text"
-        placeholder="No. de documento"
-        className="p-2 border rounded"
-        value={documento}
-        onChange={(e) => setDocumento(e.target.value)}
-      />
-
-      <input
-        type="date"
-        className="p-2 border rounded"
-        value={fecha}
-        onChange={(e) => setFecha(e.target.value)}
-      />
-
-      <input
-        type="number"
-        placeholder="Monto"
-        className="p-2 border rounded"
-        value={monto}
-        onChange={(e) => setMonto(e.target.value)}
-      />
-
-      <input type="file" className="p-2 border rounded col-span-2" />
-
-      <button
-        onClick={guardarAmpliacion}
-        className="col-span-2 mt-4 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded-xl shadow"
-      >
-        Guardar Ampliación
-      </button>
-
-      <button
-        onClick={() => setFormularioActivo(null)}
-        className="col-span-2 mt-2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 rounded-xl shadow"
-      >
-        Cancelar
-      </button>
-    </div>
-  </div>
-)}
-{formularioActivo === "ampliacion" && (
-  <div className="mt-4 bg-white rounded-xl shadow-lg p-6 max-w-3xl mx-auto">
-    <h3 className="text-xl font-bold text-gray-800 mb-4">
-      💰 Ingreso de Capital
-    </h3>
-    <div className="grid md:grid-cols-2 gap-4">
-      <select
-        className="p-2 border rounded"
-        value={proyectoSeleccionado || ""}
-        onChange={(e) => setProyectoSeleccionado(e.target.value)}
-      >
-        <option value="">Selecciona un proyecto</option>
-        {proyectos.map((p) => (
-          <option key={p.id} value={p.id}>
-            {p.nombre}
-          </option>
-        ))}
-      </select>
-
-      <select
-        className="p-2 border rounded"
-        value={medioAmpliacion}
-        onChange={(e) => setMedioAmpliacion(e.target.value)}
-      >
-        <option value="">Medio de ampliación</option>
-        <option value="transferencia">Transferencia</option>
-        <option value="deposito">Depósito</option>
-        <option value="efectivo">Efectivo</option>
-      </select>
-
-      <input
-        type="text"
-        placeholder="No. de documento"
-        className="p-2 border rounded"
-        value={documento}
-        onChange={(e) => setDocumento(e.target.value)}
-      />
-
-      <input
-        type="date"
-        className="p-2 border rounded"
-        value={fecha}
-        onChange={(e) => setFecha(e.target.value)}
-      />
-
-      <input
-        type="number"
-        placeholder="Monto"
-        className="p-2 border rounded"
-        value={monto}
-        onChange={(e) => setMonto(e.target.value)}
-      />
-
-      <input type="file" className="p-2 border rounded col-span-2" />
-
-      <button
-        onClick={guardarAmpliacion}
-        className="col-span-2 mt-4 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded-xl shadow"
-      >
-        Guardar Ampliación
-      </button>
-
-      <button
-        onClick={() => setFormularioActivo(null)}
-        className="col-span-2 mt-2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 rounded-xl shadow"
-      >
-        Cancelar
-      </button>
-    </div>
-  </div>
-)}
-
-
-
-
-
-      {/* Grid de proyectos */}
+     {/* Grid de proyectos */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 items-start">
         {proyectos
           .sort((a, b) => (a.estado === "finalizado" ? 1 : -1))
@@ -658,6 +511,158 @@ console.log("Ingresos reales calculados:", ingresosReales);
             </div>
           ))}
       </div>
+  </>
+  
+)}
+
+{formularioActivo === "ampliacion" && (
+  <div className="mt-4 bg-white rounded-xl shadow-lg p-6 max-w-3xl mx-auto">
+    <h3 className="text-xl font-bold text-gray-800 mb-4">
+      💰 Ingreso de Capital
+    </h3>
+    <div className="grid md:grid-cols-2 gap-4">
+      <select
+        className="p-2 border rounded"
+        value={proyectoSeleccionado || ""}
+        onChange={(e) => setProyectoSeleccionado(e.target.value)}
+      >
+        <option value="">Selecciona un proyecto</option>
+        {proyectos.map((p) => (
+          <option key={p.id} value={p.id}>
+            {p.nombre}
+          </option>
+        ))}
+      </select>
+
+      <select
+        className="p-2 border rounded"
+        value={medioAmpliacion}
+        onChange={(e) => setMedioAmpliacion(e.target.value)}
+      >
+        <option value="">Medio de ampliación</option>
+        <option value="transferencia">Transferencia</option>
+        <option value="deposito">Depósito</option>
+        <option value="efectivo">Efectivo</option>
+      </select>
+
+      <input
+        type="text"
+        placeholder="No. de documento"
+        className="p-2 border rounded"
+        value={documento}
+        onChange={(e) => setDocumento(e.target.value)}
+      />
+
+      <input
+        type="date"
+        className="p-2 border rounded"
+        value={fecha}
+        onChange={(e) => setFecha(e.target.value)}
+      />
+
+      <input
+        type="number"
+        placeholder="Monto"
+        className="p-2 border rounded"
+        value={monto}
+        onChange={(e) => setMonto(e.target.value)}
+      />
+
+      <input type="file" className="p-2 border rounded col-span-2" />
+
+      <button
+        onClick={guardarAmpliacion}
+        className="col-span-2 mt-4 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded-xl shadow"
+      >
+        Guardar Ampliación
+      </button>
+
+      <button
+        onClick={() => setFormularioActivo(null)}
+        className="col-span-2 mt-2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 rounded-xl shadow"
+      >
+        Cancelar
+      </button>
+    </div>
+  </div>
+)}
+{formularioActivo === "ampliacion" && (
+  <div className="mt-4 bg-white rounded-xl shadow-lg p-6 max-w-3xl mx-auto">
+    <h3 className="text-xl font-bold text-gray-800 mb-4">
+      💰 Ingreso de Capital
+    </h3>
+    <div className="grid md:grid-cols-2 gap-4">
+      <select
+        className="p-2 border rounded"
+        value={proyectoSeleccionado || ""}
+        onChange={(e) => setProyectoSeleccionado(e.target.value)}
+      >
+        <option value="">Selecciona un proyecto</option>
+        {proyectos.map((p) => (
+          <option key={p.id} value={p.id}>
+            {p.nombre}
+          </option>
+        ))}
+      </select>
+
+      <select
+        className="p-2 border rounded"
+        value={medioAmpliacion}
+        onChange={(e) => setMedioAmpliacion(e.target.value)}
+      >
+        <option value="">Medio de ampliación</option>
+        <option value="transferencia">Transferencia</option>
+        <option value="deposito">Depósito</option>
+        <option value="efectivo">Efectivo</option>
+      </select>
+
+      <input
+        type="text"
+        placeholder="No. de documento"
+        className="p-2 border rounded"
+        value={documento}
+        onChange={(e) => setDocumento(e.target.value)}
+      />
+
+      <input
+        type="date"
+        className="p-2 border rounded"
+        value={fecha}
+        onChange={(e) => setFecha(e.target.value)}
+      />
+
+      <input
+        type="number"
+        placeholder="Monto"
+        className="p-2 border rounded"
+        value={monto}
+        onChange={(e) => setMonto(e.target.value)}
+      />
+
+      <input type="file" className="p-2 border rounded col-span-2" />
+
+      <button
+        onClick={guardarAmpliacion}
+        className="col-span-2 mt-4 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded-xl shadow"
+      >
+        Guardar Ampliación
+      </button>
+
+      <button
+        onClick={() => setFormularioActivo(null)}
+        className="col-span-2 mt-2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 rounded-xl shadow"
+      >
+        Cancelar
+      </button>
+    </div>
+  </div>
+)}
+
+
+
+
+
+     
     </div>
   );
 }

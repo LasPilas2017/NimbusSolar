@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from './supabase';
+import { guardarLog } from './utils'; // 👈 Importamos la función
 
 export default function Login({ onLogin }) {
   const [usuario, setUsuario] = useState('');
@@ -18,7 +19,11 @@ export default function Login({ onLogin }) {
     if (error || !data) {
       setError('Usuario o contraseña incorrectos');
     } else {
-      console.log("ROL DEL USUARIO:", data.rol);
+      // Guardamos el log de inicio de sesión
+      await guardarLog(data, "Inicio de sesión", "El usuario ingresó al sistema");
+
+
+      // Llamamos al callback para establecer al usuario en la app
       onLogin(data);
     }
   };
