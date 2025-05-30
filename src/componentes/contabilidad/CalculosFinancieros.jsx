@@ -7,20 +7,38 @@ export default function CalculosFinancieros({ usuario, proyectoId }) {
   const [gastado, setGastado] = useState(0);
   const [ingresos, setIngresos] = useState(0);
 
-  // Calcular Producción
+  // Calcular Producción (usando la suma de reportes diarios)
   useEffect(() => {
     const calcularProduccion = async () => {
-      const { data: trabajos } = await supabase
+      const { data: trabajos, error } = await supabase
         .from("proyectos_trabajos")
         .select("*")
         .eq("proyecto_id", proyectoId);
 
+      if (error) {
+        console.error("Error cargando trabajos:", error);
+        return;
+      }
+
       let total = 0;
-      trabajos?.forEach((trabajo) => {
-        const unidadesInstaladas = trabajo.unidades_instaladas ?? 0;
+
+      for (const trabajo of trabajos) {
+        const { data: reportes, error: errorReportes } = await supabase
+          .from("reportesdiarios")
+          .select("cantidad")
+          .eq("trabajorealizado", trabajo.nombre_trabajo);
+
+        if (errorReportes) {
+          console.error("Error cargando reportes:", errorReportes);
+          continue;
+        }
+
+        const unidadesInstaladas =
+          reportes?.reduce((sum, r) => sum + (r.cantidad ?? 0), 0) ?? 0;
         const precioUnitario = trabajo.precio_unitario ?? 0;
+
         total += unidadesInstaladas * precioUnitario;
-      });
+      }
 
       setProduccion(total);
     };
