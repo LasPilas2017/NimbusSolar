@@ -6,13 +6,15 @@ import VistaMovimientos from './componentes/VistaMovimientos';
 import React, { useState } from 'react';
 import { guardarLog } from './utils';
 import Servicios from './componentes/Servicios/Servicios';
-
+import Proyectos from './componentes/Proyectos/Proyectos';
 import Vehiculos from './componentes/Servicios/vehiculos';
 import Maquinaria from './componentes/Servicios/maquinaria';
+import VerPlanilla from "./componentes/personal/VerPlanilla";
+
 export default function App() {
   const [usuario, setUsuario] = useState(null);
   const [tab, setTab] = useState("personal");
-  const [vistaServicio, setVistaServicio] = useState("principal"); // 👈 este estado controla la vista en "servicios"
+  const [vistaServicio, setVistaServicio] = useState("principal"); // 👈 controla la vista de "servicios"
 
   if (!usuario) {
     return (
@@ -29,7 +31,7 @@ export default function App() {
 
   const cambiarTab = async (nuevoTab) => {
     setTab(nuevoTab);
-    setVistaServicio("principal"); // 👈 reinicia la vista de "servicios" cuando cambias de pestaña
+    setVistaServicio("principal"); // 👈 reinicia la vista de "servicios" al cambiar de pestaña
     await guardarLog(usuario, "Cambio de pestaña", `Se cambió a la pestaña: ${nuevoTab}`);
   };
 
@@ -39,7 +41,7 @@ export default function App() {
   };
 
   const handleSelectServicio = (seleccion) => {
-    setVistaServicio(seleccion); // 👈 cambia la vista según la selección
+    setVistaServicio(seleccion); // 👈 cambia la vista de "servicios"
   };
 
   return (
@@ -63,57 +65,68 @@ export default function App() {
           <div className="w-full">
             <h2 className="text-2xl font-bold text-center text-gray-800 mb-4">Panel de Control</h2>
             <nav className="flex flex-wrap justify-center gap-4 text-lg font-medium text-gray-800 mb-6">
-  <button
-    onClick={() => cambiarTab("personal")}
-    className={`px-4 py-2 rounded-xl transition-all duration-300 shadow-sm ${
-      tab === "personal"
-        ? "bg-gray-900 text-white font-bold"
-        : "bg-gray-200 hover:bg-gray-300 text-gray-800"
-    }`}
-  >
-    Personal
-  </button>
+              <button
+                onClick={() => cambiarTab("personal")}
+                className={`px-4 py-2 rounded-xl transition-all duration-300 shadow-sm ${
+                  tab === "personal"
+                    ? "bg-gray-900 text-white font-bold"
+                    : "bg-gray-200 hover:bg-gray-300 text-gray-800"
+                }`}
+              >
+                Personal
+              </button>
 
-  <button
-    onClick={() => cambiarTab("Liquidez")}
-    className={`px-4 py-2 rounded-xl transition-all duration-300 shadow-sm ${
-      tab === "Liquidez"
-        ? "bg-gray-900 text-white font-bold"
-        : "bg-gray-200 hover:bg-gray-300 text-gray-800"
-    }`}
-  >
-    Liquidez
-  </button>
+              <button
+                onClick={() => cambiarTab("Liquidez")}
+                className={`px-4 py-2 rounded-xl transition-all duration-300 shadow-sm ${
+                  tab === "Liquidez"
+                    ? "bg-gray-900 text-white font-bold"
+                    : "bg-gray-200 hover:bg-gray-300 text-gray-800"
+                }`}
+              >
+                Liquidez
+              </button>
 
-  <button
-    onClick={() => cambiarTab("servicios")}
-    className={`px-4 py-2 rounded-xl transition-all duration-300 shadow-sm ${
-      tab === "servicios"
-        ? "bg-gray-900 text-white font-bold"
-        : "bg-gray-200 hover:bg-gray-300 text-gray-800"
-    }`}
-  >
-    Servicios
-  </button>
+              <button
+                onClick={() => cambiarTab("proyectos")}
+                className={`px-4 py-2 rounded-xl transition-all duration-300 shadow-sm ${
+                  tab === "proyectos"
+                    ? "bg-gray-900 text-white font-bold"
+                    : "bg-gray-200 hover:bg-gray-300 text-gray-800"
+                }`}
+              >
+                Proyectos
+              </button>
 
-  <button
-    onClick={() => cambiarTab("VistaMovimientos")}
-    className={`px-4 py-2 rounded-xl transition-all duration-300 shadow-sm ${
-      tab === "VistaMovimientos"
-        ? "bg-gray-900 text-white font-bold"
-        : "bg-gray-200 hover:bg-gray-300 text-gray-800"
-    }`}
-  >
-    Registro de Movimientos
-  </button>
+              <button
+                onClick={() => cambiarTab("servicios")}
+                className={`px-4 py-2 rounded-xl transition-all duration-300 shadow-sm ${
+                  tab === "servicios"
+                    ? "bg-gray-900 text-white font-bold"
+                    : "bg-gray-200 hover:bg-gray-300 text-gray-800"
+                }`}
+              >
+                Servicios
+              </button>
 
-  <button
-    onClick={handleLogout}
-    className="flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 shadow-sm bg-gray-200 hover:bg-red-200 text-red-700 hover:text-red-800 font-semibold"
-  >
-    Cerrar Sesión
-  </button>
-</nav>
+              <button
+                onClick={() => cambiarTab("VistaMovimientos")}
+                className={`px-4 py-2 rounded-xl transition-all duration-300 shadow-sm ${
+                  tab === "VistaMovimientos"
+                    ? "bg-gray-900 text-white font-bold"
+                    : "bg-gray-200 hover:bg-gray-300 text-gray-800"
+                }`}
+              >
+                Registro de Movimientos
+              </button>
+
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 shadow-sm bg-gray-200 hover:bg-red-200 text-red-700 hover:text-red-800 font-semibold"
+              >
+                Cerrar Sesión
+              </button>
+            </nav>
           </div>
         )}
 
@@ -122,6 +135,7 @@ export default function App() {
           {esAdmin && tab === "personal" && <Personal usuario={usuario} />}
           {esAdmin && tab === "Liquidez" && <Contabilidad usuario={usuario} />}
           {esAdmin && tab === "VistaMovimientos" && <VistaMovimientos />}
+          {esAdmin && tab === "proyectos" && <Proyectos />}
 
           {/* Servicios con control interno de vista */}
           {esAdmin && tab === "servicios" && (
@@ -129,15 +143,11 @@ export default function App() {
               {vistaServicio === "principal" && (
                 <Servicios onSelect={handleSelectServicio} />
               )}
-              {vistaServicio === "vehiculos" && (
-                <Vehiculos />
-              )}
-              {vistaServicio === "maquinaria" && (
-                <Maquinaria />
-              )}
+              {vistaServicio === "vehiculos" && <Vehiculos />}
+              {vistaServicio === "maquinaria" && <Maquinaria />}
             </>
           )}
-        </div>
+           </div>
       </div>
     </div>
   );

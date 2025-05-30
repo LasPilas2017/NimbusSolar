@@ -188,7 +188,7 @@ export default function Contabilidad({ usuario }) {
           >
             <p className="text-sm text-gray-600">Total ingresos</p>
             <h2 className="text-xl font-bold text-green-700">
-              Q{totales.ingresos.toFixed(2)}
+               Q{totales.ingresos.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </h2>
           </div>
           <div
@@ -197,7 +197,7 @@ export default function Contabilidad({ usuario }) {
           >
             <p className="text-sm text-gray-600">Total egresos</p>
             <h2 className="text-xl font-bold text-red-700">
-              Q{totales.egresos.toFixed(2)}
+              Q{totales.egresos.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </h2>
           </div>
           <div
@@ -206,7 +206,7 @@ export default function Contabilidad({ usuario }) {
           >
             <p className="text-sm text-gray-600">Balance general</p>
             <h2 className="text-xl font-bold text-blue-700">
-              Q{totales.balance.toFixed(2)}
+              Q{totales.balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </h2>
           </div>
         </div>
@@ -480,7 +480,7 @@ console.log("Ingresos reales calculados:", ingresosReales);
                                   .map((gasto, idx) => (
                                     <li key={idx}>
                                       {gasto.fecha} - {gasto.descripcion}: Q
-                                      {gasto.monto.toFixed(2)}
+                                     {gasto.monto.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </li>
                                   ))}
                               </ul>
@@ -498,7 +498,7 @@ console.log("Ingresos reales calculados:", ingresosReales);
                               .map((amp, idx) => (
                                 <li key={idx}>
                                   {amp.fecha} - {amp.medio} - Doc: {amp.documento} — Q
-                                  {amp.monto.toFixed(2)}
+                                  {amp.monto.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </li>
                               ))}
                           </ul>

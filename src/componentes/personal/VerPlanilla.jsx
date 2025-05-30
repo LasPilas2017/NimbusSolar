@@ -4,6 +4,7 @@ import { PlusCircle, MinusCircle } from "lucide-react";
 import { supabase } from "../../supabase";
 import ModificarTrabajos from "./ModificarTrabajos";
 import { guardarLog } from "../../utils";
+
 export default function VerPlanilla({ usuario }) {
 
   const [mostrarFormularioModificar, setMostrarFormularioModificar] = useState(false);
@@ -13,7 +14,10 @@ export default function VerPlanilla({ usuario }) {
   const [modoModificar, setModoModificar] = useState(false);
   const [modoReportar, setModoReportar] = useState(false);
   const [asistencia, setAsistencia] = useState("");
+  const [proyectoSeleccionado, setProyectoSeleccionado] = useState(null);
   const [reportesDiarios, setReportesDiarios] = useState([]);
+  const [trabajosProyecto, setTrabajosProyecto] = useState([]);
+  const [trabajoSeleccionado, setTrabajoSeleccionado] = useState("");
   const [datosReporte, setDatosReporte] = useState({
     pagoPorDia: "",
     horasExtras: "",
@@ -34,7 +38,6 @@ export default function VerPlanilla({ usuario }) {
 };
 
 const handleVerResumen = async (p) => {
-  // Si la persona ya está seleccionada y se hace clic en el mismo botón, oculta el resumen
   if (personaSeleccionada?.id === p.id && verResumen) {
     setVerResumen(false);
     setPersonaSeleccionada(null);
@@ -52,11 +55,39 @@ const handleVerResumen = async (p) => {
       bonificacionExtra: "",
       pagoExtraordinario: "",
       grupo: "",
+      trabajoRealizado: "",
     });
 
     await cargarReportesDiarios(p.nombrecompleto);
+
+    // 🔥 Buscamos el proyecto_id en proyectos_personal
+   const { data: proyectos, error } = await supabase
+  .from("proyectos_personal")
+  .select("proyecto_id")
+  .eq("trabajador_id", p.id)
+  .limit(1);
+
+
+
+    if (error) {
+  console.error("Error buscando proyecto:", error);
+  return;
+}
+
+if (proyectos && proyectos.length > 0) {
+  const proyectoId = proyectos[0].proyecto_id;
+  console.log("Proyecto encontrado:", proyectoId);
+  setProyectoSeleccionado({ id: proyectoId });
+  await cargarTrabajosProyecto(proyectoId);
+} else {
+  alert("Error: No se encontró el proyecto asignado para este trabajador. Verifica la asignación.");
+  setTrabajosProyecto([]);
+  setProyectoSeleccionado(null);
+}
   }
 };
+
+
 const cargarReportesDiarios = async (nombreTrabajador) => {
   const { data: reportes, error } = await supabase
     .from("reportesdiarios")
@@ -71,8 +102,29 @@ const cargarReportesDiarios = async (nombreTrabajador) => {
   setReportesDiarios(reportes);
 };
 
+// Obtener los trabajos del proyecto asignado a la persona seleccionada
+const cargarTrabajosProyecto = async (proyectoId) => {
+  if (!proyectoId) {
+    setTrabajosProyecto([]);
+    return;
+  }
 
-  const cargarPersonal = async () => {
+  const { data: trabajos, error } = await supabase
+    .from("proyectos_trabajos")
+    .select("id, nombre_trabajo")
+    .eq("proyecto_id", proyectoId);
+
+  if (error) {
+    console.error("Error al cargar trabajos:", error);
+    return;
+  }
+
+  console.log("Trabajos obtenidos:", trabajos); // 👈 Para verlos en consola
+  setTrabajosProyecto(trabajos);
+};
+
+
+const cargarPersonal = async () => {
   // 1️⃣ Traer datos generales
   const { data: personalData, error: personalError } = await supabase
     .from("registrodepersonal")
@@ -82,50 +134,52 @@ const cargarReportesDiarios = async (nombreTrabajador) => {
     console.error("Error cargando personal:", personalError);
     return;
   }
- await guardarLog(usuario, "Vista de Planilla", "El usuario visualizó la planilla de personal.");
 
-  // 2️⃣ Traer suma de pagos totales por trabajador
-  const { data: pagosData, error: pagosError } = await supabase
+  await guardarLog(usuario, "Vista de Planilla", "El usuario visualizó la planilla de personal.");
+
+  // 2️⃣ Traer suma de pagos totales y viáticos por trabajador
+  const { data: reportesData, error: reportesError } = await supabase
     .from("reportesdiarios")
-    .select("nombretrabajador, pagototal")
-    .order("nombretrabajador", { ascending: true });
+    .select("nombretrabajador, pagototal, viaticos");
 
-  if (pagosError) {
-    console.error("Error cargando pagos:", pagosError);
+  if (reportesError) {
+    console.error("Error cargando reportes:", reportesError);
     return;
   }
 
-  // 3️⃣ Crear objeto para acumular pagos
-  const pagosPorPersona = {};
-  pagosData.forEach((r) => {
-    if (!pagosPorPersona[r.nombretrabajador]) {
-      pagosPorPersona[r.nombretrabajador] = 0;
+  // 3️⃣ Acumular pagos y viáticos por persona
+  const acumuladosPorPersona = {};
+  reportesData.forEach((r) => {
+    if (!acumuladosPorPersona[r.nombretrabajador]) {
+      acumuladosPorPersona[r.nombretrabajador] = {
+        pagos: 0,
+        viaticos: 0,
+      };
     }
-    pagosPorPersona[r.nombretrabajador] += parseFloat(r.pagototal || 0);
+    acumuladosPorPersona[r.nombretrabajador].pagos += parseFloat(r.pagototal || 0);
+    acumuladosPorPersona[r.nombretrabajador].viaticos += parseFloat(r.viaticos || 0);
   });
 
   // 4️⃣ Combinar el total acumulado con el personal
   const personalConTotales = personalData.map((p) => {
-    const totalReportado = pagosPorPersona[p.nombrecompleto] || 0;
+    const acumulados = acumuladosPorPersona[p.nombrecompleto] || { pagos: 0, viaticos: 0 };
 
     let totalAcumulado = 0;
     if (p.modalidad === "fijo") {
-      // 👇 Si es fijo, suma salario fijo + reportes
-      totalAcumulado = (p.salarioporquincena || 0) + totalReportado;
+      totalAcumulado = (p.salarioporquincena || 0) + acumulados.pagos;
     } else {
-      // 👇 Si no es fijo, solo suma reportes
-      totalAcumulado = totalReportado;
+      totalAcumulado = acumulados.pagos;
     }
 
     return {
       ...p,
       totalAcumulado,
+      totalViaticos: acumulados.viaticos, // 👈 Nuevo campo con viáticos acumulados
     };
   });
 
   setPersonal(personalConTotales);
 };
-
 
   useEffect(() => {
     cargarPersonal();
@@ -146,41 +200,47 @@ return (
           <th className="px-2 py-2 border">Bono por día</th>
           <th className="px-2 py-2 border">Hora extra</th>
           <th className="px-2 py-2 border">Viáticos</th>
+          <th className="px-2 py-2 border">Total Viáticos</th>
           <th className="px-2 py-2 border font-semibold text-green-800">Total</th>
         </tr>
       </thead>
       <tbody>
         {personal.map((p) => {
-    const salario = p.modalidad === "fijo" ? p.salarioporquincena || 0 : p.salariopordia || 0;
-    const bono = p.bonificacion || 0;
-    const horaExtra = p.pagoporhoraextra || 0;
-    const viaticos = p.viaticos_diarios || 0;
-    const total = p.totalAcumulado || 0;
+          const salario = p.modalidad === "fijo" ? p.salarioporquincena || 0 : p.salariopordia || 0;
+          const bono = p.bonificacion || 0;
+          const horaExtra = p.pagoporhoraextra || 0;
+          const viaticos = p.viaticos_diarios || 0;
+          const totalSinViaticos = (p.totalAcumulado || 0) - (p.totalViaticos || 0);
 
-    return (
-      <React.Fragment key={p.id}>
-        <tr className="border-b">
-          <td className="px-2 py-2 border">
-            <button
-                onClick={() => handleVerResumen(p)}
-                className="text-green-600 hover:text-green-800"
-              >
-                {personaSeleccionada?.id === p.id && verResumen ? (
-                  <MinusCircle size={20} />
-                ) : (
-                  <PlusCircle size={20} />
-                )}
-              </button>
-          </td>
-          <td className="px-2 py-2 border text-xs md:text-sm">{p.nombrecompleto}</td>
-          <td className="px-2 py-2 border capitalize text-xs md:text-sm">{p.modalidad}</td>
-          <td className="px-2 py-2 border text-xs md:text-sm">Q{salario}</td>
-          <td className="px-2 py-2 border text-xs md:text-sm">Q{bono}</td>
-          <td className="px-2 py-2 border text-xs md:text-sm">Q{horaExtra}</td>
-          <td className="px-2 py-2 border text-xs md:text-sm">Q{viaticos}</td>
-          <td className="px-2 py-2 border font-bold text-green-700 text-xs md:text-sm">Q{total}</td>
-        </tr>
-
+          return (
+            <React.Fragment key={p.id}>
+              <tr className="border-b">
+                <td className="px-2 py-2 border">
+                  <button
+                    onClick={() => handleVerResumen(p)}
+                    className="text-green-600 hover:text-green-800"
+                  >
+                    {personaSeleccionada?.id === p.id && verResumen ? (
+                      <MinusCircle size={20} />
+                    ) : (
+                      <PlusCircle size={20} />
+                    )}
+                  </button>
+                </td>
+                <td className="px-2 py-2 border text-xs md:text-sm">{p.nombrecompleto}</td>
+                <td className="px-2 py-2 border capitalize text-xs md:text-sm">{p.modalidad}</td>
+                <td className="px-2 py-2 border text-xs md:text-sm">Q{salario.toLocaleString()}</td>
+                <td className="px-2 py-2 border text-xs md:text-sm">Q{bono.toLocaleString()}</td>
+                <td className="px-2 py-2 border text-xs md:text-sm">Q{horaExtra.toLocaleString()}</td>
+                <td className="px-2 py-2 border text-xs md:text-sm">Q{viaticos.toLocaleString()}</td>
+                <td className="px-2 py-2 border text-xs md:text-sm text-green-700 font-semibold">
+                  Q{(p.totalViaticos || 0).toLocaleString()}
+                </td>
+                <td className="px-2 py-2 border font-bold text-green-700 text-xs md:text-sm">
+                  Q{totalSinViaticos.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </td>
+            </tr>
+            
         {verResumen && personaSeleccionada?.id === p.id && (
           <tr>
             <td colSpan="8" className="px-4 py-2 bg-gray-50">
@@ -227,7 +287,26 @@ return (
         </select>
 
         {asistencia === "si" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {/* Trabajo realizado */}
+            <div>
+              <label className="block text-sm font-medium mb-1">Trabajo realizado</label>
+              <select
+                name="trabajoRealizado"
+                value={datosReporte.trabajoRealizado || ""}
+                onChange={(e) => setDatosReporte({ ...datosReporte, trabajoRealizado: e.target.value })}
+                className="border p-2 rounded w-full"
+              >
+                <option value="">Seleccione un trabajo</option>
+                {trabajosProyecto.map((trabajo) => (
+  <option key={trabajo.id} value={trabajo.nombre_trabajo}>
+    {trabajo.nombre_trabajo}
+  </option>
+))}
+
+              </select>
+            </div>
+
             {/* Horas extras */}
             <div>
               <label className="block text-sm font-medium mb-1">Horas extras</label>
@@ -371,7 +450,7 @@ return (
 <div className="flex justify-center mt-4">
   <button
     onClick={async () => {
-      const campos = ["horasExtras", "unidadesMeta", "unidadesBonificacion"];
+      const campos = ["horasExtras", "unidadesMeta", "unidadesBonificacion", "trabajoRealizado"];
       const faltanCampos = campos.some((campo) => datosReporte[campo] === "");
       if (faltanCampos) {
         if (confirm("Faltan datos. ¿Desea guardar solo los datos llenados?")) {
@@ -381,7 +460,20 @@ return (
           return;
         }
       }
-      // Construir el objeto de datos a guardar
+
+      // ✅ Verificar que se haya seleccionado un proyecto antes de guardar
+      if (!proyectoSeleccionado || !proyectoSeleccionado.id) {
+        alert("Error: No se encontró el proyecto asignado para este trabajador. Verifica la asignación.");
+        return;
+      }
+
+      // ✅ Validar que se haya seleccionado el trabajo
+      if (!datosReporte.trabajoRealizado) {
+        alert("Por favor, selecciona el trabajo realizado.");
+        return;
+      }
+
+      // 🔥 Crear el objeto para guardar el reporte
       const nuevoReporte = {
         fechareporte: new Date().toISOString().slice(0, 10),
         nombretrabajador: personaSeleccionada.nombrecompleto,
@@ -392,21 +484,21 @@ return (
         cantidad: parseInt(datosReporte.unidadesBonificacion || 0),
         extra: parseFloat(datosReporte.bonificacionExtra || 0),
         pagoextraordinario: parseFloat(datosReporte.pagoExtraordinario || 0),
-        pagototal: (
+        pagototal:
           parseFloat(p.bonificacion || 0) +
           parseFloat(p.viaticos_diarios || 0) +
           (parseFloat(datosReporte.horasExtras || 0) * parseFloat(p.pagoporhoraextra || 0)) +
-          (
-            (parseInt(datosReporte.unidadesBonificacion || 0) - parseInt(datosReporte.unidadesMeta || 0)) *
-            parseFloat(datosReporte.bonificacionExtra || 0)
-          ) +
-          parseFloat(datosReporte.pagoExtraordinario || 0)
-        ),
+          ((parseInt(datosReporte.unidadesBonificacion || 0) - parseInt(datosReporte.unidadesMeta || 0)) *
+            parseFloat(datosReporte.bonificacionExtra || 0)) +
+          parseFloat(datosReporte.pagoExtraordinario || 0),
         numerogrupo: datosReporte.grupo || "",
-        sepresentoatrabajar: asistencia, // ¡no olvides registrar si se presentó!
+        sepresentoatrabajar: asistencia,
+        proyecto: proyectoSeleccionado.id,
+        trabajorealizado: datosReporte.trabajoRealizado,
       };
 
       try {
+        // 🔥 Insertar el reporte diario
         const { data, error } = await supabase
           .from("reportesdiarios")
           .insert([nuevoReporte]);
@@ -416,17 +508,16 @@ return (
         alert("¡Reporte guardado correctamente!");
         setModoReportar(false);
         setVerResumen(false);
+        cargarPersonal();
 
-        const salarioCalculado = (
+        // 🔥 Calcular el salario final para actualizarlo en registrodepersonal
+        const salarioCalculado =
           parseFloat(p.bonificacion || 0) +
           parseFloat(p.viaticos_diarios || 0) +
           (parseFloat(datosReporte.horasExtras || 0) * parseFloat(p.pagoporhoraextra || 0)) +
-          (
-            (parseInt(datosReporte.unidadesBonificacion || 0) - parseInt(datosReporte.unidadesMeta || 0)) *
-            parseFloat(datosReporte.bonificacionExtra || 0)
-          ) +
-          parseFloat(datosReporte.pagoExtraordinario || 0)
-        );
+          ((parseInt(datosReporte.unidadesBonificacion || 0) - parseInt(datosReporte.unidadesMeta || 0)) *
+            parseFloat(datosReporte.bonificacionExtra || 0)) +
+          parseFloat(datosReporte.pagoExtraordinario || 0);
 
         const salarioFinalEntero = parseInt(salarioCalculado, 10) || 0;
 
@@ -439,10 +530,10 @@ return (
 
         if (updateError) throw updateError;
 
-        // Recarga el personal para ver reflejado el cambio
+        // 🔥 Recargar para ver reflejado el cambio
         cargarPersonal();
       } catch (error) {
-        console.error(error);
+        console.error("Error al guardar en la base de datos:", error);
         alert("Error al guardar en la base de datos.");
       }
     }}
@@ -451,6 +542,9 @@ return (
     Subir Reporte
   </button>
 </div>
+
+
+
 
 </div>
 )}

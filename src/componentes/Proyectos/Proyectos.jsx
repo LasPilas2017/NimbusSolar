@@ -86,19 +86,47 @@ const cargarDatosProyecto = async (proyecto) => {
 
   console.log("📦 Nombre del proyecto:", proyecto.nombre);
 
-  // Ahora sí podemos hacer la consulta
-  const { data: egresos, error: errorEgresos } = await supabase
-    .from("contabilidad")
-    .select("monto")
-    .eq("proyecto_id", proyecto.id); // ¡Usamos proyecto_id en vez de nombre!
+// Ahora sí podemos hacer la consulta
+const { data: egresos, error: errorEgresos } = await supabase
+  .from("contabilidad")
+  .select("monto")
+  .eq("proyecto_id", proyecto.id); // ¡Usamos proyecto_id en vez de nombre!
 
-  if (errorEgresos) {
-    console.error("Error al obtener egresos:", errorEgresos);
+if (errorEgresos) {
+  console.error("Error al obtener egresos:", errorEgresos);
+}
+
+setGastosProyecto(egresos || []);
+
+// 🔥 PASO 1: Consulta de reportes diarios para ese proyecto
+const { data: reportes, error: errorReportes } = await supabase
+  .from("reportesdiarios")
+  .select("cantidad, trabajorealizado")
+  .eq("proyecto", proyecto.id);
+
+if (errorReportes) {
+  console.error("Error obteniendo reportes:", errorReportes);
+}
+
+// 🔥 PASO 2: Sumar por nombre de trabajo
+const sumasPorTrabajo = {};
+reportes?.forEach((r) => {
+  const trabajo = r.trabajorealizado; // 🔥 aquí usamos el nombre correcto
+  if (!sumasPorTrabajo[trabajo]) {
+    sumasPorTrabajo[trabajo] = 0;
   }
+  sumasPorTrabajo[trabajo] += r.cantidad || 0;
+});
+// 🔥 PASO 3: Actualizar el estado con las unidades instaladas
+const trabajosActualizados = (trabajosCargados || []).map((t) => ({
+  nombre: t.nombre_trabajo,
+  unidades: t.unidades_totales,
+  instaladas: sumasPorTrabajo[t.nombre_trabajo] || 0 // Aquí colocamos lo instalado
+}));
 
-  setGastosProyecto(egresos || []);
+setTrabajosProyecto(trabajosActualizados);
 
-  await obtenerPersonal(proyecto); // 👈 Ya podemos llamar a obtenerPersonal
+await obtenerPersonal(proyecto); // 👈 Ya podemos llamar a obtenerPersonal
 };
 
 

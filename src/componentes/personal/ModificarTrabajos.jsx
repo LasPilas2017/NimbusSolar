@@ -1,8 +1,9 @@
 // ModificarTrabajos.jsx
 import React, { useState, useEffect } from "react";
 import { supabase } from "../../supabase";
+import { guardarLog } from "../../utils";
 
-export default function ModificarTrabajos({ persona, onCerrar, onRecargar }) {
+export default function ModificarTrabajos({ usuario, persona, onCerrar, onRecargar }) {
   const [datosFormulario, setDatosFormulario] = useState({
     salarioBase: "",
     bonoAsistencia: "",
@@ -62,7 +63,13 @@ export default function ModificarTrabajos({ persona, onCerrar, onRecargar }) {
       alert("Ocurrió un error al actualizar los datos.");
     } else {
       alert("Datos actualizados correctamente.");
-      // 🔄 Llama a la función para recargar la tabla donde sea
+
+      await guardarLog(
+        usuario,
+        "Modificación de datos de trabajo",
+        `El usuario modificó datos de: ${persona.nombrecompleto}`
+      );
+      
       if (onRecargar) {
         onRecargar();
       }

@@ -66,7 +66,7 @@ export default function TotalIngresos({ ampliaciones, proyectos, onCerrar }) {
                   <td className="py-2 px-4 capitalize">{a.medio}</td>
                   <td className="py-2 px-4">{a.fecha}</td>
                   <td className="py-2 px-4 font-semibold text-green-600">
-                    Q{Number(a.monto).toFixed(2)}
+                    Q{Number(a.monto).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
                 </tr>
               );
@@ -77,7 +77,7 @@ export default function TotalIngresos({ ampliaciones, proyectos, onCerrar }) {
 
       {/* Total de ingresos */}
       <div className="mt-4 text-right font-semibold text-lg text-green-700">
-        Total: Q{total.toFixed(2)}
+        Total: Q{total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
       </div>
 
       {/* Botón para cerrar */}

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../supabase";
 import { guardarLog } from "../../utils"; // 👈 Importar el log
 
-export default function CalculosFinancieros({ usuario, proyectoId }) { // 👈 Recibe usuario real
+export default function CalculosFinancieros({ usuario, proyectoId }) {
   const [produccion, setProduccion] = useState(0);
   const [gastado, setGastado] = useState(0);
   const [ingresos, setIngresos] = useState(0);
@@ -99,35 +99,35 @@ export default function CalculosFinancieros({ usuario, proyectoId }) { // 👈 R
         <div className="flex flex-col items-center flex-1 min-w-[100px]">
           <p className="text-sm font-semibold text-gray-700">💵 Producción</p>
           <p className="text-lg font-bold text-green-700">
-            Q{produccion.toFixed(2)}
+            Q{produccion.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
         </div>
 
         <div className="flex flex-col items-center flex-1 min-w-[100px]">
           <p className="text-sm font-semibold text-gray-700">📤 Gastado</p>
           <p className="text-lg font-bold text-red-700">
-            Q{gastado.toFixed(2)}
+            Q{gastado.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
         </div>
 
         <div className="flex flex-col items-center flex-1 min-w-[100px]">
           <p className="text-sm font-semibold text-gray-700">💰 Ingresos</p>
           <p className="text-lg font-bold text-blue-700">
-            Q{ingresos.toFixed(2)}
+            Q{ingresos.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
         </div>
 
         <div className="flex flex-col items-center flex-1 min-w-[100px]">
           <p className="text-sm font-semibold text-gray-700">💚 Utilidad</p>
           <p className="text-lg font-bold text-green-700">
-            Q{utilidad.toFixed(2)}
+            Q{utilidad.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
         </div>
 
         <div className="flex flex-col items-center flex-1 min-w-[100px]">
           <p className="text-sm font-semibold text-gray-700">💚 Liquidez</p>
           <p className="text-lg font-bold text-green-700">
-            Q{liquidez.toFixed(2)}
+            Q{liquidez.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
         </div>
       </div>

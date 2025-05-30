@@ -33,5 +33,7 @@ export default function ResumenFinanciero({ produccion, gastado, utilidad, liqui
         <span className="text-base font-semibold">Q{(liquidez ?? 0).toFixed(2)}</span>
       </div>
     </div>
+
+    
   );
 }

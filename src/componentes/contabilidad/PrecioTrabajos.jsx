@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../supabase";
 import { guardarLog } from "../../utils";
+
 export default function PrecioTrabajos({ usuario }) {
   const [proyectos, setProyectos] = useState([]);
   const [trabajosPorProyecto, setTrabajosPorProyecto] = useState({});
@@ -33,44 +34,43 @@ export default function PrecioTrabajos({ usuario }) {
   }, []);
 
   const handleGuardarPrecios = async (proyectoId) => {
-  const trabajos = trabajosPorProyecto[proyectoId];
-  for (const trabajo of trabajos) {
-    if (nuevosPrecios[trabajo.id] !== undefined) {
-      const nuevoPrecio = parseFloat(nuevosPrecios[trabajo.id]);
+    const trabajos = trabajosPorProyecto[proyectoId];
+    for (const trabajo of trabajos) {
+      if (nuevosPrecios[trabajo.id] !== undefined) {
+        const nuevoPrecio = parseFloat(nuevosPrecios[trabajo.id]);
 
-      if (!isNaN(nuevoPrecio) && trabajo.id) {
-        const { error } = await supabase
-          .from("proyectos_trabajos")
-          .update({
-            precio_unitario: nuevoPrecio
-          })
-          .eq("id", trabajo.id);
+        if (!isNaN(nuevoPrecio) && trabajo.id) {
+          const { error } = await supabase
+            .from("proyectos_trabajos")
+            .update({
+              precio_unitario: nuevoPrecio
+            })
+            .eq("id", trabajo.id);
 
-        if (error) {
-          console.error("Error al actualizar:", error);
+          if (error) {
+            console.error("Error al actualizar:", error);
+          }
         }
       }
     }
-  }
     await guardarLog(
       usuario,
       "Actualización de precios",
       `El usuario actualizó los precios del proyecto ID: ${proyectoId}`
     );
-  // Refrescar la vista
-  const actualizados = { ...trabajosPorProyecto };
-  actualizados[proyectoId] = actualizados[proyectoId].map((trabajo) => ({
-    ...trabajo,
-    precio_unitario:
-      nuevosPrecios[trabajo.id] !== undefined
-        ? parseFloat(nuevosPrecios[trabajo.id])
-        : trabajo.precio_unitario
-  }));
-  setTrabajosPorProyecto(actualizados);
-  setEditandoProyectoId(null);
-  setNuevosPrecios({});
-};
 
+    const actualizados = { ...trabajosPorProyecto };
+    actualizados[proyectoId] = actualizados[proyectoId].map((trabajo) => ({
+      ...trabajo,
+      precio_unitario:
+        nuevosPrecios[trabajo.id] !== undefined
+          ? parseFloat(nuevosPrecios[trabajo.id])
+          : trabajo.precio_unitario
+    }));
+    setTrabajosPorProyecto(actualizados);
+    setEditandoProyectoId(null);
+    setNuevosPrecios({});
+  };
 
   return (
     <div className="p-4">
@@ -78,7 +78,6 @@ export default function PrecioTrabajos({ usuario }) {
         <div key={proyecto.id} className="bg-white rounded-lg shadow p-4 mb-4 relative">
           <h3 className="text-lg font-bold text-purple-700 mb-2">{proyecto.nombre}</h3>
 
-          {/* Botón Editar/Cerrar/Guardar */}
           <div className="absolute top-2 right-2 flex gap-2">
             {editandoProyectoId === proyecto.id ? (
               <>
@@ -123,7 +122,6 @@ export default function PrecioTrabajos({ usuario }) {
                   <p className="text-lg font-bold text-gray-800">{trabajo.nombre_trabajo}</p>
                 </div>
 
-                {/* Precio por Unidad */}
                 <div className="flex flex-col items-center flex-1 min-w-[100px]">
                   <p className="text-sm font-semibold text-gray-700">💵 Precio por Unidad</p>
                   {editandoProyectoId === proyecto.id ? (
@@ -143,42 +141,38 @@ export default function PrecioTrabajos({ usuario }) {
                     <p className="text-lg font-bold text-green-700">
                       Q
                       {trabajo.precio_unitario !== undefined && trabajo.precio_unitario !== null
-                        ? trabajo.precio_unitario.toFixed(2)
+                        ? trabajo.precio_unitario.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                         : "0.00"}
                     </p>
                   )}
                 </div>
 
-                {/* Unidades a Instalar */}
                 <div className="flex flex-col items-center flex-1 min-w-[100px]">
                   <p className="text-sm font-semibold text-gray-700">🔹 Unidades a Instalar</p>
                   <p className="text-lg font-bold text-gray-800">{trabajo.unidades_totales ?? 0}</p>
                 </div>
 
-                {/* Total a Instalar (calculado) */}
                 <div className="flex flex-col items-center flex-1 min-w-[100px]">
                   <p className="text-sm font-semibold text-gray-700">🔹 Total a Instalar</p>
                   <p className="text-lg font-bold text-gray-800">
                     Q
                     {(trabajo.precio_unitario && trabajo.unidades_totales)
-                      ? (trabajo.precio_unitario * trabajo.unidades_totales).toFixed(2)
+                      ? (trabajo.precio_unitario * trabajo.unidades_totales).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                       : "0.00"}
                   </p>
                 </div>
 
-                {/* Unidades Instaladas */}
                 <div className="flex flex-col items-center flex-1 min-w-[100px]">
                   <p className="text-sm font-semibold text-gray-700">🔹 Unidades Instaladas</p>
                   <p className="text-lg font-bold text-gray-800">{trabajo.unidades_instaladas ?? 0}</p>
                 </div>
 
-                {/* Total Instalado */}
                 <div className="flex flex-col items-center flex-1 min-w-[100px]">
                   <p className="text-sm font-semibold text-gray-700">🔹 Total Instalado</p>
                   <p className="text-lg font-bold text-gray-800">
                     Q
                     {(trabajo.precio_unitario && trabajo.unidades_instaladas)
-                      ? (trabajo.precio_unitario * trabajo.unidades_instaladas).toFixed(2)
+                      ? (trabajo.precio_unitario * trabajo.unidades_instaladas).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                       : "0.00"}
                   </p>
                 </div>

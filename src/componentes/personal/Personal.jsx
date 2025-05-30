@@ -125,12 +125,13 @@ export default function Personal() {
 
       {/* Modal para modificar datos */}
       {personaSeleccionada && (
-        <ModificarTrabajos
-          persona={personaSeleccionada}
-          onCerrar={cerrarModificar}
-          onRecargar={() => setRecargarTabla(!recargarTabla)} // 🔄 Fuerza recarga de tabla
-        />
-      )}
+      <ModificarTrabajos
+        usuario={usuario} // 👈 ¡Esto es lo que faltaba!
+        persona={personaSeleccionada}
+        onCerrar={cerrarModificar}
+        onRecargar={() => setRecargarTabla(!recargarTabla)}
+      />
+    )}
     </div>
   );
 }

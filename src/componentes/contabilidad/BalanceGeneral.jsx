@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 
+
 export default function BalanceGeneral({ ampliaciones, gastos }) {
   const [transacciones, setTransacciones] = useState([]);
 
@@ -61,12 +62,18 @@ export default function BalanceGeneral({ ampliaciones, gastos }) {
               <td className="py-2 px-4">{t.documento}</td>
               <td className="py-2 px-4">{t.medio}</td>
               <td className="py-2 px-4">
-                {t.tipo === "ingreso" ? `Q${t.monto.toFixed(2)}` : ""}
+                {t.tipo === "ingreso"
+                  ? `Q${t.monto.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                  : ""}
               </td>
               <td className="py-2 px-4">
-                {t.tipo === "egreso" ? `Q${t.monto.toFixed(2)}` : ""}
+                {t.tipo === "egreso"
+                  ? `Q${t.monto.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                  : ""}
               </td>
-              <td className="py-2 px-4">Q{t.saldo.toFixed(2)}</td>
+              <td className="py-2 px-4">
+                Q{t.saldo.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </td>
             </tr>
           ))}
         </tbody>

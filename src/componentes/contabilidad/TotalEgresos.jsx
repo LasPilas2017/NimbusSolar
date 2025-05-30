@@ -68,7 +68,7 @@ export default function TotalEgresos({ gastos, onCerrar }) {
             <tr className="border-t">
               <td className="py-2 px-4">Egresos</td>
               <td className="py-2 px-4 font-semibold text-red-600">
-                Q{totalFiltrado.toFixed(2)}
+                Q{totalFiltrado.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </td>
             </tr>
           </tbody>
