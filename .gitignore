@@ -1,0 +1,10 @@
+# Ignorar dependencias y cache
+node_modules/
+.eslintcache
+
+# Ignorar archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Ignorar archivos de instalación
+*.msi
