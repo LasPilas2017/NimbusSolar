@@ -1,21 +1,24 @@
-// Personal.jsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../../supabase";
 
-import AgregarPersonal from "./AgregarPersonal";
-import VerPlanilla from "./VerPlanilla";
-import VerPersonal from "./VerPersonal";
-import ReportarAsistencia from "./ReportarAsistencia";
-import CajaChica from "../contabilidad/CajaChica";
-import ModificarTrabajos from "./ModificarTrabajos";
+// Importación dinámica de componentes
+const AgregarPersonal = lazy(() => import("./AgregarPersonal"));
+const VerPlanilla = lazy(() => import("./VerPlanilla"));
+const VerPersonal = lazy(() => import("./VerPersonal"));
+const ReportarAsistencia = lazy(() => import("./ReportarAsistencia"));
+const CajaChica = lazy(() => import("../contabilidad/CajaChica"));
+const ModificarTrabajos = lazy(() => import("./ModificarTrabajos"));
 
 export default function Personal() {
-  const [vista, setVista] = useState("formulario");
+  const [vista, setVista] = useState("menu");
+  const [ocultandoMenu, setOcultandoMenu] = useState(false);
   const [mostrarFormularioCajaChica, setMostrarFormularioCajaChica] = useState(false);
   const [personal, setPersonal] = useState([]);
   const [personaSeleccionada, setPersonaSeleccionada] = useState(null);
-  const [recargarTabla, setRecargarTabla] = useState(false); // ✅ Estado trigger para recargar la tabla
+  const [recargarTabla, setRecargarTabla] = useState(false);
 
+  // Usuario temporal para pruebas
   const usuario = {
     id: 4,
     usuario: "super1",
@@ -29,109 +32,132 @@ export default function Personal() {
     }
 
     const { data, error } = await consulta;
-    if (!error) {
-      setPersonal(data);
-    } else {
-      console.error(error);
-    }
+    if (!error) setPersonal(data);
+    else console.error(error);
   };
 
-  // ✅ Ahora recarga cuando cambia la vista o cuando guardas en ModificarTrabajos
   useEffect(() => {
     obtenerPersonal();
   }, [vista, recargarTabla]);
 
-  const abrirModificar = (persona) => {
-    setPersonaSeleccionada(persona);
-  };
+  const abrirModificar = (persona) => setPersonaSeleccionada(persona);
+  const cerrarModificar = () => setPersonaSeleccionada(null);
 
-  const cerrarModificar = () => {
-    setPersonaSeleccionada(null);
+  const manejarCambioVista = (nuevaVista) => {
+    setVista(nuevaVista);
   };
 
   return (
-    <div className="mt-6 max-w-7xl mx-auto bg-white/10 backdrop-blur-xl p-6 rounded-2xl">
-      {/* Acciones rápidas y navegación */}
-      <div className="flex flex-col md:flex-row gap-6 justify-start">
-        {/* Acciones rápidas */}
-        <div className="bg-white/70 hover:bg-white/90 transition-all duration-200 rounded-2xl shadow-md p-6 flex-1 text-center flex flex-col gap-4">
-          <h3 className="text-xl font-bold text-gray-800 mb-2">⚡ Acciones rápidas</h3>
-          <button
-            onClick={() => setVista("asistencia")}
-            className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition"
-          >
-            ✏️ Reportar Asistencia
-          </button>
-          <button
-            onClick={() => setMostrarFormularioCajaChica(!mostrarFormularioCajaChica)}
-            className="flex items-center justify-center gap-2 bg-blue-600 text-white font-semibold px-4 py-2 rounded shadow hover:bg-blue-700 transition"
-          >
-            💰 Caja Chica
-          </button>
-        </div>
-
-        {/* Navegación de vistas */}
-        <div className="flex flex-col sm:flex-row gap-6 flex-1 justify-center items-center">
-          <div
-            onClick={() => setVista("formulario")}
-            className="bg-white/70 hover:bg-white/90 transition-all duration-200 rounded-2xl shadow-md p-6 w-full sm:w-72 cursor-pointer flex flex-col items-center justify-center text-center"
-          >
-            <h3 className="text-lg font-bold text-gray-800 mb-2">➕ Agregar Personal</h3>
-            <p className="text-gray-600 text-sm">Formulario para ingresar trabajadores</p>
-          </div>
-          <div
-            onClick={() => setVista("planilla")}
-            className="bg-white/70 hover:bg-white/90 transition-all duration-200 rounded-2xl shadow-md p-6 w-full sm:w-72 cursor-pointer flex flex-col items-center justify-center text-center"
-          >
-            <h3 className="text-lg font-bold text-gray-800 mb-2">📋 Ver Planilla</h3>
-            <p className="text-gray-600 text-sm">Visualizar la planilla del personal</p>
-          </div>
-          <div
-            onClick={() => setVista("ver_personal")}
-            className="bg-white/70 hover:bg-white/90 transition-all duration-200 rounded-2xl shadow-md p-6 w-full sm:w-72 cursor-pointer flex flex-col items-center justify-center text-center"
-          >
-            <h3 className="text-lg font-bold text-gray-800 mb-2">👤 Ver Personal</h3>
-            <p className="text-gray-600 text-sm">Listado completo de trabajadores</p>
+    <motion.div
+      layout
+      transition={{ duration: 1.2, ease: "easeInOut", type: "tween" }}
+      className="mt-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4"
+    >
+      {/* Vista principal: menú de opciones */}
+      {vista === "menu" && !ocultandoMenu && (
+  <div className="flex flex-col lg:flex-row gap-6 max-w-5xl mx-auto">
+    {/* Columna izquierda: 3 tarjetas en columna */}  
+    <div className="flex flex-col gap-6 flex-grow">
+      {[
+        {
+          titulo: "➕ Agregar Personal",
+          descripcion: "Formulario para ingresar trabajadores",
+          vista: "formulario",
+        },
+        {
+          titulo: "📋 Ver Planilla",
+          descripcion: "Visualizar la planilla del personal",
+          vista: "planilla",
+        },
+        {
+          titulo: "👤 Ver Personal",
+          descripcion: "Listado completo de trabajadores",
+          vista: "ver_personal",
+        },
+      ].map((t, i) => (
+        <div
+          key={i}
+          onClick={() => manejarCambioVista(t.vista)}
+          className="relative cursor-pointer rounded-2xl w-full p-6 text-center bg-white/80 backdrop-blur-md overflow-hidden group shadow-xl hover:scale-[1.01] transition-transform duration-300"
+        >
+          <div className="absolute -inset-[2px] bg-gradient-to-r from-blue-400 via-purple-200 to-slate-400 rounded-2xl blur-xl opacity-30 group-hover:opacity-60 animate-pulse pointer-events-none z-0"></div>
+          <div className="relative z-10">
+            <h3 className="text-lg font-bold text-gray-800 mb-1">{t.titulo}</h3>
+            <p className="text-sm text-gray-600">{t.descripcion}</p>
           </div>
         </div>
-      </div>
+      ))}
+    </div>
 
-      {/* Formulario de caja chica */}
-      {mostrarFormularioCajaChica && (
-        <CajaChica
-          onCerrar={() => {
-            setMostrarFormularioCajaChica(false);
-            setVista("formulario");
+    {/* Acciones rápidas: solo el tamaño que necesita */}
+    <div className="relative rounded-2xl bg-white/80 backdrop-blur-md p-6 shadow-xl overflow-hidden group flex flex-col justify-start space-y-4 self-start">
+      <div className="absolute -inset-[2px] bg-gradient-to-br from-yellow-300 via-orange-200 to-pink-300 rounded-2xl blur-xl opacity-30 group-hover:opacity-60 animate-pulse pointer-events-none z-0" />
+      <div className="relative z-10">
+        <h3 className="text-lg font-bold text-center text-gray-800 mb-4">⚡ Acciones rápidas</h3>
+        <button
+          onClick={() => manejarCambioVista("asistencia")}
+          className="w-full border border-black bg-transparent text-black hover:bg-gray-100 font-semibold py-2 rounded-xl transition"
+        >
+          ✏️ Reportar Asistencia
+        </button>
+        <button
+          onClick={() => {
+            setMostrarFormularioCajaChica(true);
+            setVista("caja_chica");
           }}
+          className="w-full border border-black bg-transparent text-black hover:bg-gray-100 font-semibold py-2 rounded-xl transition"
+        >
+          💰 Caja Chica
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+
+      {/* Contenido dinámico con carga diferida */}
+      <Suspense fallback={<div className="text-center py-10">Cargando...</div>}>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={vista}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            {mostrarFormularioCajaChica && vista === "caja_chica" && (
+              <CajaChica
+                onCerrar={() => {
+                  setMostrarFormularioCajaChica(false);
+                  setVista("menu");
+                }}
+              />
+            )}
+            {vista === "formulario" && (
+             <AgregarPersonal onCerrar={() => setVista("menu")} usuario={usuario} />
+            )}
+            {vista === "planilla" && (
+              <VerPlanilla personal={personal} onModificar={abrirModificar} />
+            )}
+            {vista === "ver_personal" && (
+              <VerPersonal personal={personal} onModificar={abrirModificar} />
+            )}
+            {vista === "asistencia" && (
+              <ReportarAsistencia usuario={usuario} onCerrar={() => setVista("menu")} />
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </Suspense>
+
+      {/* Modal para editar persona */}
+      {personaSeleccionada && (
+        <ModificarTrabajos
+          usuario={usuario}
+          persona={personaSeleccionada}
+          onCerrar={cerrarModificar}
+          onRecargar={() => setRecargarTabla(!recargarTabla)}
         />
       )}
-
-      {/* Vistas dinámicas */}
-      <div className="mt-4">
-        {vista === "formulario" && <AgregarPersonal />}
-        {vista === "planilla" && (
-          <VerPlanilla personal={personal} onModificar={abrirModificar} />
-        )}
-        {vista === "ver_personal" && (
-          <VerPersonal personal={personal} onModificar={abrirModificar} />
-        )}
-        {vista === "asistencia" && (
-          <ReportarAsistencia
-            usuario={usuario}
-            onCerrar={() => setVista("formulario")}
-          />
-        )}
-      </div>
-
-      {/* Modal para modificar datos */}
-      {personaSeleccionada && (
-      <ModificarTrabajos
-        usuario={usuario} // 👈 ¡Esto es lo que faltaba!
-        persona={personaSeleccionada}
-        onCerrar={cerrarModificar}
-        onRecargar={() => setRecargarTabla(!recargarTabla)}
-      />
-    )}
-    </div>
+    </motion.div>
   );
 }
