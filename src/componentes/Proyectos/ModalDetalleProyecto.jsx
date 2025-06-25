@@ -141,7 +141,14 @@ export default function ModalDetalleProyecto({
 };
 
 
-  if (!proyectoSeleccionado) return null;
+  if (!proyectoSeleccionado) {
+    
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 text-white text-xl font-semibold">
+      Cargando proyecto...
+    </div>
+  );
+}
 
   return (
     <div className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm flex justify-center items-start px-4 py-10 overflow-y-scroll scrollbar-hide">

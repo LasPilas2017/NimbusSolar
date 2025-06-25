@@ -1,13 +1,7 @@
-/**
- * Este custom hook encapsula toda la lógica de carga, obtención y eliminación
- * de proyectos desde Supabase. Se usa dentro de Proyectos.jsx para mantener el
- * archivo limpio y organizado.
- */
 import { useState } from "react";
 import { supabase } from "../../../supabase";
 
 export function useProyectoActual() {
-  // Estados para controlar los diferentes datos del proyecto
   const [trabajos, setTrabajos] = useState([{ nombre: "", unidades: "" }]);
   const [trabajosProyecto, setTrabajosProyecto] = useState([]);
   const [personalDisponible, setPersonalDisponible] = useState([]);
@@ -16,7 +10,7 @@ export function useProyectoActual() {
   const [supervisoresPorProyecto, setSupervisoresPorProyecto] = useState([]);
   const [proyectos, setProyectos] = useState([]);
 
-  // Obtiene todos los proyectos con su categoría asociada
+  // 🔄 Obtener todos los proyectos con su categoría contable
   const obtenerProyectos = async () => {
     const { data, error } = await supabase
       .from("proyectos")
@@ -36,7 +30,7 @@ export function useProyectoActual() {
     setProyectos(data);
   };
 
-  // Obtiene el nombre del supervisor por proyecto
+  // 🔍 Obtener supervisores por proyecto
   const obtenerSupervisores = async () => {
     const { data, error } = await supabase
       .from("proyectos_personal")
@@ -54,7 +48,7 @@ export function useProyectoActual() {
     }
   };
 
-  // Filtra personal disponible que no esté asignado a otros proyectos
+  // 👥 Obtener personal disponible para asignar
   const obtenerPersonal = async (proyectoParam) => {
     const { data: asignados } = await supabase
       .from("proyectos_personal")
@@ -88,21 +82,32 @@ export function useProyectoActual() {
     setPersonalDisponible(personalFiltrado);
   };
 
-  // Carga trabajos, personal asignado y egresos del proyecto
-  const cargarDatosProyecto = async (proyecto) => {
-    if (!proyecto || !proyecto.id) return;
+  // 📦 Cargar los datos de un proyecto seleccionado
+  const cargarDatosProyecto = async (idProyecto) => {
+    if (!idProyecto) return null;
+
+    const { data: proyecto, error } = await supabase
+      .from("proyectos")
+      .select("*, categorias_contables (id, nombre)")
+      .eq("id", idProyecto)
+      .single();
+
+    if (error) {
+      console.error("Error al obtener el proyecto:", error);
+      return null;
+    }
 
     const { data: trabajosCargados, error: errorTrabajos } = await supabase
       .from("proyectos_trabajos")
       .select("nombre_trabajo, unidades_totales")
-      .eq("proyecto_id", proyecto.id);
+      .eq("proyecto_id", idProyecto);
 
     if (errorTrabajos) {
       console.error("Error al cargar trabajos:", errorTrabajos);
     }
 
     setTrabajos(
-      (trabajosCargados && trabajosCargados.length > 0)
+      trabajosCargados?.length
         ? trabajosCargados.map((t) => ({
             nombre: t.nombre_trabajo,
             unidades: t.unidades_totales
@@ -110,20 +115,19 @@ export function useProyectoActual() {
         : [{ nombre: "", unidades: "" }]
     );
 
-    // Supervisores y trabajadores del proyecto
+    // Supervisores y trabajadores asignados
     const { data: sup } = await supabase
       .from("proyectos_personal")
       .select("trabajador_id")
-      .eq("proyecto_id", proyecto.id)
+      .eq("proyecto_id", idProyecto)
       .eq("rol", "supervisor");
 
     const { data: trab } = await supabase
       .from("proyectos_personal")
       .select("trabajador_id")
-      .eq("proyecto_id", proyecto.id)
+      .eq("proyecto_id", idProyecto)
       .eq("rol", "trabajador");
 
-    // Sueldos del personal
     const { data: personal } = await supabase
       .from("registrodepersonal")
       .select("id, salariopordia")
@@ -131,11 +135,10 @@ export function useProyectoActual() {
 
     setPersonalAsignado(personal || []);
 
-    // Carga egresos del proyecto
     const { data: egresos, error: errorEgresos } = await supabase
       .from("contabilidad")
       .select("monto")
-      .eq("proyecto_id", proyecto.id);
+      .eq("proyecto_id", idProyecto);
 
     if (errorEgresos) {
       console.error("Error al obtener egresos:", errorEgresos);
@@ -143,11 +146,10 @@ export function useProyectoActual() {
 
     setGastosProyecto(egresos || []);
 
-    // Carga reportes para calcular unidades instaladas
     const { data: reportes, error: errorReportes } = await supabase
       .from("reportesdiarios")
       .select("cantidad, trabajorealizado")
-      .eq("proyecto", proyecto.id);
+      .eq("proyecto", idProyecto);
 
     if (errorReportes) {
       console.error("Error obteniendo reportes:", errorReportes);
@@ -169,21 +171,23 @@ export function useProyectoActual() {
     }));
 
     setTrabajosProyecto(trabajosActualizados);
-    await obtenerPersonal(proyecto); // Actualiza personal disponible con permisos para editar
+
+    await obtenerPersonal(proyecto); // ✅ Actualizar personal permitido
+
+    return proyecto;
   };
 
-  // Elimina un proyecto por ID
+  // 🗑️ Eliminar un proyecto
   const eliminarProyecto = async (id) => {
     if (!confirm("¿Eliminar este proyecto?")) return;
     const { error } = await supabase.from("proyectos").delete().eq("id", id);
     if (!error) obtenerProyectos();
   };
 
-  // Retorna los estados y funciones para ser utilizados por el componente principal
   return {
     proyectos,
     trabajos,
-    setTrabajos, // permite actualizar trabajos desde componentes externos
+    setTrabajos,
     trabajosProyecto,
     personalDisponible,
     setPersonalDisponible,

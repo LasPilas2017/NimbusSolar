@@ -218,47 +218,32 @@ export default function Contabilidad() {
         </AnimatePresence>
         {vistaActual === "caja" && <AsignacionDeCajaChica />}
 
-        {/* Vista de ingresos */}
-        {vistaActual === "ingresos" && (
-          <>
-            <TotalIngresos onCerrar={() => setVistaActual("")} />
-            <AnimatePresence>
-              {mostrarCategorias && (
-                <motion.div
-                  key="categorias-ingreso"
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.5 }}
-                  className="mt-4"
-                >
-                  <GestionCategorias tipo="ingreso" />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </>
-        )}
+        
+       {/* Vista de ingresos */}
+{vistaActual === "ingresos" && (
+  <>
+    {mostrarCategorias && (
+      <div className="mt-4">
+        <GestionCategorias tipo="ingreso" />
+      </div>
+    )}
+    <TotalIngresos onCerrar={() => setVistaActual("")} />
+  </>
+)}
 
-        {/* Vista de egresos */}
-        {vistaActual === "egresos" && (
-          <>
-            <TotalEgresos onCerrar={() => setVistaActual("")} />
-            <AnimatePresence>
-              {mostrarCategorias && (
-                <motion.div
-                  key="categorias-egreso"
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.5 }}
-                  className="mt-4"
-                >
-                  <GestionCategorias tipo="egreso" />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </>
-        )}
+{/* Vista de egresos */}
+{vistaActual === "egresos" && (
+  <>
+    {mostrarCategorias && (
+      <div className="mt-4">
+        <GestionCategorias tipo="egreso" />
+      </div>
+    )}
+    <TotalEgresos onCerrar={() => setVistaActual("")} />
+  </>
+)}
+
+          
       </div>
     </div>
   );
