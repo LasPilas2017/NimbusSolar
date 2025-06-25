@@ -20,6 +20,7 @@ import ReportarAsistencia from './componentes/personal/ReportarAsistencia';
 import { guardarLog } from './utils';
 import TotalIngresos from "./componentes/contabilidad/TotalIngresos";
 import TotalEgresos from "./componentes/contabilidad/TotalEgresos";
+import Categorias from "./componentes/contabilidad/Categorias"; // ajustá la ruta si es distinta
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);

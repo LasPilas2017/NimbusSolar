@@ -1,45 +1,18 @@
 import React, { useState, useEffect } from "react";
+import { supabase } from "../../supabase"; // ajusta ruta si es necesario
 
 export default function TotalEgresos({ onCerrar }) {
   const [fechaInicio, setFechaInicio] = useState("");
   const [fechaFin, setFechaFin] = useState("");
-  const [gastos, setGastos] = useState([
-    {
-      autorizacion: "A-001",
-      fecha: "2025-06-01",
-      monto: 450,
-      concepto: "Compra de herramientas",
-      categoria: "Herramientas",
-      comentario: "Para el taller de mantenimiento"
-    },
-    {
-      autorizacion: "A-002",
-      fecha: "2025-06-03",
-      monto: 300,
-      concepto: "Pago de transporte",
-      categoria: "Logística",
-      comentario: "Transporte de paneles solares"
-    },
-    {
-      autorizacion: "A-003",
-      fecha: "2025-06-06",
-      monto: 620.5,
-      concepto: "Material eléctrico",
-      categoria: "Materiales",
-      comentario: "Cableado para nueva instalación"
-    },
-    {
-      autorizacion: "A-004",
-      fecha: "2025-06-10",
-      monto: 150,
-      concepto: "Reparación de equipo",
-      categoria: "Mantenimiento",
-      comentario: "Reparación de inversor dañado"
-    },
-  ]);
-
+  const [gastos, setGastos] = useState([]);
   const [gastosFiltrados, setGastosFiltrados] = useState([]);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const [subcategorias, setSubcategorias] = useState([]);
+
+  useEffect(() => {
+    obtenerEgresos();
+    obtenerSubcategorias();
+  }, []);
 
   useEffect(() => {
     const filtrados = gastos.filter((g) => {
@@ -49,33 +22,54 @@ export default function TotalEgresos({ onCerrar }) {
 
       if (inicio && fecha < inicio) return false;
       if (fin && fecha > fin) return false;
-
       return true;
     });
 
     setGastosFiltrados(filtrados);
   }, [fechaInicio, fechaFin, gastos]);
 
-  const totalFiltrado = gastosFiltrados.reduce(
-  (total, g) => total + Number(g.monto),
-  0
-);
+  const obtenerEgresos = async () => {
+    const { data, error } = await supabase
+      .from("egresos")
+      .select("*")
+      .order("fecha", { ascending: false });
 
-
-  const agregarGasto = (nuevoGasto) => {
-    setGastos([nuevoGasto, ...gastos]);
-    setMostrarFormulario(false);
+    if (error) {
+      console.error("Error al obtener egresos:", error);
+    } else {
+      setGastos(data);
+    }
   };
+
+  const obtenerSubcategorias = async () => {
+    const { data, error } = await supabase.from("subcategorias_contables").select("*");
+    if (!error) setSubcategorias(data);
+  };
+
+  const agregarGasto = async (nuevoGasto) => {
+    const { error } = await supabase.from("egresos").insert([nuevoGasto]);
+
+    if (error) {
+      console.error("Error al guardar egreso:", error);
+    } else {
+      obtenerEgresos();
+      setMostrarFormulario(false);
+    }
+  };
+
+  const totalFiltrado = gastosFiltrados.reduce(
+    (total, g) => total + Number(g.monto),
+    0
+  );
 
   return (
     <div className="relative bg-white rounded-xl shadow-md p-4">
       <h3 className="text-lg font-bold mb-4">💸 Detalle de Egresos</h3>
 
+      {/* Filtro de fechas */}
       <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-gray-700 text-sm font-semibold mb-1">
-            Fecha inicio:
-          </label>
+          <label className="block text-sm font-semibold">Fecha inicio:</label>
           <input
             type="date"
             className="border rounded w-full p-2"
@@ -84,9 +78,7 @@ export default function TotalEgresos({ onCerrar }) {
           />
         </div>
         <div>
-          <label className="block text-gray-700 text-sm font-semibold mb-1">
-            Fecha fin:
-          </label>
+          <label className="block text-sm font-semibold">Fecha fin:</label>
           <input
             type="date"
             className="border rounded w-full p-2"
@@ -96,38 +88,41 @@ export default function TotalEgresos({ onCerrar }) {
         </div>
       </div>
 
+      {/* Tabla de resultados */}
       <div className="overflow-x-auto">
         <table className="min-w-full text-sm border border-gray-200 rounded-xl">
           <thead className="bg-gray-100 text-gray-700">
             <tr>
-              <th className="py-2 px-3 text-left">No.</th>
-              <th className="py-2 px-3 text-left">Autorización</th>
-              <th className="py-2 px-3 text-left">Fecha</th>
-              <th className="py-2 px-3 text-left">Monto</th>
-              <th className="py-2 px-3 text-left">Concepto</th>
-              <th className="py-2 px-3 text-left">Categoría</th>
-              <th className="py-2 px-3 text-left">Comentario</th>
+              <th className="py-2 px-3">No.</th>
+              <th className="py-2 px-3">Boleta</th>
+              <th className="py-2 px-3">Fecha</th>
+              <th className="py-2 px-3">Monto</th>
+              <th className="py-2 px-3">Concepto</th>
+              <th className="py-2 px-3">Categoría</th>
+              <th className="py-2 px-3">Comentario</th>
             </tr>
           </thead>
           <tbody>
-            {gastosFiltrados.map((gasto, index) => (
-              <tr key={index} className="border-t">
-                <td className="py-2 px-3">{index + 1}</td>
-                <td className="py-2 px-3">{gasto.autorizacion}</td>
-                <td className="py-2 px-3">{gasto.fecha}</td>
+            {gastosFiltrados.map((g, i) => (
+              <tr key={g.id || i} className="border-t">
+                <td className="py-2 px-3">{i + 1}</td>
+                <td className="py-2 px-3">{g.autorizacion}</td>
+                <td className="py-2 px-3">{g.fecha}</td>
                 <td className="py-2 px-3 text-red-600 font-semibold">
-                  Q{Number(gasto.monto).toLocaleString(undefined, {
+                  Q{Number(g.monto).toLocaleString(undefined, {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}
                 </td>
-                <td className="py-2 px-3">{gasto.concepto}</td>
-                <td className="py-2 px-3">{gasto.categoria}</td>
-                <td className="py-2 px-3">{gasto.comentario}</td>
+                <td className="py-2 px-3">{g.concepto}</td>
+                <td className="py-2 px-3">{g.categoria}</td>
+                <td className="py-2 px-3">{g.comentario}</td>
               </tr>
             ))}
             <tr className="border-t bg-gray-50 font-bold">
-              <td colSpan="3" className="py-2 px-3 text-right">Total:</td>
+              <td colSpan="3" className="py-2 px-3 text-right">
+                Total:
+              </td>
               <td className="py-2 px-3 text-red-700">
                 Q{totalFiltrado.toLocaleString(undefined, {
                   minimumFractionDigits: 2,
@@ -140,6 +135,7 @@ export default function TotalEgresos({ onCerrar }) {
         </table>
       </div>
 
+      {/* Botones */}
       <div className="mt-4 flex justify-between">
         <button
           onClick={onCerrar}
@@ -155,6 +151,7 @@ export default function TotalEgresos({ onCerrar }) {
         </button>
       </div>
 
+      {/* Formulario nuevo egreso */}
       {mostrarFormulario && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-xl relative">
@@ -180,12 +177,17 @@ export default function TotalEgresos({ onCerrar }) {
               }}
               className="grid grid-cols-1 gap-3"
             >
-              <input name="autorizacion" className="border rounded p-2" placeholder="No. de Autorización" required />
+              <input name="autorizacion" className="border rounded p-2" placeholder="No. de Boleta" required />
               <input name="fecha" type="date" className="border rounded p-2" required />
               <input name="monto" type="number" step="0.01" className="border rounded p-2" placeholder="Monto" required />
               <input name="concepto" className="border rounded p-2" placeholder="Concepto" required />
-              <input name="categoria" className="border rounded p-2" placeholder="Categoría" required />
-              <textarea name="comentario" className="border rounded p-2" placeholder="Comentario" />
+              <select name="categoria" className="border rounded p-2" required>
+                <option value="">Selecciona subcategoría</option>
+                {subcategorias.map((sub) => (
+                  <option key={sub.id} value={sub.nombre}>{sub.nombre}</option>
+                ))}
+              </select>
+              <input name="comentario" className="border rounded p-2" placeholder="Comentario" />
               <button type="submit" className="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded">
                 Guardar
               </button>

@@ -1,4 +1,5 @@
-import { useState } from "react";
+// Archivo: Contabilidad.jsx
+import { useState, useEffect } from "react";
 import {
   FiChevronDown,
   FiChevronUp,
@@ -11,15 +12,25 @@ import {
 } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 
-// Componentes
+// Componentes importados
 import TotalIngresos from "./TotalIngresos";
 import TotalEgresos from "./TotalEgresos";
+import GestionCategorias from "./Categorias";
+import AsignacionDeCajaChica from "./AsignacionDeCajaChica";
 
 export default function Contabilidad() {
+  // Estados principales para mostrar vistas y secciones
   const [mostrarResumen, setMostrarResumen] = useState(false);
   const [mostrarTransacciones, setMostrarTransacciones] = useState(false);
-  const [vistaActual, setVistaActual] = useState(""); // "ingresos" | "egresos"
+  const [vistaActual, setVistaActual] = useState("");
+  const [mostrarCategorias, setMostrarCategorias] = useState(false);
 
+  // Oculta categorías al cambiar de vista
+  useEffect(() => {
+    setMostrarCategorias(false);
+  }, [vistaActual]);
+
+  // Datos para resumen de utilidades
   const datos = [
     {
       titulo: "Utilidad Bruta",
@@ -41,6 +52,7 @@ export default function Contabilidad() {
     },
   ];
 
+  // Información del dinero líquido
   const dineroLiquido = {
     titulo: "Dinero Líquido",
     valor: 12000,
@@ -51,7 +63,7 @@ export default function Contabilidad() {
   return (
     <div className="relative w-full px-4 py-8">
       <div className="relative max-w-6xl mx-auto bg-white/50 backdrop-blur-md shadow-xl rounded-b-3xl pt-2">
-        {/* Botón superior */}
+        {/* Botón toggle resumen */}
         <div className="flex justify-center -translate-y-6">
           <button
             onClick={() => setMostrarResumen(!mostrarResumen)}
@@ -61,7 +73,7 @@ export default function Contabilidad() {
           </button>
         </div>
 
-        {/* Resumen financiero */}
+        {/* Resumen financiero animado */}
         <AnimatePresence>
           {mostrarResumen && (
             <motion.div
@@ -71,7 +83,6 @@ export default function Contabilidad() {
               transition={{ duration: 0.5 }}
               className="flex flex-col lg:flex-row justify-center items-center gap-6 p-6"
             >
-              {/* Izquierda */}
               <div className="flex flex-col gap-4 w-full lg:w-2/3">
                 {datos.map((dato, i) => (
                   <div
@@ -79,9 +90,7 @@ export default function Contabilidad() {
                     className="flex items-center gap-4 px-4 py-3 rounded-xl bg-white shadow-md"
                   >
                     <div className="w-6">{dato.icono}</div>
-                    <span className="w-40 font-semibold text-gray-700">
-                      {dato.titulo}
-                    </span>
+                    <span className="w-40 font-semibold text-gray-700">{dato.titulo}</span>
                     <span className="w-28 font-bold text-green-700">
                       Q. {dato.valor.toLocaleString()}
                     </span>
@@ -98,7 +107,7 @@ export default function Contabilidad() {
                 ))}
               </div>
 
-              {/* Derecha */}
+              {/* Dinero líquido */}
               <div className="w-full lg:w-1/3 flex justify-center items-center">
                 <div className="w-full max-w-xs bg-green-100 border border-green-600 rounded-2xl shadow-md p-4 text-center">
                   <div>{dineroLiquido.icono}</div>
@@ -126,13 +135,14 @@ export default function Contabilidad() {
         </AnimatePresence>
       </div>
 
-      {/* Botones principales */}
+      {/* Navegación principal */}
       <div className="max-w-6xl mx-auto mt-6 px-4">
         <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
           <button
             onClick={() => {
               setMostrarTransacciones(true);
               setVistaActual("");
+              setMostrarCategorias(false);
             }}
             className={`w-44 flex items-center justify-center gap-2 py-2 rounded-xl shadow hover:scale-105 transition ${
               mostrarTransacciones ? "bg-white border border-black font-semibold" : "bg-white/70"
@@ -142,10 +152,14 @@ export default function Contabilidad() {
             Transacciones
           </button>
 
-          <button className="w-44 flex items-center justify-center gap-2 bg-white/70 text-black font-medium py-2 rounded-xl shadow hover:scale-105 transition">
+          <button
+            onClick={() => setVistaActual("caja")} // 🔹 Cambia la vista al componente de Caja chica
+            className="w-44 flex items-center justify-center gap-2 bg-white/70 text-black font-medium py-2 rounded-xl shadow hover:scale-105 transition"
+          >
             <FiDollarSign size={18} />
             Caja chica
           </button>
+
 
           <button className="w-44 flex items-center justify-center gap-2 bg-white/70 text-black font-medium py-2 rounded-xl shadow hover:scale-105 transition">
             <FiFileText size={18} />
@@ -153,7 +167,7 @@ export default function Contabilidad() {
           </button>
         </div>
 
-        {/* Subbotones SIEMPRE visibles si Transacciones está activo */}
+        {/* Submenú Ingresos y Egresos */}
         {mostrarTransacciones && (
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mt-4">
             <button
@@ -182,15 +196,69 @@ export default function Contabilidad() {
           </div>
         )}
 
-        {/* Vistas condicionales */}
-        <div className="mt-6">
-          {vistaActual === "ingresos" && (
+        {/* Botón Categorías estilizado con animación */}
+        <AnimatePresence>
+          {vistaActual && (
+            <motion.div
+              key="boton-categorias"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.4 }}
+              className="flex justify-center mt-2 mb-4"
+            >
+              <button
+                onClick={() => setMostrarCategorias(!mostrarCategorias)}
+                className="w-40 h-10 bg-neutral-800 text-white rounded-md shadow hover:scale-105 transition font-semibold"
+              >
+                Categorías
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        {vistaActual === "caja" && <AsignacionDeCajaChica />}
+
+        {/* Vista de ingresos */}
+        {vistaActual === "ingresos" && (
+          <>
             <TotalIngresos onCerrar={() => setVistaActual("")} />
-          )}
-          {vistaActual === "egresos" && (
+            <AnimatePresence>
+              {mostrarCategorias && (
+                <motion.div
+                  key="categorias-ingreso"
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.5 }}
+                  className="mt-4"
+                >
+                  <GestionCategorias tipo="ingreso" />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </>
+        )}
+
+        {/* Vista de egresos */}
+        {vistaActual === "egresos" && (
+          <>
             <TotalEgresos onCerrar={() => setVistaActual("")} />
-          )}
-        </div>
+            <AnimatePresence>
+              {mostrarCategorias && (
+                <motion.div
+                  key="categorias-egreso"
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.5 }}
+                  className="mt-4"
+                >
+                  <GestionCategorias tipo="egreso" />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </>
+        )}
       </div>
     </div>
   );
