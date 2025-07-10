@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
-import ModalDetalleProyecto from "./ModalDetalleProyecto";
 import NuevoProyecto from "./NuevoProyecto";
+import VistaDetalleProyecto from "./VistaDetalleProyecto/VistaDetalleProyecto";
+
 import { useProyectoActual } from "./hooks/useProyectoActual";
 
 // 🔹 Tarjeta visual de proyecto
 function TarjetaProyecto({ proyecto, abrirDetalle }) {
   const montoTotal = proyecto.monto_total || 0;
   const utilidad = proyecto.utilidad || 0;
-  const porcentajeUtilidad = montoTotal > 0 ? Math.min((utilidad / montoTotal) * 100, 100) : 0;
+  const porcentajeUtilidad =
+    montoTotal > 0 ? Math.min((utilidad / montoTotal) * 100, 100) : 0;
 
   return (
     <div
@@ -45,38 +47,22 @@ function TarjetaProyecto({ proyecto, abrirDetalle }) {
 export default function Proyectos() {
   const {
     proyectos,
-    trabajos,
     trabajosProyecto,
     personalDisponible,
-    personalAsignado,
     gastosProyecto,
     supervisoresPorProyecto,
     obtenerProyectos,
     obtenerSupervisores,
     obtenerPersonal,
     cargarDatosProyecto,
-    eliminarProyecto,
   } = useProyectoActual();
 
   const [vista, setVista] = useState("lista");
-  const [modoEdicion, setModoEdicion] = useState(false);
   const [proyectoSeleccionado, setProyectoSeleccionado] = useState(null);
-  const [nuevoProyecto, setNuevoProyecto] = useState({ nombre: "", descripcion: "" });
-  const [supervisoresSeleccionados, setSupervisoresSeleccionados] = useState([]);
-  const [trabajadoresSeleccionados, setTrabajadoresSeleccionados] = useState([]);
-  const [trabajosEstado, setTrabajos] = useState([{ nombre: "", unidades: "" }]);
-
-  useEffect(() => {
-    if (modoEdicion && trabajosProyecto?.length) {
-      const trabajosCopia = trabajosProyecto.map((t) => ({
-        id: t.id,
-        nombre: t.nombre ?? t.nombre_trabajo,
-        unidades: t.unidades ?? t.unidades_totales,
-        instaladas: t.instaladas ?? 0,
-      }));
-      setTrabajos(trabajosCopia);
-    }
-  }, [modoEdicion, trabajosProyecto]);
+  const [nuevoProyecto, setNuevoProyecto] = useState({
+    nombre: "",
+    descripcion: "",
+  });
 
   useEffect(() => {
     obtenerProyectos();
@@ -85,34 +71,31 @@ export default function Proyectos() {
   }, []);
 
   const proyectosPorCategoria = proyectos.reduce((acc, proyecto) => {
-    const categoria = proyecto.categorias_contables?.nombre?.trim() || "Sin Categoría";
+    const categoria =
+      proyecto.categorias_contables?.nombre?.trim() || "Sin Categoría";
     if (!acc[categoria]) acc[categoria] = [];
     acc[categoria].push(proyecto);
     return acc;
   }, {});
 
   const abrirDetalle = async (idProyecto) => {
-  const datos = await cargarDatosProyecto(idProyecto);
+    const datos = await cargarDatosProyecto(idProyecto);
 
-  if (datos) {
-    // Verifica que traiga la categoría contable y demás campos
-    setProyectoSeleccionado({
-      ...datos,
-      categorias_contables: datos.categorias_contables || null, // Asegura que exista
-    });
+    if (datos) {
+      setProyectoSeleccionado({
+        ...datos,
+        categorias_contables: datos.categorias_contables || null,
+      });
 
-    setNuevoProyecto({
-      nombre: datos.nombre,
-      descripcion: datos.descripcion,
-      categoria_id: datos.categoria_id,
-    });
+      setNuevoProyecto({
+        nombre: datos.nombre,
+        descripcion: datos.descripcion,
+        categoria_id: datos.categoria_id,
+      });
 
-    setModoEdicion(false);
-  }
-};
-
-console.log("Proyecto seleccionado:", proyectoSeleccionado);
-
+      setVista("detalle"); // 🔁 Cambia a la nueva vista
+    }
+  };
 
   return (
     <div className="p-4 sm:p-6 bg-white/30 min-h-screen rounded-2xl">
@@ -139,7 +122,9 @@ console.log("Proyecto seleccionado:", proyectoSeleccionado);
         <div className="space-y-8">
           {Object.entries(proyectosPorCategoria).map(([categoria, lista]) => (
             <div key={categoria}>
-              <h2 className="text-xl font-bold text-gray-800 mb-2">{categoria}</h2>
+              <h2 className="text-xl font-bold text-gray-800 mb-2">
+                {categoria}
+              </h2>
               <div className="overflow-x-auto scroll-smooth snap-x snap-mandatory pb-4">
                 <div className="flex gap-4 w-max min-w-full px-2">
                   {lista.map((proyecto) => (
@@ -156,7 +141,7 @@ console.log("Proyecto seleccionado:", proyectoSeleccionado);
         </div>
       )}
 
-      {/* ➕ Vista nuevo proyecto */}
+      {/* ➕ Crear nuevo proyecto */}
       {vista === "nuevo" && (
         <NuevoProyecto
           onGuardar={() => {
@@ -166,30 +151,10 @@ console.log("Proyecto seleccionado:", proyectoSeleccionado);
         />
       )}
 
-      {/* 🔍 Modal detalle proyecto */}
-      {proyectoSeleccionado && (
-  <ModalDetalleProyecto
-    modoEdicion={modoEdicion}
-    setModoEdicion={setModoEdicion}
-    proyectoSeleccionado={proyectoSeleccionado}
-    setProyectoSeleccionado={setProyectoSeleccionado}
-    nuevoProyecto={nuevoProyecto}
-    setNuevoProyecto={setNuevoProyecto}
-    personalDisponible={personalDisponible}
-    supervisoresSeleccionados={supervisoresSeleccionados}
-    setSupervisoresSeleccionados={setSupervisoresSeleccionados}
-    trabajadoresSeleccionados={trabajadoresSeleccionados}
-    setTrabajadoresSeleccionados={setTrabajadoresSeleccionados}
-    trabajos={trabajosEstado}
-    setTrabajos={setTrabajos}
-    trabajosProyecto={trabajosProyecto}
-    personalAsignado={personalAsignado}
-    gastosProyecto={gastosProyecto}
-    obtenerProyectos={obtenerProyectos}
-    obtenerPersonal={obtenerPersonal}
-  />
-)}
-
+      {/* 👁 Detalle del proyecto (nuevo diseño) */}
+      {vista === "detalle" && proyectoSeleccionado && (
+        <VistaDetalleProyecto proyecto={proyectoSeleccionado} />
+      )}
     </div>
   );
 }
