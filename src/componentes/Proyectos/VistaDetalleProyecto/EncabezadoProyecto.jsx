@@ -12,12 +12,12 @@ export default function EncabezadoProyecto({ proyecto, fechas, quincenas, quince
 
   return (
     <div className="text-center mb-4">
-      {/* 🔹 Nombre grande con tipo al lado */}
+      {/* 🔹 Tipo primero, luego nombre */}
       <div className="flex justify-center items-center gap-2 flex-wrap">
-        <h2 className="text-2xl font-bold text-blue-900">{proyecto?.nombre || "Las Pilas"}</h2>
         <span className="text-sm bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full shadow">
           {proyecto?.tipo || "Rápido"}
         </span>
+        <h2 className="text-2xl font-bold text-blue-900">{proyecto?.nombre || "Las Pilas"}</h2>
       </div>
 
       {/* 🔹 Fechas */}

@@ -7,17 +7,12 @@ export default function ResumenGeneralProyecto({
   subcategoriasGastos,
   mostrarSubcategorias,
   setMostrarSubcategorias,
-  titulo = "Resumen General del Proyecto",
 }) {
   return (
     <div className="bg-white rounded-2xl shadow p-4 mb-8">
-      <h2 className="text-lg font-semibold text-center mb-4 text-gray-800">
-        {titulo}
-      </h2>
-
+      {/* 🔹 Título eliminado */}
       <div className="space-y-4">
         {resumen.map((item, idx) => {
-          // 🔹 Color según tipo
           let barraColor = "bg-gray-400";
           if (item.nombre === "Utilidad") barraColor = "bg-green-400";
           else if (item.nombre === "Producción") barraColor = "bg-blue-500";
