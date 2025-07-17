@@ -1,6 +1,5 @@
 import React from "react";
 
-// 🔹 Recibe también las fechas y la quincena activa
 export default function EncabezadoProyecto({ proyecto, fechas, quincenas, quincenaActiva }) {
   const index = quincenas.indexOf(quincenaActiva);
   const fecha = fechas[index];
@@ -13,12 +12,15 @@ export default function EncabezadoProyecto({ proyecto, fechas, quincenas, quince
 
   return (
     <div className="text-center mb-4">
-      <h2 className="text-2xl font-bold text-blue-900">{proyecto?.nombre || "Las Pilas"}</h2>
+      {/* 🔹 Nombre grande con tipo al lado */}
+      <div className="flex justify-center items-center gap-2 flex-wrap">
+        <h2 className="text-2xl font-bold text-blue-900">{proyecto?.nombre || "Las Pilas"}</h2>
+        <span className="text-sm bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full shadow">
+          {proyecto?.tipo || "Rápido"}
+        </span>
+      </div>
 
-      <span className="inline-block mt-1 text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded-full shadow">
-        {proyecto?.tipo || "Rápido"}
-      </span>
-
+      {/* 🔹 Fechas */}
       {fecha?.inicio && fecha?.fin && (
         <p className="mt-1 text-sm text-gray-800 font-medium">
           {formatearFecha(fecha.inicio)} - {formatearFecha(fecha.fin)}

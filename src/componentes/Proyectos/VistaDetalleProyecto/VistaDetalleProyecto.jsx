@@ -114,7 +114,7 @@ const manejarRegreso = () => {
             disabled={cargandoRegreso}
           >
             <FiArrowLeft className="text-xl animate-pulse" />
-            {cargandoRegreso ? "Cargando proyectos..." : "Regresar"}
+            {cargandoRegreso ? "Cargando proyectos..." : ""}
           </button>
 
         </div>
@@ -125,25 +125,35 @@ const manejarRegreso = () => {
         quincenaActiva={quincenaActiva}
         quincenas={quincenas}
       />
-      <div className="flex justify-center mb-4">
-        <button
-          onClick={() => setQuincenaActiva(null)}
-          className={`px-4 py-2 rounded-xl text-sm font-medium shadow transition-colors ${
-            quincenaActiva === null
-              ? "bg-blue-900 text-white"
-              : "border-blue-900 text-blue-900 hover:bg-blue-100"
-          }`}
-        >
-          Resumen General
-        </button>
-      </div>
-      {/* 🔹 Selector de Quincenas */}
-      <SelectorQuincenas
-        quincenas={quincenas}
-        quincenaActiva={quincenaActiva}
-        setQuincenaActiva={setQuincenaActiva}
-        agregarQuincena={agregarQuincena}
-      />
+     {/* 🔹 Línea con botón Resumen General y Selector de Quincenas */}
+{/* 🔹 Línea con botón Resumen General y Selector de Quincenas */}
+<div className="flex justify-center items-center gap-3 mb-4">
+  {/* Botón Resumen General */}
+  <button
+    onClick={() => setQuincenaActiva(null)}
+    className={`h-10 px-4 py-2 rounded-xl text-sm font-medium shadow transition-colors flex items-center ${
+      quincenaActiva === null
+        ? "bg-blue-900 text-white"
+        : "border border-blue-900 text-blue-900 hover:bg-blue-100"
+    }`}
+  >
+    Resumen General
+  </button>
+
+  {/* Selector de Quincenas */}
+  <div className="flex items-center gap-2">
+    <SelectorQuincenas
+      quincenas={quincenas}
+      quincenaActiva={quincenaActiva}
+      setQuincenaActiva={setQuincenaActiva}
+      agregarQuincena={agregarQuincena}
+    />
+  </div>
+</div>
+
+
+
+    
 
             {/* 🔘 Botones de navegación por vista dentro de la quincena */}
           {quincenaActiva && (
