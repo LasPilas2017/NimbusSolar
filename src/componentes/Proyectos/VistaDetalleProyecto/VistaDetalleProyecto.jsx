@@ -168,8 +168,8 @@ const manejarRegreso = () => {
         }
       />
 
-      {/* 🔹 Tabla de trabajos */}
-      <TablaTrabajos />
+      {/* 🔹 Tabla de trabajos solo en Resumen General */}
+      {quincenaActiva === null && <TablaTrabajos />}
     </div>
   );
 }
