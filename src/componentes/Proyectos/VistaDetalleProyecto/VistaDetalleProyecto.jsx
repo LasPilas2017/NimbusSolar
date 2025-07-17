@@ -14,7 +14,7 @@ export default function VistaDetalleProyecto({
   const [quincenaActiva, setQuincenaActiva] = useState(null);
   const [fechasQuincenas, setFechasQuincenas] = useState([]);
   const [mostrarSubcategorias, setMostrarSubcategorias] = useState(false);
-
+  const [vistaQuincena, setVistaQuincena] = useState("resumen");
   const [cargandoRegreso, setCargandoRegreso] = useState(false);
 
 const manejarRegreso = () => {
@@ -145,15 +145,33 @@ const manejarRegreso = () => {
         agregarQuincena={agregarQuincena}
       />
 
+            {/* 🔘 Botones de navegación por vista dentro de la quincena */}
+          {quincenaActiva && (
+            <div className="flex justify-center gap-2 my-4 flex-wrap">
+              {["resumen", "producción", "planilla", "caja chica"].map((vista) => (
+                <button
+                  key={vista}
+                  onClick={() => setVistaQuincena(vista)}
+                  className={`px-4 py-2 rounded-xl text-sm font-semibold transition shadow 
+                    ${vistaQuincena === vista
+                      ? "bg-blue-900 text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+                >
+                  {vista.charAt(0).toUpperCase() + vista.slice(1)}
+                </button>
+              ))}
+            </div>
+          )}
+
       {/* 🔹 Formulario SOLO de la quincena activa */}
-      {quincenaActiva && (
-        <FormularioQuincena
-          quincena={quincenaActiva}
-          index={quincenas.indexOf(quincenaActiva)}
-          fechas={fechasQuincenas}
-          setFechas={setFechasQuincenas}
-        />
-      )}
+     {quincenaActiva && vistaQuincena === "resumen" && (
+  <FormularioQuincena
+    quincena={quincenaActiva}
+    index={quincenas.indexOf(quincenaActiva)}
+    fechas={fechasQuincenas}
+    setFechas={setFechasQuincenas}
+  />
+)}
 
       {/* 🔹 Resumen (general o por quincena) */}
       <ResumenGeneralProyecto
