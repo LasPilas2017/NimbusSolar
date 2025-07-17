@@ -1,4 +1,3 @@
-// App.jsx
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -12,7 +11,6 @@ import Personal from './componentes/personal/Personal';
 import Contabilidad from './componentes/contabilidad/Contabilidad';
 import VistaMovimientos from './componentes/VistaMovimientos';
 import Servicios from './componentes/Servicios/Servicios';
-import Proyectos from './componentes/Proyectos/Proyectos';
 import Vehiculos from './componentes/Servicios/vehiculos';
 import Maquinaria from './componentes/Servicios/maquinaria';
 import CajaChica from './componentes/contabilidad/CajaChica';
@@ -20,7 +18,7 @@ import ReportarAsistencia from './componentes/personal/ReportarAsistencia';
 import { guardarLog } from './utils';
 import TotalIngresos from "./componentes/contabilidad/TotalIngresos";
 import TotalEgresos from "./componentes/contabilidad/TotalEgresos";
-import Categorias from "./componentes/contabilidad/Categorias"; // ajustá la ruta si es distinta
+import Proyectos from './componentes/Proyectos/Proyectos';
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -38,9 +36,9 @@ export default function App() {
   const [vistaServicio, setVistaServicio] = useState("principal");
   const [cerrando, setCerrando] = useState(false);
   const [mostrarBarra, setMostrarBarra] = useState(true);
-  const isMobile = useIsMobile();
   const [mostrarTransacciones, setMostrarTransacciones] = useState(false);
-  const [tipoTransaccion, setTipoTransaccion] = useState(""); // "ingresos" | "egresos"
+  const [tipoTransaccion, setTipoTransaccion] = useState("");
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (isMobile && tab !== "") {
@@ -77,25 +75,22 @@ export default function App() {
   const handleSelectServicio = (seleccion) => setVistaServicio(seleccion);
 
   const tabs = [
-    { id: "VistaMovimientos", label: "Movimientos", icon: <FiRepeat size={40} /> },
-    { id: "papeleria", label: "Papelería", icon: <FiFolder size={40} /> },
-    { id: "personal", label: "R.R.H.H.", icon: <FiUsers size={40} /> },
-    { id: "servicios", label: "Servicios", icon: <FiTool size={40} /> },
-    { id: "existencias", label: "Existencias", icon: <FiBox size={40} /> },
-    { id: "ventas", label: "Ventas", icon: <FiDollarSign size={40} /> },
-    { id: "proyectos", label: "Proyectos", icon: <FiFolder size={40} /> },
-    { id: "Liquidez", label: "Finanzas", icon: <FiDollarSign size={40} /> },
+    { id: "VistaMovimientos", label: "Movimientos", icon: <FiRepeat size={24} /> },
+    { id: "papeleria", label: "Papelería", icon: <FiFolder size={24} /> },
+    { id: "personal", label: "R.R.H.H.", icon: <FiUsers size={24} /> },
+    { id: "servicios", label: "Servicios", icon: <FiTool size={24} /> },
+    { id: "existencias", label: "Existencias", icon: <FiBox size={24} /> },
+    { id: "ventas", label: "Ventas", icon: <FiDollarSign size={24} /> },
+    { id: "proyectos", label: "Proyectos", icon: <FiFolder size={24} /> },
+    { id: "Liquidez", label: "Finanzas", icon: <FiDollarSign size={24} /> },
   ];
+
+  const colores = ["text-orange-500", "text-cyan-500", "text-emerald-500", "text-pink-500"];
 
   return (
     <>
-      {/* Fondo fijo que no se distorsiona */}
-      <div
-        className="fixed inset-0 -z-10 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: "url('/fondo.png')" }}
-      />
-
-      <div className="relative min-h-screen flex flex-col">
+      <div className="relative min-h-screen flex flex-col bg-gray-50">
+        {/* Botones superiores */}
         <div className="fixed top-0 left-1/2 transform -translate-x-1/2 z-40 flex gap-4 mt-0">
           <button
             className="px-6 py-3 rounded-b-xl bg-white/30 backdrop-blur-lg text-gray-800 font-semibold shadow-md hover:bg-white/50 transition-all duration-300"
@@ -117,6 +112,7 @@ export default function App() {
           </button>
         </div>
 
+        {/* Mensaje de cierre */}
         {cerrando && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -127,6 +123,7 @@ export default function App() {
           </motion.div>
         )}
 
+        {/* Sidebar */}
         <AnimatePresence>
           {mostrarBarra && (
             <>
@@ -138,57 +135,53 @@ export default function App() {
                   onClick={() => setMostrarBarra(false)}
                 />
               )}
-              <motion.aside
-                initial={{ x: -260, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                exit={{ x: -260, opacity: 0 }}
-                transition={{ duration: 0.6, ease: 'easeInOut' }}
-                className="h-screen bg-white/30 backdrop-blur-xl shadow-xl fixed top-0 left-0 z-40 flex flex-col w-60"
-              >
-                <motion.button
-                  whileTap={{ scale: 1.5 }}
-                  whileHover={{ scale: 1.9 }}
+                        <motion.aside
+              initial={{ x: -260, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: -260, opacity: 0 }}
+              transition={{ duration: 0.6, ease: 'easeInOut' }}
+              className="h-screen w-60 bg-white fixed top-0 left-0 z-40 shadow-2xl border-r border-gray-200 flex flex-col items-center justify-between"
+            >
+            <motion.button
+                  whileTap={{ scale: 1.2 }}
+                  whileHover={{ scale: 1.3 }}
                   onClick={() => setMostrarBarra(false)}
-                  className="absolute top-4 -right-12 z-50 h-20 w-12 flex items-center justify-center bg-white/30 backdrop-blur-xl shadow-xl rounded-l-none rounded-r-2xl text-gray-700 hover:bg-white/40 transition-transform duration-300"
+                  className="absolute top-4 -right-12 z-50 h-20 w-12 flex items-center justify-center bg-blue-100 text-blue-800 shadow rounded-r-2xl"
                 >
-                  <FiChevronsLeft size={40} />
+                  <FiChevronsLeft size={28} />
                 </motion.button>
-
-                <div className="flex items-center justify-between p-4 pb-2">
-                  <span className="text-lg font-semibold text-gray-700">Menú</span>
-                </div>
-
+                <div className="flex flex-col items-center justify-center gap-3 mt-8 w-full">
+                {tabs.map((t, index) => (
+                  <motion.button
+                    key={t.id}
+                    whileTap={{ scale: 0.97 }}
+                    whileHover={{ scale: 1.02 }}
+                    onClick={() => cambiarTab(t.id)}
+                    className={`w-48 flex items-center gap-3 justify-start py-2 px-4 rounded-xl font-semibold text-sm hover:bg-blue-50 transition ${
+                      tab === t.id ? "bg-blue-100 text-blue-900" : "text-gray-700"
+                    }`}
+                  >
+                    <div className={`text-xl ${colores[index % colores.length]}`}>{t.icon}</div>
+                    <span className="text-sm font-medium">{t.label}</span>
+                  </motion.button>
+                ))}
+              </div>
                 <motion.button
                   whileTap={{ scale: 0.95 }}
-                  whileHover={{ scale: 1.03 }}
+                  whileHover={{ scale: 1.05 }}
                   onClick={handleLogout}
-                  className="mx-4 mb-4 w-[85%] flex items-center gap-2 py-2 px-3 rounded-xl bg-red-500 hover:bg-red-600 text-white font-semibold justify-center"
+                  className="mx-auto mb-6 mt-auto flex items-center justify-center gap-2 py-2 px-4 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold w-40"
                 >
-                  <FiLogOut className="text-lg" />
-                  <span>Cerrar Sesión</span>
+                  <FiLogOut />
+                  <span>Salir</span>
                 </motion.button>
 
-                <div className="flex-1 flex flex-col items-start justify-center gap-3 px-4">
-                  {tabs.map((t) => (
-                    <motion.button
-                      key={t.id}
-                      whileTap={{ scale: 0.95 }}
-                      whileHover={{ scale: 1.03 }}
-                      onClick={() => cambiarTab(t.id)}
-                      className={`flex items-center gap-2 py-2 px-3 rounded-xl text-sm md:text-base whitespace-nowrap w-full ${
-                        tab === t.id ? "bg-gray-900 text-white font-bold" : "bg-gray-100 hover:bg-gray-200 text-gray-800"
-                      }`}
-                    >
-                      {t.icon}
-                      <span className="text-lg md:text-xl font-semibold">{t.label}</span>
-                    </motion.button>
-                  ))}
-                </div>
               </motion.aside>
             </>
           )}
         </AnimatePresence>
 
+        {/* Botón abrir sidebar */}
         <AnimatePresence>
           {!mostrarBarra && (
             <motion.button
@@ -197,17 +190,18 @@ export default function App() {
               exit={{ x: -60, opacity: 0 }}
               transition={{ duration: 0.6, ease: 'easeInOut' }}
               onClick={() => setMostrarBarra(true)}
-              className="fixed top-4 left-0 z-50 h-20 w-12 flex items-center justify-center bg-white/30 backdrop-blur-xl shadow-xl rounded-l-none rounded-r-2xl text-gray-700 hover:bg-white/40 transition-transform duration-300"
+              className="fixed top-4 left-0 z-50 h-20 w-12 flex items-center justify-center bg-blue-100 text-blue-800 shadow rounded-r-2xl"
               whileTap={{ scale: 0.9 }}
               whileHover={{ scale: 1.1 }}
             >
-              <FiChevronsRight size={40} />
+              <FiChevronsRight size={28} />
             </motion.button>
           )}
         </AnimatePresence>
 
-        <main className="flex-1 pt-28 px-4 md:px-6 overflow-y-auto transition-all duration-500">
-          <div className={`${tab !== "" ? "bg-white/40 backdrop-blur-lg shadow-2xl" : ""} rounded-2xl p-6 max-w-6xl mx-auto`}>
+        {/* Contenido principal */}
+        <main className="flex-1 pt-28 px-4 md:px-6 overflow-y-auto w-full">
+          <div className="w-full px-2 sm:px-4">
             <AnimatePresence mode="wait">
               <motion.div
                 key={tab + vistaServicio}
@@ -237,14 +231,6 @@ export default function App() {
                 {esAdmin && tab === "papeleria" && (
                   <div className="text-center text-xl font-semibold">Papelería (Próximamente)</div>
                 )}
-                {esAdmin && tab === "transacciones" && (
-                  <div className="text-center text-xl font-semibold">
-                    Sección de Transacciones (Próximamente)
-                    <span className="text-sm block mt-2 text-gray-600">
-                      Aquí se mostrarán todos los movimientos y se podrá ingresar un egreso o ingreso.
-                    </span>
-                  </div>
-                )}
                 {esAdmin && tab === "cajachica" && (
                   <CajaChica usuario={usuario} onCerrar={() => setTab("")} />
                 )}
@@ -252,88 +238,61 @@ export default function App() {
             </AnimatePresence>
           </div>
         </main>
-        {/* MODAL DE TRANSACCIONES */}
-            {mostrarTransacciones && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center px-4"
+
+        {/* Modal Transacciones */}
+        {mostrarTransacciones && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center px-4"
+          >
+            <div className="bg-white rounded-2xl p-6 w-full max-w-5xl shadow-xl relative">
+              <button
+                onClick={() => {
+                  setMostrarTransacciones(false);
+                  setTipoTransaccion("");
+                }}
+                className="absolute top-2 right-2 text-gray-500 hover:text-black text-xl"
               >
-                <div className="bg-white rounded-2xl p-6 w-full max-w-5xl shadow-xl relative">
-                  {/* Botón de cerrar */}
-                  <button
-                    onClick={() => {
-                      setMostrarTransacciones(false);
-                      setTipoTransaccion("");
-                    }}
-                    className="absolute top-2 right-2 text-gray-500 hover:text-black text-xl"
-                  >
-                    ✕
-                  </button>
+                ✕
+              </button>
 
-                  {/* Botones de Ingresos y Egresos */}
-                  <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-4 mt-4">
-                    <button
-                      onClick={() => setTipoTransaccion("ingresos")}
-                      className={`w-44 flex items-center justify-center gap-2 font-medium py-2 rounded-xl shadow hover:scale-105 transition ${
-                        tipoTransaccion === "ingresos"
-                          ? "bg-green-200 text-black font-bold"
-                          : "bg-white/80 text-black"
-                      }`}
-                    >
-                      💰 Ingresos
-                    </button>
+              <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-4 mt-4">
+                <button
+                  onClick={() => setTipoTransaccion("ingresos")}
+                  className={`w-44 flex items-center justify-center gap-2 font-medium py-2 rounded-xl shadow hover:scale-105 transition ${
+                    tipoTransaccion === "ingresos"
+                      ? "bg-green-200 text-black font-bold"
+                      : "bg-white/80 text-black"
+                  }`}
+                >
+                  💰 Ingresos
+                </button>
 
-                    <button
-                      onClick={() => setTipoTransaccion("egresos")}
-                      className={`w-44 flex items-center justify-center gap-2 font-medium py-2 rounded-xl shadow hover:scale-105 transition ${
-                        tipoTransaccion === "egresos"
-                          ? "bg-red-200 text-black font-bold"
-                          : "bg-white/80 text-black"
-                      }`}
-                    >
-                      📤 Egresos
-                    </button>
-                  </div>
+                <button
+                  onClick={() => setTipoTransaccion("egresos")}
+                  className={`w-44 flex items-center justify-center gap-2 font-medium py-2 rounded-xl shadow hover:scale-105 transition ${
+                    tipoTransaccion === "egresos"
+                      ? "bg-red-200 text-black font-bold"
+                      : "bg-white/80 text-black"
+                  }`}
+                >
+                  📤 Egresos
+                </button>
+              </div>
 
-                  {/* Contenido del formulario */}
-                  <div className="mt-4">
-                    {tipoTransaccion === "ingresos" && (
-                      <TotalIngresos
-                        ampliaciones={[
-                          {
-                            id: 1,
-                            proyecto_id: 1,
-                            documento: "DOC-001",
-                            medio: "transferencia",
-                            fecha: "2025-06-10",
-                            monto: 4500,
-                          },
-                        ]}
-                        proyectos={[{ id: 1, nombre: "Proyecto Solar A" }]}
-                        onCerrar={() => setTipoTransaccion("")}
-                      />
-                    )}
-                    {tipoTransaccion === "egresos" && (
-                      <TotalEgresos
-                        gastos={[
-                          {
-                            id: 1,
-                            fecha: "2025-06-12",
-                            monto: 3800,
-                            concepto: "Compra de materiales",
-                            categoria: "Materiales",
-                            autorizacion: "AUT-045",
-                          },
-                        ]}
-                        onCerrar={() => setTipoTransaccion("")}
-                      />
-                    )}
-                  </div>
-                </div>
-              </motion.div>
-            )}
+              <div className="mt-4">
+                {tipoTransaccion === "ingresos" && (
+                  <TotalIngresos proyectos={[]} ampliaciones={[]} onCerrar={() => setTipoTransaccion("")} />
+                )}
+                {tipoTransaccion === "egresos" && (
+                  <TotalEgresos gastos={[]} onCerrar={() => setTipoTransaccion("")} />
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
       </div>
     </>
   );

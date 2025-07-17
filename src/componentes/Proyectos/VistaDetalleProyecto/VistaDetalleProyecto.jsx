@@ -4,12 +4,27 @@ import SelectorQuincenas from "./SelectorQuincenas";
 import FormularioQuincena from "./FormularioQuincena";
 import ResumenGeneralProyecto from "./ResumenGeneralProyecto";
 import TablaTrabajos from "./TablaTrabajos";
+import { FiArrowLeft } from "react-icons/fi"
 
-export default function VistaDetalleProyecto({ proyecto }) {
+export default function VistaDetalleProyecto({
+  proyecto,
+  onVolver,
+}) {
   const [quincenas, setQuincenas] = useState(["1ra. Quincena"]);
-  const [quincenaActiva, setQuincenaActiva] = useState(null); // inicia sin selección
+  const [quincenaActiva, setQuincenaActiva] = useState(null);
   const [fechasQuincenas, setFechasQuincenas] = useState([]);
   const [mostrarSubcategorias, setMostrarSubcategorias] = useState(false);
+
+  const [cargandoRegreso, setCargandoRegreso] = useState(false);
+
+const manejarRegreso = () => {
+  setCargandoRegreso(true); // Activa spinner
+  setTimeout(() => {
+    onVolver(); // Llama a la función original
+    setCargandoRegreso(false);
+  }, 1000); // Espera 1 segundo para mostrar el "loading"
+};
+
 
   const agregarQuincena = () => {
     const ultimaIndex = quincenas.length - 1;
@@ -90,7 +105,19 @@ export default function VistaDetalleProyecto({ proyecto }) {
     : resumenGeneral;
 
   return (
-    <div className="w-full max-w-6xl mx-auto p-4 bg-white/70 rounded-3xl shadow-lg">
+    <div className="w-full max-w-6xl mx-auto p-4 bg-white/70 rounded-3xl shadow-lg relative">
+      {/* 🔙 Botón fijo para volver */}
+      <div className="absolute top-4 left-4 z-10 hidden sm:block">
+          <button
+            onClick={manejarRegreso}
+            className="text-base px-5 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 shadow-md font-medium flex items-center gap-2 transition disabled:opacity-50"
+            disabled={cargandoRegreso}
+          >
+            <FiArrowLeft className="text-xl animate-pulse" />
+            {cargandoRegreso ? "Cargando proyectos..." : "Regresar"}
+          </button>
+
+        </div>
       {/* 🔹 Encabezado del Proyecto */}
       <EncabezadoProyecto
         proyecto={proyecto}
@@ -98,7 +125,18 @@ export default function VistaDetalleProyecto({ proyecto }) {
         quincenaActiva={quincenaActiva}
         quincenas={quincenas}
       />
-
+      <div className="flex justify-center mb-4">
+        <button
+          onClick={() => setQuincenaActiva(null)}
+          className={`px-4 py-2 rounded-xl text-sm font-medium shadow transition-colors ${
+            quincenaActiva === null
+              ? "bg-blue-900 text-white"
+              : "border-blue-900 text-blue-900 hover:bg-blue-100"
+          }`}
+        >
+          Resumen General
+        </button>
+      </div>
       {/* 🔹 Selector de Quincenas */}
       <SelectorQuincenas
         quincenas={quincenas}
@@ -107,19 +145,15 @@ export default function VistaDetalleProyecto({ proyecto }) {
         agregarQuincena={agregarQuincena}
       />
 
-      {/* 🔹 Formulario solo cuando hay quincena seleccionada */}
-      {quincenaActiva &&
-        quincenas.map((q, i) =>
-          q === quincenaActiva ? (
-            <FormularioQuincena
-              key={i}
-              quincena={q}
-              index={i}
-              fechas={fechasQuincenas}
-              setFechas={setFechasQuincenas}
-            />
-          ) : null
-        )}
+      {/* 🔹 Formulario SOLO de la quincena activa */}
+      {quincenaActiva && (
+        <FormularioQuincena
+          quincena={quincenaActiva}
+          index={quincenas.indexOf(quincenaActiva)}
+          fechas={fechasQuincenas}
+          setFechas={setFechasQuincenas}
+        />
+      )}
 
       {/* 🔹 Resumen (general o por quincena) */}
       <ResumenGeneralProyecto

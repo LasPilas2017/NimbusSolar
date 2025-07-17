@@ -10,3 +10,12 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+/* 👇 Oculta scroll horizontal en todos los navegadores */
+.scrollbar-hide {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE y Edge */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome, Safari */
+}
