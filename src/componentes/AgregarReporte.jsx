@@ -1,6 +1,6 @@
 // AgregarReporte.jsx
 import { useState, useEffect } from "react";
-import { supabase } from "../supabase";
+import supabase from "../supabase";
 import { guardarLog } from "../utils"; // 👈 Agregado para guardar los logs
 import { Plus, Pencil, FileText } from "lucide-react";
 

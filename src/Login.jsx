@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiMail, FiLock } from 'react-icons/fi';
-import { supabase } from './supabase';
+import supabase from './supabase';
 import { guardarLog } from './utils';
 
 export default function Login({ onLogin }) {

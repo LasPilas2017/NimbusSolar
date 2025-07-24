@@ -1,7 +1,7 @@
 // VerPlanilla.jsx
 import React, { useState, useEffect } from "react";
 import { PlusCircle, MinusCircle } from "lucide-react";
-import { supabase } from "../../supabase";
+import supabase from "../../supabase";
 import ModificarTrabajos from "./ModificarTrabajos";
 import { guardarLog } from "../../utils";
 

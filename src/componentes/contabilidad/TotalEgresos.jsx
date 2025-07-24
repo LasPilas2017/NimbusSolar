@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { supabase } from "../../supabase"; // ajusta ruta si es necesario
+import supabase from "../../supabase"; // ajusta ruta si es necesario
 
 export default function TotalEgresos({ onCerrar }) {
   const [fechaInicio, setFechaInicio] = useState("");

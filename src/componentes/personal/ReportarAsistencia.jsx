@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { supabase } from "../../supabase";
+import supabase from "../../supabase";
 import { guardarLog } from "../../utils";
 export default function ReportarAsistencia({ usuario, onCerrar }) {
   const [datosSupervisor, setDatosSupervisor] = useState(null);

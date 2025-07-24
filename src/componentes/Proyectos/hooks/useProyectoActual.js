@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { supabase } from "../../../supabase";
+import supabase from "../../../supabase";
 
 export function useProyectoActual() {
   const [trabajos, setTrabajos] = useState([{ nombre: "", unidades: "" }]);

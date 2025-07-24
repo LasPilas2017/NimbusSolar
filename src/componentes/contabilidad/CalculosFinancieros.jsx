@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "../../supabase";
+import supabase from "../../supabase";
 import { guardarLog } from "../../utils"; // 👈 Importar el log
 
 export default function CalculosFinancieros({ usuario, proyectoId }) {

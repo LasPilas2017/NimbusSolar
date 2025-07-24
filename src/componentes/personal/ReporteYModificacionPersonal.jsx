@@ -1,7 +1,7 @@
 // ReporteYModificacionPersonal.jsx
 import { useState } from "react";
 import { Plus, Pencil, FileText } from "lucide-react";
-import { supabase } from "../../supabase";
+import supabase from "../../supabase";
 import { guardarLog } from "../../utils";
 
 export default function ReporteYModificacionPersonal({ persona }) {

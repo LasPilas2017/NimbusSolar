@@ -1,6 +1,6 @@
 import { useState, useEffect, lazy, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { supabase } from "../../supabase";
+import supabase from "../../supabase";
 
 // Importación dinámica de componentes
 const AgregarPersonal = lazy(() => import("./AgregarPersonal"));

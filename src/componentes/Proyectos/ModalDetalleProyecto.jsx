@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import AsignacionPersonal from "./AsignacionPersonal";
 import TrabajosPorRealizar from "./TrabajosPorRealizar";
-import { supabase } from "../../supabase";
+import supabase from "../../supabase";
 
 export default function ModalDetalleProyecto({
   modoEdicion,

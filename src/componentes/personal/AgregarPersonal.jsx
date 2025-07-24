@@ -1,6 +1,6 @@
 // AgregarPersonal.jsx
 import { useState } from "react";
-import { supabase } from "../../supabase";
+import supabase from "../../supabase";
 import { guardarLog } from "../../utils";
 export default function AgregarPersonal({ usuario }) {
   const [tipoPersonal, setTipoPersonal] = useState("");

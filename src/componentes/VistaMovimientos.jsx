@@ -1,9 +1,10 @@
 // src/componentes/VistaMovimientos.jsx (¡o como lo tengas!)
 import { useEffect, useState } from "react";
-import { supabase } from "../supabase";
+import supabase from "../supabase"
 
 export default function VistaMovimientos() {  // 👈 sin la "s"
   const [logs, setLogs] = useState([]);
+console.log("¿Qué es supabase?", supabase);
 
   useEffect(() => {
     const obtenerLogs = async () => {
