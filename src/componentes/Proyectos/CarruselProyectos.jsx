@@ -25,28 +25,30 @@ export default function CarruselProyectos({ categoria, lista, abrirDetalle }) {
     setIsDragging(false);
   };
 
-  // 🔹 Proyectos de prueba con distintos porcentajes
+  // 🔹 Proyectos de prueba actualizados
   const proyectosPrueba = [
+   
     {
-      id: "test1",
-      nombre: "Proyecto A",
-      monto_total: 1000,
-      utilidad: 70,
-      descripcion: "Solo limpieza de paneles",
+      id: "p2",
+      nombre: "Granja San Miguel",
+      monto_total: 15000,
+      utilidad: -700,
+      descripcion: "Sistema solar trifásico en granja",
     },
     {
-      id: "test2",
-      nombre: "Proyecto B",
-      monto_total: 1000,
-      utilidad: 220,
-      descripcion: "Instalación básica",
+      id: "p3",
+      nombre: "Tienda Don Pedro",
+      monto_total: 5400,
+      utilidad: 450,
+      descripcion: "Kit solar con respaldo de batería",
     },
+    
     {
-      id: "test3",
-      nombre: "Proyecto C",
-      monto_total: 1000,
-      utilidad: 560,
-      descripcion: "Sistema completo de paneles",
+      id: "p5",
+      nombre: "Bodega Central",
+      monto_total: 21000,
+      utilidad: 5600,
+      descripcion: "Instalación industrial completa",
     },
   ];
 

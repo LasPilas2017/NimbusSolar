@@ -75,42 +75,22 @@ export default function Personal() {
           vista: "ver_personal",
         },
       ].map((t, i) => (
-        <div
-          key={i}
-          onClick={() => manejarCambioVista(t.vista)}
-          className="relative cursor-pointer rounded-2xl w-full p-6 text-center bg-white/80 backdrop-blur-md overflow-hidden group shadow-xl hover:scale-[1.01] transition-transform duration-300"
-        >
-          <div className="absolute -inset-[2px] bg-gradient-to-r from-blue-400 via-purple-200 to-slate-400 rounded-2xl blur-xl opacity-30 group-hover:opacity-60 animate-pulse pointer-events-none z-0"></div>
-          <div className="relative z-10">
-            <h3 className="text-lg font-bold text-gray-800 mb-1">{t.titulo}</h3>
-            <p className="text-sm text-gray-600">{t.descripcion}</p>
-          </div>
-        </div>
+      <div
+  key={i}
+  onClick={() => manejarCambioVista(t.vista)}
+  className="cursor-pointer bg-white border border-black shadow-md px-6 py-8 w-full max-w-sm mx-auto text-center hover:bg-gray-200 transition-all duration-300"
+>
+  <h3 className="text-xl font-semibold mb-2 tracking-wide text-black">{t.titulo}</h3>
+  <p className="text-sm text-gray-700 transition">{t.descripcion}</p>
+</div>
+
+
+
       ))}
     </div>
 
-    {/* Acciones rápidas: solo el tamaño que necesita */}
-    <div className="relative rounded-2xl bg-white/80 backdrop-blur-md p-6 shadow-xl overflow-hidden group flex flex-col justify-start space-y-4 self-start">
-      <div className="absolute -inset-[2px] bg-gradient-to-br from-yellow-300 via-orange-200 to-pink-300 rounded-2xl blur-xl opacity-30 group-hover:opacity-60 animate-pulse pointer-events-none z-0" />
-      <div className="relative z-10">
-        <h3 className="text-lg font-bold text-center text-gray-800 mb-4">⚡ Acciones rápidas</h3>
-        <button
-          onClick={() => manejarCambioVista("asistencia")}
-          className="w-full border border-black bg-transparent text-black hover:bg-gray-100 font-semibold py-2 rounded-xl transition"
-        >
-          ✏️ Reportar Asistencia
-        </button>
-        <button
-          onClick={() => {
-            setMostrarFormularioCajaChica(true);
-            setVista("caja_chica");
-          }}
-          className="w-full border border-black bg-transparent text-black hover:bg-gray-100 font-semibold py-2 rounded-xl transition"
-        >
-          💰 Caja Chica
-        </button>
-      </div>
-    </div>
+   
+
   </div>
 )}
 

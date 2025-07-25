@@ -38,7 +38,7 @@ export default function SelectorQuincenas({
     if (!isDragging) return;
     e.preventDefault();
     const x = e.pageX - scrollRef.current.offsetLeft;
-    const walk = (x - startX) * 1.5; // sensibilidad
+    const walk = (x - startX) * 1.5;
     scrollRef.current.scrollLeft = scrollLeft - walk;
   };
 
@@ -59,11 +59,12 @@ export default function SelectorQuincenas({
         <button
           key={idx}
           onClick={() => setQuincenaActiva(q)}
-          className={`h-10 px-4 rounded-full border text-sm sm:text-base shadow transition flex items-center whitespace-nowrap ${
-            quincenaActiva === q
-              ? "bg-blue-100 text-blue-800 border-blue-400 font-semibold"
-              : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-          }`}
+          className={`h-10 px-4 text-sm sm:text-base shadow transition rounded-none border flex items-center whitespace-nowrap
+            ${
+              quincenaActiva === q
+                ? "bg-blue-900 text-white border-blue-900"
+                : "bg-gray-200 text-gray-800 border-gray-400 hover:bg-gray-300"
+            }`}
         >
           {q}
         </button>
@@ -71,7 +72,7 @@ export default function SelectorQuincenas({
 
       <button
         onClick={agregarQuincena}
-        className="h-10 w-10 flex items-center justify-center bg-green-200 text-green-800 rounded-full shadow hover:scale-110 transition"
+        className="h-10 px-4 flex items-center justify-center bg-green-600 text-white border border-green-700 hover:bg-green-700 transition rounded-none shadow"
         title="Agregar nueva quincena"
       >
         <Plus size={18} />

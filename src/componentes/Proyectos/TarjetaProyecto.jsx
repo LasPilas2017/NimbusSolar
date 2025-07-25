@@ -1,21 +1,22 @@
-// TarjetaProyecto.jsx
 export default function TarjetaProyecto({ proyecto, abrirDetalle }) {
   const montoTotal = proyecto.monto_total || 0;
   const utilidad = proyecto.utilidad || 0;
   const porcentajeUtilidad =
     montoTotal > 0 ? Math.min((utilidad / montoTotal) * 100, 100) : 0;
 
-  // 🎨 Color dinámico según porcentaje
   const colorCirculo =
-    porcentajeUtilidad < 10
-      ? "#dc2626" // rojo
-      : porcentajeUtilidad < 50
-      ? "#facc15" // amarillo
-      : "#10b981"; // verde
+  utilidad < 0
+    ? "#dc2626" // rojo fuerte si pérdida
+    : porcentajeUtilidad < 10
+    ? "#facc15" // amarillo si ganancia muy baja
+    : "#10b981"; // verde si ganancia decente
+
+
+  const colorTextoUtilidad = utilidad > 0 ? "text-green-700" : "text-red-600";
 
   return (
     <div
-      className="w-60 h-72 bg-gray-100/80 backdrop-blur-md border border-gray-300 rounded-2xl shadow-md p-4 flex flex-col justify-between cursor-pointer hover:bg-gray-200 transition-colors duration-300 flex-shrink-0"
+      className="w-60 h-72 bg-gray-100/80 backdrop-blur-md border border-gray-300 rounded-none shadow-md p-4 flex flex-col justify-between cursor-pointer hover:bg-gray-200 transition-colors duration-300 flex-shrink-0"
       onClick={() => abrirDetalle(proyecto.id)}
     >
       {/* 🔹 Nombre del Proyecto */}
@@ -31,7 +32,7 @@ export default function TarjetaProyecto({ proyecto, abrirDetalle }) {
         </div>
         <div className="text-center">
           <p className="text-gray-500">Utilidad</p>
-          <p className="font-semibold text-red-600">Q{utilidad}</p>
+          <p className={`font-semibold ${colorTextoUtilidad}`}>Q{utilidad}</p>
         </div>
       </div>
 
@@ -60,7 +61,7 @@ export default function TarjetaProyecto({ proyecto, abrirDetalle }) {
         </svg>
       </div>
 
-      {/* 📊 Texto de utilidad */}
+      {/* 📊 Porcentaje utilidad */}
       <p className="text-center text-sm text-gray-700 font-medium mb-1">
         {porcentajeUtilidad.toFixed(1)}% de Utilidad
       </p>

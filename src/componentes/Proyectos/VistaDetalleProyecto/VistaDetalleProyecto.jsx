@@ -5,6 +5,7 @@ import FormularioQuincena from "./FormularioQuincena";
 import ResumenGeneralProyecto from "./ResumenGeneralProyecto";
 import TablaTrabajos from "./TablaTrabajos";
 import { FiArrowLeft } from "react-icons/fi"
+import Planilla from "./Planilla";
 
 export default function VistaDetalleProyecto({
   proyecto,
@@ -109,13 +110,13 @@ const manejarRegreso = () => {
       {/* 🔙 Botón fijo para volver */}
       <div className="absolute top-4 left-4 z-10 hidden sm:block">
           <button
-            onClick={manejarRegreso}
-            className="text-base px-5 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 shadow-md font-medium flex items-center gap-2 transition disabled:opacity-50"
-            disabled={cargandoRegreso}
-          >
-            <FiArrowLeft className="text-xl animate-pulse" />
-            {cargandoRegreso ? "Cargando proyectos..." : ""}
-          </button>
+          onClick={manejarRegreso}
+          className="text-base px-5 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium flex items-center gap-2 transition rounded-none shadow"
+          disabled={cargandoRegreso}
+        >
+          <FiArrowLeft className="text-xl animate-pulse" />
+          {cargandoRegreso ? "Cargando proyectos..." : ""}
+        </button>
 
         </div>
       {/* 🔹 Encabezado del Proyecto */}
@@ -130,15 +131,17 @@ const manejarRegreso = () => {
 <div className="flex justify-center items-center gap-3 mb-4">
   {/* Botón Resumen General */}
   <button
-    onClick={() => setQuincenaActiva(null)}
-    className={`h-10 px-4 py-2 rounded-xl text-sm font-medium shadow transition-colors flex items-center ${
+  onClick={() => setQuincenaActiva(null)}
+  className={`h-10 px-4 py-2 text-sm font-medium shadow transition flex items-center rounded-none
+    ${
       quincenaActiva === null
         ? "bg-blue-900 text-white"
         : "border border-blue-900 text-blue-900 hover:bg-blue-100"
     }`}
-  >
-    Resumen General
-  </button>
+>
+  Resumen General
+</button>
+
 
   {/* Selector de Quincenas */}
   <div className="flex items-center gap-2">
@@ -160,20 +163,24 @@ const manejarRegreso = () => {
             <div className="flex justify-center gap-2 my-4 flex-wrap">
               {["resumen", "producción", "planilla", "caja chica"].map((vista) => (
                 <button
-                  key={vista}
-                  onClick={() => setVistaQuincena(vista)}
-                  className={`px-4 py-2 rounded-xl text-sm font-semibold transition shadow 
-                    ${vistaQuincena === vista
-                      ? "bg-blue-900 text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
-                >
-                  {vista.charAt(0).toUpperCase() + vista.slice(1)}
-                </button>
+                    key={vista}
+                    onClick={() => setVistaQuincena(vista)}
+                    className={`px-4 py-2 text-sm font-semibold transition shadow rounded-none
+                      ${
+                        vistaQuincena === vista
+                          ? "bg-blue-900 text-white"
+                          : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+                      }`}
+                  >
+                    {vista.charAt(0).toUpperCase() + vista.slice(1)}
+                  </button>
+
               ))}
             </div>
           )}
 
       {/* 🔹 Formulario SOLO de la quincena activa */}
+      
      {quincenaActiva && vistaQuincena === "resumen" && (
   <FormularioQuincena
     quincena={quincenaActiva}
@@ -183,21 +190,30 @@ const manejarRegreso = () => {
   />
 )}
 
-      {/* 🔹 Resumen (general o por quincena) */}
-      <ResumenGeneralProyecto
-        resumen={resumen}
-        subcategoriasGastos={subcategoriasGastos}
-        mostrarSubcategorias={mostrarSubcategorias}
-        setMostrarSubcategorias={setMostrarSubcategorias}
-        titulo={
-          quincenaActiva
-            ? `Resumen de ${quincenaActiva}`
-            : "Resumen General del Proyecto"
-        }
-      />
+{vistaQuincena === "planilla" && quincenaActiva && <Planilla />}
+
+      
+     {/* 🔹 Resumen (general o por quincena) */}
+{vistaQuincena !== "planilla" && (
+  <ResumenGeneralProyecto
+    resumen={resumen}
+    subcategoriasGastos={subcategoriasGastos}
+    mostrarSubcategorias={mostrarSubcategorias}
+    setMostrarSubcategorias={setMostrarSubcategorias}
+    titulo={
+      quincenaActiva
+        ? `Resumen de ${quincenaActiva}`
+        : "Resumen General del Proyecto"
+    }
+  />
+)}
+
 
       {/* 🔹 Tabla de trabajos solo en Resumen General */}
       {quincenaActiva === null && <TablaTrabajos />}
     </div>
   );
+
+
+
 }
