@@ -1,7 +1,3 @@
-import React from "react";
-import FilaResumen from "./FilaResumen";
-import SubcategoriasGastos from "./SubcategoriasGastos";
-
 export default function ResumenGeneralProyecto({
   resumen,
   subcategoriasGastos,
@@ -10,7 +6,6 @@ export default function ResumenGeneralProyecto({
 }) {
   return (
     <div className="bg-white rounded-2xl shadow p-4 mb-8">
-      {/* 🔹 Título eliminado */}
       <div className="space-y-4">
         {resumen.map((item, idx) => {
           let barraColor = "bg-gray-400";
@@ -39,9 +34,10 @@ export default function ResumenGeneralProyecto({
                   {item.porcentaje || 0}%
                 </span>
 
-                <div className="relative flex-1 bg-gray-200 rounded-full h-4">
+                {/* 🔹 Barra con estilo cuadrado */}
+                <div className="relative flex-1 bg-gray-200 rounded-none h-4">
                   <div
-                    className={`h-4 rounded-full transition-all ${barraColor}`}
+                    className={`h-4 rounded-none transition-all ${barraColor}`}
                     style={{ width: `${item.porcentaje || 0}%` }}
                   ></div>
                 </div>
