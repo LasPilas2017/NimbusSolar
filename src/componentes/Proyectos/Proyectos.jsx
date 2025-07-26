@@ -67,18 +67,18 @@ export default function Proyectos() {
        {vista === "lista" && (
         <div className="flex justify-between items-center mb-4 gap-2 flex-wrap">
           <button
-  onClick={() => setVista("nuevo")}
-  className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-none shadow-sm flex items-center gap-2 transition-colors"
->
-  <FiPlus /> Nuevo Proyecto
-</button>
+              onClick={() => setVista("nuevo")}
+              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-none shadow-sm flex items-center gap-2 transition-colors"
+            >
+              <FiPlus /> Nuevo Proyecto
+            </button>
 
-<button
-  onClick={() => alert("Aquí mostrarías los proyectos finalizados")}
-  className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-none shadow-sm flex items-center gap-2 transition-colors"
->
-  <FiFolder /> Proyectos Finalizados
-</button>
+            <button
+              onClick={() => alert("Aquí mostrarías los proyectos finalizados")}
+              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-none shadow-sm flex items-center gap-2 transition-colors"
+            >
+              <FiFolder /> Proyectos Finalizados
+            </button>
 
         </div>
       )}
