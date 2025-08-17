@@ -10,7 +10,7 @@ const diasQuincena = [
 const datosPorPersona = [
   {
     id: 1,
-    dias: diasQuincena.map(() => ({ ba: true, bp: 25, h: 2 }))
+    dias: diasQuincena.map(() => ({ ba: true, bp: 25, h: 2 }))  
   },
   {
     id: 2,
