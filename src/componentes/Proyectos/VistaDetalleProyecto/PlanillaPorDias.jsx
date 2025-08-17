@@ -19,6 +19,13 @@ const datosPorPersona = [
 ];
 
 export default function PlanillaPorDias() {
+  // Calcular totales por día
+  const totales = diasQuincena.map((_, index) => {
+    const totalBP = datosPorPersona.reduce((acc, persona) => acc + persona.dias[index].bp, 0);
+    const totalH = datosPorPersona.reduce((acc, persona) => acc + persona.dias[index].h, 0);
+    return { bp: totalBP, h: totalH };
+  });
+
   return (
     <div className="overflow-x-auto border border-black w-full">
       <table className="text-xs text-center border-collapse border border-black min-w-max">
@@ -30,6 +37,18 @@ export default function PlanillaPorDias() {
               </th>
             ))}
           </tr>
+
+          {/* Nueva fila con totales */}
+          <tr>
+            {totales.map((total, i) => (
+              <React.Fragment key={i}>
+                <th className="border border-black px-1 py-1 bg-gray-200">Totales</th>
+                <th className="border border-black px-1 py-1 bg-gray-200">{total.bp}</th>
+                <th className="border border-black px-1 py-1 bg-gray-200">{total.h}</th>
+              </React.Fragment>
+            ))}
+          </tr>
+
           <tr>
             {diasQuincena.map((_, i) => (
               <React.Fragment key={i}>
@@ -40,6 +59,7 @@ export default function PlanillaPorDias() {
             ))}
           </tr>
         </thead>
+
         <tbody>
           {datosPorPersona.map((persona, i) => (
             <tr key={i}>

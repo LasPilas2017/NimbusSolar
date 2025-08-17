@@ -48,7 +48,10 @@ export default function Planilla() {
               <td className="border border-black px-1 py-1">Q{totalProduccion}</td>
               <td className="border border-black px-1 py-1">{totalHoras}</td>
             </tr>
-
+                {/* Fila Vacía */}
+                <tr className="h-6">
+                  <td colSpan="8" className="border border-black"></td>
+                </tr>
             {/* Encabezados */}
             <tr className="font-semibold">
               <th className="border border-black px-1 py-1">#</th>
