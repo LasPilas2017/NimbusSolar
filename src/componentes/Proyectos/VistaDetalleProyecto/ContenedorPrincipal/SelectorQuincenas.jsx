@@ -1,18 +1,19 @@
+// src/componentes/Proyectos/VistaDetalleProyecto/ContenedorPrincipal/SelectorQuincenas.jsx
 import React, { useRef, useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 
 export default function SelectorQuincenas({
-  quincenas,
-  quincenaActiva,
-  setQuincenaActiva,
-  agregarQuincena,
+  quincenas = [],                // array de strings
+  quincenaActiva = null,
+  setQuincenaActiva = () => {},
+  agregarQuincena = () => {},
 }) {
   const scrollRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
 
-  // 🔁 Scroll con la rueda del mouse (scroll horizontal)
+  // 🔁 Scroll con la rueda del mouse (horizontal)
   useEffect(() => {
     const container = scrollRef.current;
     if (!container) return;
@@ -27,7 +28,7 @@ export default function SelectorQuincenas({
     return () => container.removeEventListener("wheel", onWheel);
   }, []);
 
-  // 🖱️ Scroll arrastrando con el mouse (click + mover)
+  // 🖱️ Scroll arrastrando con el mouse
   const handleMouseDown = (e) => {
     setIsDragging(true);
     setStartX(e.pageX - scrollRef.current.offsetLeft);
@@ -42,9 +43,7 @@ export default function SelectorQuincenas({
     scrollRef.current.scrollLeft = scrollLeft - walk;
   };
 
-  const handleMouseUpOrLeave = () => {
-    setIsDragging(false);
-  };
+  const handleMouseUpOrLeave = () => setIsDragging(false);
 
   return (
     <div
@@ -54,11 +53,21 @@ export default function SelectorQuincenas({
       onMouseUp={handleMouseUpOrLeave}
       onMouseLeave={handleMouseUpOrLeave}
       className="flex items-center gap-2 overflow-x-auto scrollbar-hide py-2 px-1 cursor-grab active:cursor-grabbing select-none"
+      role="tablist"
+      aria-label="Selector de quincenas"
     >
+      {quincenas.length === 0 && (
+        <span className="text-gray-500 text-sm italic px-2">
+          No hay quincenas disponibles
+        </span>
+      )}
+
       {quincenas.map((q, idx) => (
         <button
           key={idx}
           onClick={() => setQuincenaActiva(q)}
+          aria-pressed={quincenaActiva === q}
+          role="tab"
           className={`h-10 px-4 text-sm sm:text-base shadow transition rounded-none border flex items-center whitespace-nowrap
             ${
               quincenaActiva === q

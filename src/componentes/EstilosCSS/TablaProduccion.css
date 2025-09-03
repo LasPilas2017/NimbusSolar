@@ -1,0 +1,185 @@
+/* ===== Tema Excel para tabla de Producción (3 primeras columnas fijas) ===== */
+.table-excel {
+  /* anchos de las 3 primeras columnas (ajústalos si querés) */
+  --col-actividad: 170px;   /* PRODUCCIÓN */
+  --col-dinero:    110px;   /* Dinero GANADO */
+  --col-trabajo:   110px;   /* Trabajo HECHO */
+
+  --head1: 38px;            /* altura aprox. de 1ª fila de header */
+
+  --grid: #d9d9d9;          /* líneas tipo Excel */
+  --header: #203864;        /* azul cabecera (fila 1) */
+  --header-sub: #2e4a7f;    /* azul subcabecera (cant/total) */
+  --text-header: #ffffff;
+  --row-alt: #fff7e6;       /* zebra odd */
+  --row-bg: #ffffff;        /* zebra even */
+  --row-hover: #f2f6ff;
+  --sticky-shadow: 2px 0 0 rgba(0,0,0,.06);  /* línea/freeze */
+
+  font-size: 13px;
+  font-family: "Segoe UI", Calibri, Roboto, system-ui, -apple-system, sans-serif;
+}
+
+.table-excel .scroll-x {
+  overflow-x: auto;                /* el scroll está aquí (solo fechas) */
+  border: 1px solid var(--grid);
+  border-radius: 10px;
+  background: #fff;
+  position: relative;
+}
+
+/* Tabla crece horizontalmente como Excel */
+.table-excel table {
+  width: max-content;
+  border-collapse: collapse;
+  table-layout: auto;
+}
+
+.table-excel th,
+.table-excel td {
+  border: 1px solid var(--grid);
+  padding: 8px 10px;
+  white-space: nowrap;
+}
+
+/* ===== Encabezados (estilo visual) ===== */
+.table-excel thead tr:first-child th {
+  background: var(--header);
+  color: var(--text-header);
+  font-weight: 700;
+  text-align: center;
+}
+.table-excel thead tr:nth-child(2) th {
+  background: var(--header-sub);
+  color: var(--text-header);
+  font-weight: 600;
+  text-transform: lowercase;
+}
+
+/* Zebra + hover */
+.table-excel tbody tr:nth-child(odd) td { background: var(--row-alt); }
+.table-excel tbody tr:nth-child(even) td { background: var(--row-bg); }
+.table-excel tbody tr:hover td { background: var(--row-hover); }
+
+/* Alineaciones utilitarias */
+.td-center { text-align: center; }
+.td-right  { text-align: right;  }
+
+/* ===== Columnas sticky (izquierda fija) ===== */
+.st-actividad,
+.st-dinero,
+.st-trabajo {
+  position: sticky;
+  box-shadow: var(--sticky-shadow);   /* efecto freeze pane */
+  z-index: 9;                         /* por encima de celdas de fechas */
+}
+
+/* Posiciones y anchos fijos */
+.st-actividad { left: 0; min-width: var(--col-actividad); max-width: var(--col-actividad); }
+.st-dinero    { left: var(--col-actividad); min-width: var(--col-dinero); max-width: var(--col-dinero); }
+.st-trabajo   { left: calc(var(--col-actividad) + var(--col-dinero)); min-width: var(--col-trabajo); max-width: var(--col-trabajo); }
+
+/* Fondo sólido en sticky para que NADA se vea por debajo */
+.table-excel thead .st-actividad { background: var(--header) !important; }
+.table-excel thead .st-dinero    { background: var(--header) !important; }
+.table-excel thead .st-trabajo   { background: var(--header) !important; }
+
+.table-excel thead tr:nth-child(2) .st-actividad { background: var(--header-sub) !important; }
+.table-excel thead tr:nth-child(2) .st-dinero    { background: var(--header-sub) !important; }
+.table-excel thead tr:nth-child(2) .st-trabajo   { background: var(--header-sub) !important; }
+
+/* Cuerpo: fondo sólido respetando zebra */
+.table-excel tbody tr:nth-child(odd)  .st-actividad,
+.table-excel tbody tr:nth-child(odd)  .st-dinero,
+.table-excel tbody tr:nth-child(odd)  .st-trabajo { background: var(--row-alt) !important; }
+
+.table-excel tbody tr:nth-child(even) .st-actividad,
+.table-excel tbody tr:nth-child(even) .st-dinero,
+.table-excel tbody tr:nth-child(even) .st-trabajo { background: var(--row-bg) !important; }
+
+/* Bisel/máscara en el borde derecho de la última columna fija para ocultar deslizamiento */
+.table-excel .st-trabajo::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: -1px;                     /* tapa la unión */
+  width: 8px;                      /* ancho de máscara */
+  height: 100%;
+  background: linear-gradient(90deg, rgba(255,255,255,0), rgba(0,0,0,0.05), rgba(255,255,255,1));
+  pointer-events: none;
+}
+
+/* ===== Encabezados sticky: solo las 3 primeras columnas ===== */
+/* Resetea sticky para TODOS los th del thead (fechas NO sticky) */
+.table-excel thead th {
+  position: static !important;
+  top: auto !important;
+  z-index: auto !important;
+}
+
+/* Vuelve a activar sticky solo para PRODUCCIÓN / DINERO / TRABAJO */
+.table-excel thead tr:first-child .st-actividad,
+.table-excel thead tr:first-child .st-dinero,
+.table-excel thead tr:first-child .st-trabajo {
+  position: sticky !important;
+  top: 0 !important;                /* fila 1 */
+  z-index: 10 !important;           /* por encima de headers de fechas */
+}
+
+/* Si tienes subheader (cant/total) en esas 3, fíjalo también */
+.table-excel thead tr:nth-child(2) .st-actividad,
+.table-excel thead tr:nth-child(2) .st-dinero,
+.table-excel thead tr:nth-child(2) .st-trabajo {
+  position: sticky !important;
+  top: var(--head1) !important;     /* alineado bajo fila 1 */
+  z-index: 10 !important;
+}
+
+/* Subcolumnas de días */
+.col-cant, .col-total { min-width: 92px; text-align: center; }
+
+/* Fila TOTAL estilo Excel */
+.row-total td {
+  font-weight: 700;
+  background: #eef1f7 !important;
+}
+
+/* Overlay de guardado en toda la pantalla */
+.saving-overlay {
+  position: fixed;         /* ✅ ya no dentro del contenedor */
+  top: 0;
+  left: 0;
+  width: 100vw;            /* cubre todo */
+  height: 100vh;
+  background: rgba(255, 255, 255, 0.8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  z-index: 9999;           /* bien arriba de todo */
+}
+
+/* Loader circular */
+.loader {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  box-shadow:
+    rgba(0, 0, 0, 0.4) 0px 2px 4px,
+    rgba(0, 0, 0, 0.3) 0px 7px 13px -3px,
+    rgba(0, 0, 0, 0.2) 0px -3px 0px inset;
+  animation: rotate 2.0s infinite linear;
+}
+
+@keyframes rotate {
+  100% {
+    transform: rotate(1turn);
+  }
+}
+
+.saving-text {
+  font-size: 18px;
+  font-weight: bold;
+  color: #1f2937; /* gris oscuro */
+}

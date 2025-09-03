@@ -1,11 +1,12 @@
 import React, { useState } from "react";
-import EncabezadoProyecto from "./EncabezadoProyecto";
-import SelectorQuincenas from "./SelectorQuincenas";
-import FormularioQuincena from "./FormularioQuincena";
-import ResumenGeneralProyecto from "./ResumenGeneralProyecto";
-import TablaTrabajos from "./TablaTrabajos";
+import EncabezadoProyecto from "./Resumen/EncabezadoProyecto";
+import SelectorQuincenas from "./Resumen/SelectorQuincenas";
+import FormularioQuincena from "./Planilla/FormularioQuincena";
+import ResumenGeneralProyecto from "./Resumen/ResumenGeneralProyecto";
+import TablaTrabajos from "./Resumen/TablaTrabajos";
 import { FiArrowLeft } from "react-icons/fi"
-import Planilla from "./Planilla";
+import Planilla from "./Planilla/Planilla";
+import ProduccionEstiloExcel from "./Produccion/Produccion";
 
 export default function VistaDetalleProyecto({
   proyecto,

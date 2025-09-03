@@ -1,7 +1,8 @@
 // Planilla.jsx
 import React from 'react';
 import { FiEdit2, FiTrash2 } from 'react-icons/fi';
-import PlanillaPorDias from './PlanillaPorDias';
+import PlanillaPorDias from "./PlanillaPorDias.jsx";
+
 
 const datos = [
   {

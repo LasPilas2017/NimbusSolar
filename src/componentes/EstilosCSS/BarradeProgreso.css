@@ -1,0 +1,82 @@
+/* Contenedor: gris claro + borde negro delgado */
+.progress-container {
+  position: relative;
+  width: 100%;
+  height: 28px;
+  background: #f2f3f5;          /* gris claro */
+  border: 1px solid #000;       /* contorno negro fino */
+  border-radius: 9999px;
+  overflow: hidden;
+  box-shadow: 0 3px 10px rgba(0,0,0,.18);
+  box-sizing: border-box;
+}
+
+/* Barra de progreso: el color lo define la variante (utilidad/produccion/gastos) */
+.progress-bar {
+  position: absolute;
+  inset: 0 auto 0 0;           /* top:0; left:0; bottom:0 */
+  width: 0;                    /* inicia en 0, luego anima hasta --percent */
+  border-radius: inherit;
+  animation: fillWidth .9s ease-out forwards;
+  animation-delay: .05s;
+  /* efecto sutil de brillo */
+  box-shadow: inset 0 0 0 rgba(0,0,0,0);
+}
+
+/* Colores por tipo */
+.progress-bar.utilidad {
+  background: linear-gradient(90deg, #00c853, #66bb6a);  /* VERDE */
+  box-shadow: 0 0 10px rgba(0,200,83,.35);
+}
+.progress-bar.produccion {
+  background: linear-gradient(90deg, #1e88e5, #42a5f5);  /* AZUL */
+  box-shadow: 0 0 10px rgba(66,165,245,.35);
+}
+.progress-bar.gastos {
+  background: linear-gradient(90deg, #e53935, #ef5350);  /* ROJO */
+  box-shadow: 0 0 10px rgba(239,83,80,.35);
+}
+
+/* Texto del porcentaje (más grande) */
+.progress-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%,-50%);
+  font-size: 15px;
+  font-weight: 800;
+  color: #111;
+  text-shadow: 0 1px 2px rgba(255,255,255,.9);
+  z-index: 2;
+}
+
+/* Partículas (opcionales, negras suaves) */
+.particles { position:absolute; inset:0; pointer-events:none; }
+.particle {
+  position: absolute;
+  width: 4px; height: 4px; border-radius: 50%;
+  background: #000; opacity: .35; filter: blur(.2px);
+  animation: float 5s infinite ease-in-out;
+}
+.particle:nth-child(1){ top:12%; left:18%; animation-delay:0s; }
+.particle:nth-child(2){ top:34%; left:62%; animation-delay:.8s; }
+.particle:nth-child(3){ top:54%; left:48%; animation-delay:1.6s; }
+.particle:nth-child(4){ top:78%; left:36%; animation-delay:1.2s; }
+.particle:nth-child(5){ top:88%; left:66%; animation-delay:2.2s; }
+
+/* Animación basada en variable --percent */
+@keyframes fillWidth {
+  from { width: 0; }
+  to   { width: var(--percent, 0%); }  /* <- se setea desde JSX */
+}
+@keyframes float {
+  0% { transform: translateY(0) translateX(0); }
+  50% { transform: translateY(-14px) translateX(10px); }
+  100% { transform: translateY(0) translateX(0); }
+}
+
+/* un poco más grande en pantallas medianas */
+@media (min-width: 768px){
+  .progress-container { height: 32px; }
+  .progress-text { font-size: 16px; }
+}
