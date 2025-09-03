@@ -5,25 +5,23 @@ import PlanillaPorDias from "./PlanillaPorDias.jsx";
 
 
 const datos = [
-  {
-    id: 1,
-    nombre: 'Juan',
-    extras: 0,
-    total: 170,
-    asistencia: 100,
-    produccion: 50,
-    horas: 20
-  },
-  {
-    id: 2,
-    nombre: 'Pedro',
-    extras: 0,
-    total: 170,
-    asistencia: 100,
-    produccion: 50,
-    horas: 20
-  }
+  { id: 1, nombre: 'Juan',   extras: 0, total: 170, asistencia: 100, produccion: 50, horas: 20 },
+  { id: 2, nombre: 'Pedro',  extras: 0, total: 170, asistencia: 100, produccion: 50, horas: 20 },
+  { id: 3, nombre: 'María',  extras: 2, total: 185, asistencia: 95,  produccion: 60, horas: 22 },
+  { id: 4, nombre: 'Luis',   extras: 1, total: 175, asistencia: 90,  produccion: 55, horas: 18 },
+  { id: 5, nombre: 'Ana',    extras: 3, total: 190, asistencia: 100, produccion: 65, horas: 25 },
+  { id: 6, nombre: 'Carlos', extras: 0, total: 160, asistencia: 85,  produccion: 45, horas: 19 },
+  { id: 7, nombre: 'Sofía',  extras: 1, total: 172, asistencia: 92,  produccion: 52, horas: 21 },
+  { id: 8, nombre: 'Diego',  extras: 0, total: 168, asistencia: 88,  produccion: 48, horas: 20 },
+  { id: 9, nombre: 'Laura',  extras: 2, total: 180, asistencia: 96,  produccion: 58, horas: 23 },
+  { id: 10, nombre: 'Andrés',extras: 0, total: 165, asistencia: 90,  produccion: 50, horas: 19 },
+  { id: 11, nombre: 'Camila',extras: 1, total: 178, asistencia: 94,  produccion: 55, horas: 22 },
+  { id: 12, nombre: 'Mateo', extras: 0, total: 170, asistencia: 100, produccion: 50, horas: 20 },
+  { id: 13, nombre: 'Valeria',extras: 3,total: 195, asistencia: 98,  produccion: 65, horas: 24 },
+  { id: 14, nombre: 'Jorge', extras: 0, total: 160, asistencia: 85,  produccion: 45, horas: 18 },
+  { id: 15, nombre: 'Paola', extras: 1, total: 175, asistencia: 92,  produccion: 53, horas: 21 },
 ];
+
 
 export default function Planilla() {
   const totalExtras = datos.reduce((sum, p) => sum + p.extras, 0);

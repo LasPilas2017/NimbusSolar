@@ -7,22 +7,17 @@ const diasQuincena = [
   '11/07/25', '12/07/25', '13/07/25', '14/07/25', '15/07/25',
 ];
 
-const datosPorPersona = [
-  {
-    id: 1,
-    dias: diasQuincena.map(() => ({ ba: true, bp: 25, h: 2 }))  
-  },
-  {
-    id: 2,
-    dias: diasQuincena.map(() => ({ ba: true, bp: 25, h: 2 }))
-  }
-];
+// 🔢 15 personas (id: 1..15) con el mismo patrón diario (solo visual)
+const datosPorPersona = Array.from({ length: 15 }, (_, i) => ({
+  id: i + 1,
+  dias: diasQuincena.map(() => ({ ba: true, bp: 25, h: 2 })),
+}));
 
 export default function PlanillaPorDias() {
   // Calcular totales por día
   const totales = diasQuincena.map((_, index) => {
-    const totalBP = datosPorPersona.reduce((acc, persona) => acc + persona.dias[index].bp, 0);
-    const totalH = datosPorPersona.reduce((acc, persona) => acc + persona.dias[index].h, 0);
+    const totalBP = datosPorPersona.reduce((acc, persona) => acc + (persona.dias[index]?.bp || 0), 0);
+    const totalH  = datosPorPersona.reduce((acc, persona) => acc + (persona.dias[index]?.h  || 0), 0);
     return { bp: totalBP, h: totalH };
   });
 
@@ -38,7 +33,7 @@ export default function PlanillaPorDias() {
             ))}
           </tr>
 
-          {/* Nueva fila con totales */}
+          {/* Fila con totales por día */}
           <tr>
             {totales.map((total, i) => (
               <React.Fragment key={i}>
@@ -49,6 +44,7 @@ export default function PlanillaPorDias() {
             ))}
           </tr>
 
+          {/* Sub-encabezados B.A. / B.P. / H por día */}
           <tr>
             {diasQuincena.map((_, i) => (
               <React.Fragment key={i}>
@@ -61,8 +57,8 @@ export default function PlanillaPorDias() {
         </thead>
 
         <tbody>
-          {datosPorPersona.map((persona, i) => (
-            <tr key={i}>
+          {datosPorPersona.map((persona) => (
+            <tr key={persona.id}>
               {persona.dias.map((dia, j) => (
                 <React.Fragment key={j}>
                   <td className="border border-black px-1 py-1">
