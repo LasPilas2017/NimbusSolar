@@ -1,69 +1,35 @@
-// TablaTrabajos.jsx
 import React from "react";
-import { FiEdit, FiTrash } from "react-icons/fi";
 
-export default function TablaTrabajos() {
-  const trabajos = [
-    {
-      id: 1,
-      nombre: "Instalación de paneles",
-      precioUnitario: 20,
-      cantidad: 50,
-      avance: 40,
-    },
-    {
-      id: 2,
-      nombre: "Colocación de hincas",
-      precioUnitario: 15,
-      cantidad: 40,
-      avance: 30,
-    },
-  ];
+export default function TablaTrabajos({
+  filas = [
+    { trabajo: "Instalación de paneles", cantidad: 56, precioUnitario: 120 },
+    { trabajo: "Tendido de cable", cantidad: 120, precioUnitario: 35 },
+    { trabajo: "Limpieza de maleza", cantidad: 80, precioUnitario: 25 },
+  ],
+}) {
+  const fmtQ = (n) => `Q${Number(n || 0).toLocaleString("es-GT")}`;
+  const calcTotal = (f) => Number(f.cantidad || 0) * Number(f.precioUnitario || 0);
 
   return (
-    <div className="bg-white rounded-2xl shadow p-4 mb-8 overflow-x-auto">
-      <h2 className="text-lg font-semibold text-center mb-4 text-gray-700">
-        Trabajos a Realizar
-      </h2>
-
-      <table className="min-w-full text-sm text-left">
-        <thead>
-          <tr className="text-gray-600 border-b">
-            <th className="p-2">Trabajo</th>
-            <th className="p-2">Precio Unitario</th>
-            <th className="p-2">Precio Total</th>
-            <th className="p-2">Cantidad</th>
-            <th className="p-2">Avance</th>
-            <th className="p-2">Pendiente</th>
-            <th className="p-2 text-center">Acciones</th>
+    <div className="overflow-x-auto">
+      <table className="min-w-full text-sm">
+        <thead className="sticky top-0 bg-slate-100 text-slate-700">
+          <tr>
+            <th className="text-left font-semibold px-4 py-2 rounded-l-xl">Trabajo</th>
+            <th className="text-right font-semibold px-4 py-2">Cantidad</th>
+            <th className="text-right font-semibold px-4 py-2">Precio unitario</th>
+            <th className="text-right font-semibold px-4 py-2 rounded-r-xl">Total</th>
           </tr>
         </thead>
-        <tbody>
-          {trabajos.map((trabajo) => {
-            const pendiente = trabajo.cantidad - trabajo.avance;
-            const total = trabajo.precioUnitario * trabajo.cantidad;
-
-            return (
-              <tr key={trabajo.id} className="border-b hover:bg-gray-50">
-                <td className="p-2">{trabajo.nombre}</td>
-                <td className="p-2">Q{trabajo.precioUnitario.toFixed(2)}</td>
-                <td className="p-2">Q{total.toFixed(2)}</td>
-                <td className="p-2">{trabajo.cantidad}</td>
-                <td className="p-2">{trabajo.avance}</td>
-                <td className="p-2">{pendiente}</td>
-                <td className="p-2 text-center">
-                  <div className="flex justify-center gap-2">
-                    <button className="text-blue-600 hover:text-blue-800">
-                      <FiEdit size={16} />
-                    </button>
-                    <button className="text-red-600 hover:text-red-800">
-                      <FiTrash size={16} />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
+        <tbody className="divide-y divide-slate-200">
+          {filas.map((f, idx) => (
+            <tr key={idx} className="bg-white hover:bg-slate-50">
+              <td className="px-4 py-2">{f.trabajo}</td>
+              <td className="px-4 py-2 text-right">{Number(f.cantidad || 0)}</td>
+              <td className="px-4 py-2 text-right">{fmtQ(f.precioUnitario)}</td>
+              <td className="px-4 py-2 text-right font-semibold">{fmtQ(calcTotal(f))}</td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>

@@ -1,86 +1,99 @@
-import React from "react";
-import SubcategoriasGastos from "../ContenedorPrincipal/SubcategoriasGastos";
+import React, { useState } from "react";
+import FilaResumen from "./FilaResumen";
+import SubCategoriasQuincena from "./SubCategoriasQuincena";
 import TablaTrabajos from "./TablaTrabajos";
 
 export default function Resumen({
-  quincena,
-  resumen = [],
-  subcategoriasGastos = [],
-  trabajos = [],
+  quincena = null,       // si mandás null => "Sin quincena"
+  resumen = null,        // si viene vacío usamos mock
+  subcategorias = null,  // idem
+  trabajos = null,       // idem
 }) {
-  const fmtQ = (n) => `Q${Number(n || 0).toLocaleString("es-GT")}`;
-  const clamp = (n) => Math.max(0, Math.min(100, Number(n || 0)));
+  // ----- MOCK DATA SOLO PARA VISTA -----
+  const mockResumen = [
+    { nombre: "Producción", monto: 120000, porcentaje: 100 },
+    { nombre: "Gastos", monto: 45000, porcentaje: 38 },
+    { nombre: "Utilidad", monto: 75000, porcentaje: 62 },
+  ];
+  const mockSubcats = [
+    { nombre: "Planilla", total: 18000 },
+    { nombre: "Combustible", total: 12000 },
+    { nombre: "Repuestos", total: 8000 },
+    { nombre: "Viáticos", total: 3000 },
+  ];
+  const mockTrabajos = [
+    { trabajo: "Instalación de paneles", cantidad: 56, precioUnitario: 120 },
+    { trabajo: "Tendido de cable", cantidad: 120, precioUnitario: 35 },
+    { trabajo: "Limpieza de maleza", cantidad: 80, precioUnitario: 25 },
+  ];
+  // -------------------------------------
 
-  const colorMap = {
-    Utilidad: "#34D399",   // verde
-    Producción: "#3B82F6", // azul
-    Gastos: "#EF4444",     // rojo
-  };
+  const dataResumen = Array.isArray(resumen) && resumen.length ? resumen : mockResumen;
+  const dataSub = Array.isArray(subcategorias) && subcategorias.length ? subcategorias : mockSubcats;
+  const dataTrab = Array.isArray(trabajos) && trabajos.length ? trabajos : mockTrabajos;
+
+  // Estado del acordeón (solo visual): "Gastos" abierto/cerrado
+  const [openKey, setOpenKey] = useState(null);
+  const toggle = (key) => setOpenKey((k) => (k === key ? null : key));
 
   return (
     <section className="mt-6 space-y-6">
-      {/* Título local de la sección */}
+      {/* Título */}
       <div>
         <h2 className="text-xl font-bold text-slate-900">
-          Resumen — {quincena || "Sin quincena"}
+          Resumen — {quincena || "2025"}
         </h2>
-        <p className="text-slate-500 text-sm">
-          Indicadores y detalle de la quincena seleccionada
-        </p>
-      </div>
+        </div>
 
-      {/* KPIs / Barras */}
+      {/* Barras de progreso (con despliegue bajo "Gastos") */}
       <div className="bg-white rounded-3xl shadow-sm ring-1 ring-slate-200 p-5 space-y-4">
-        {resumen.map((item, idx) => {
-          const pct = clamp(item.porcentaje);
-          const color = colorMap[item.nombre] || "#9CA3AF"; // gris
+        {dataResumen.map((row, i) => {
+          const isGastos = row.nombre === "Gastos";
+          const isOpen = openKey === "Gastos";
 
           return (
-            <div
-              key={idx}
-              className="bg-slate-50 px-4 py-3 rounded-2xl shadow-inner flex items-center gap-4 flex-wrap sm:flex-nowrap"
-            >
-              <span className="font-semibold text-slate-700 w-28 min-w-[92px]">
-                {item.nombre}
-              </span>
+            <div key={i} className="space-y-3">
+              <FilaResumen
+                nombre={row.nombre}
+                monto={row.monto}
+                porcentaje={row.porcentaje}
+                onClick={isGastos ? () => toggle("Gastos") : undefined}
+                isOpen={isGastos && isOpen}
+              />
 
-              <span className="font-extrabold text-slate-900 w-32 min-w-[108px]">
-                {fmtQ(item.monto)}
-              </span>
-
-              <span className="text-sm text-slate-600 w-16 min-w-[60px] text-right">
-                {pct}%
-              </span>
-
-              <div className="relative flex-1">
-                <div className="h-4 w-full bg-slate-200 rounded-full shadow-[inset_0_1px_0_rgba(255,255,255,.6),inset_0_-1px_0_rgba(0,0,0,.03)]" />
+              {/* Contenido desplegable justo DEBAJO de la fila de Gastos */}
+              {isGastos && (
                 <div
-                  className="absolute left-0 top-0 h-4 rounded-full transition-all duration-500 ease-out shadow-[inset_0_1px_0_rgba(255,255,255,.6),inset_0_-1px_0_rgba(0,0,0,.03)]"
-                  style={{ width: `${pct}%`, backgroundColor: color }}
-                />
-              </div>
+                  className={[
+                    "overflow-hidden rounded-2xl",
+                    "transition-all duration-300",
+                    isOpen ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"
+                  ].join(" ")}
+                >
+                  <div className="bg-white ring-1 ring-slate-200 p-4">
+                    <h4 className="text-sm font-semibold text-slate-900 mb-3">
+                      Subcategorías de Gastos
+                    </h4>
+                    <SubCategoriasQuincena items={dataSub} />
+                  </div>
+                </div>
+              )}
             </div>
           );
         })}
       </div>
 
-      {/* Subcategorías de gastos (si hay) */}
-      {Array.isArray(subcategoriasGastos) && subcategoriasGastos.length > 0 && (
-        <div className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-          <h3 className="mb-4 text-lg font-semibold text-slate-900">
-            Subcategorías de Gastos
-          </h3>
-          <SubcategoriasGastos subcategorias={subcategoriasGastos} />
-        </div>
-      )}
+      {/* (Opcional) También querés las subcategorías fijas más abajo: comenta si ya no las querés duplicadas */}
+      {/* <div className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <h3 className="mb-4 text-lg font-semibold text-slate-900">Subcategorías de Gastos</h3>
+        <SubCategoriasQuincena items={dataSub} />
+      </div> */}
 
-      {/* Tabla de trabajos (si hay) */}
-      {Array.isArray(trabajos) && trabajos.length > 0 && (
+      {/* Trabajos */}
+      {dataTrab.length > 0 && (
         <div className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-          <h3 className="mb-4 text-lg font-semibold text-slate-900">
-            Trabajos a Realizar
-          </h3>
-          <TablaTrabajos filas={trabajos} />
+          <h3 className="mb-4 text-lg font-semibold text-slate-900">Trabajos a Realizar</h3>
+          <TablaTrabajos filas={dataTrab} />
         </div>
       )}
     </section>
