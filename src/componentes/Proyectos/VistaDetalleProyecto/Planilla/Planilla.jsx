@@ -22,22 +22,24 @@ const datos = [
   { id: 15, nombre: 'Paola', extras: 1, total: 175, asistencia: 92,  produccion: 53, horas: 21 },
 ];
 
-const GTQ = (n) => "Q" + Number(n || 0).toLocaleString("es-GT", { maximumFractionDigits: 0 });
+const GTQ = (n) =>
+  "Q" + Number(n || 0).toLocaleString("es-GT", { maximumFractionDigits: 0 });
 
 export default function Planilla() {
-  const totalExtras      = datos.reduce((sum, p) => sum + p.extras, 0);
-  const totalQ           = datos.reduce((sum, p) => sum + p.total, 0);
-  const totalAsistencia  = datos.reduce((sum, p) => sum + p.asistencia, 0);
-  const totalProduccion  = datos.reduce((sum, p) => sum + p.produccion, 0);
-  const totalHoras       = datos.reduce((sum, p) => sum + p.horas, 0);
+  const totalExtras      = datos.reduce((s, p) => s + p.extras, 0);
+  const totalQ           = datos.reduce((s, p) => s + p.total, 0);
+  const totalAsistencia  = datos.reduce((s, p) => s + p.asistencia, 0);
+  const totalProduccion  = datos.reduce((s, p) => s + p.produccion, 0);
+  const totalHoras       = datos.reduce((s, p) => s + p.horas, 0);
 
   return (
-    <div className="flex flex-row w-full">
-
-      {/* ====== Tabla Resumen (30%) ====== */}
-      <div className="table-planilla w-[40%]">
+    <div className="flex w-full items-start">
+      {/* ===== IZQUIERDA: resumen trabajadores ===== */}
+      <div className="table-planilla no-freeze planilla-left w-[45%]">
+        {/* scroll horizontal SOLO si no cabe */}
         <div className="scroll-x">
-          <table>
+          {/* min-w ajustado (compacto). si lo querés aún más chico, baja a 720px */}
+          <table className="min-w-[600px]">
             <thead>
               <tr>
                 <th className="st-idx">#</th>
@@ -49,8 +51,8 @@ export default function Planilla() {
                 <th>B. Producción</th>
                 <th>Horas</th>
               </tr>
-              
-              <tr>
+
+              <tr className="totales">
                 <th className="st-idx"></th>
                 <th className="st-acciones"></th>
                 <th className="st-nombre td-right">Totales:</th>
@@ -60,27 +62,28 @@ export default function Planilla() {
                 <th className="td-center">{GTQ(totalProduccion)}</th>
                 <th className="td-center">{totalHoras}</th>
               </tr>
-              {/* 🔹 Fila separadora vacía */}
+
               <tr className="separador">
-                <th colSpan="8"></th>
+                <th colSpan={8}></th>
               </tr>
             </thead>
+
             <tbody>
-              {datos.map((persona, index) => (
-                <tr key={persona.id}>
-                  <td className="st-idx td-center">{index + 1}</td>
+              {datos.map((p, i) => (
+                <tr key={p.id}>
+                  <td className="st-idx td-center">{i + 1}</td>
                   <td className="st-acciones">
                     <div className="flex justify-center gap-2">
                       <FiEdit2 className="cursor-pointer" />
                       <FiTrash2 className="cursor-pointer" />
                     </div>
                   </td>
-                  <td className="st-nombre">{persona.nombre}</td>
-                  <td className="td-center">{persona.extras}</td>
-                  <td className="td-center">{GTQ(persona.total)}</td>
-                  <td className="td-center">{GTQ(persona.asistencia)}</td>
-                  <td className="td-center">{GTQ(persona.produccion)}</td>
-                  <td className="td-center">{persona.horas}</td>
+                  <td className="st-nombre">{p.nombre}</td>
+                  <td className="td-center">{p.extras}</td>
+                  <td className="td-center">{GTQ(p.total)}</td>
+                  <td className="td-center">{GTQ(p.asistencia)}</td>
+                  <td className="td-center">{GTQ(p.produccion)}</td>
+                  <td className="td-center">{p.horas}</td>
                 </tr>
               ))}
             </tbody>
@@ -88,8 +91,8 @@ export default function Planilla() {
         </div>
       </div>
 
-      {/* ====== Tabla de días (70%) ====== */}
-      <div className="table-planilla w-[70%]">
+      {/* ===== DERECHA: por días ===== */}
+      <div className="table-planilla w-[70%] min-w-0">
         <PlanillaPorDias datos={datos} />
       </div>
     </div>

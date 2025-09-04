@@ -156,3 +156,28 @@
 .td-right  { text-align: right;  }
 
 
+/* === Fila Totales del thead (izquierda): azul + divisiones blancas tipo Excel === */
+.table-planilla thead tr.totales th {
+  background: var(--header-sum) !important; /* azul fila 2 */
+  color: var(--text-header);
+  font-weight: 700;
+  text-align: center;
+  border: 1px solid #ffffff !important;     /* líneas blancas entre columnas */
+}
+
+/* Desactivar columnas fijas (izquierda) SOLO cuando el contenedor tiene .no-freeze */
+.table-planilla.no-freeze .st-idx,
+.table-planilla.no-freeze .st-acciones,
+.table-planilla.no-freeze .st-nombre {
+  position: static !important;
+  left: auto !important;
+  box-shadow: none !important;
+  z-index: auto !important;
+}
+
+/* (opcional) si también querés quitar el sticky del thead en este modo: */
+.table-planilla.no-freeze thead th {
+  position: static !important;
+  top: auto !important;
+  z-index: auto !important;
+}
