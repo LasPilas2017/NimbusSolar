@@ -1,90 +1,32 @@
 // src/componentes/Proyectos/VistaDetalleProyecto/ContenedorPrincipal/SelectorQuincenas.jsx
-import React, { useRef, useEffect, useState } from "react";
-import { Plus } from "lucide-react";
+import React from "react";
 
 export default function SelectorQuincenas({
-  quincenas = [],                // array de strings
-  quincenaActiva = null,
-  setQuincenaActiva = () => {},
+  quincenas = [],           // array de labels
+  activeIndex = null,       // índice activo o null
+  onSelectIndex = () => {}, // (idx|null) => void
   agregarQuincena = () => {},
 }) {
-  const scrollRef = useRef(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [scrollLeft, setScrollLeft] = useState(0);
-
-  // 🔁 Scroll con la rueda del mouse (horizontal)
-  useEffect(() => {
-    const container = scrollRef.current;
-    if (!container) return;
-
-    const onWheel = (e) => {
-      if (e.deltaY === 0) return;
-      e.preventDefault();
-      container.scrollLeft += e.deltaY;
-    };
-
-    container.addEventListener("wheel", onWheel, { passive: false });
-    return () => container.removeEventListener("wheel", onWheel);
-  }, []);
-
-  // 🖱️ Scroll arrastrando con el mouse
-  const handleMouseDown = (e) => {
-    setIsDragging(true);
-    setStartX(e.pageX - scrollRef.current.offsetLeft);
-    setScrollLeft(scrollRef.current.scrollLeft);
-  };
-
-  const handleMouseMove = (e) => {
-    if (!isDragging) return;
-    e.preventDefault();
-    const x = e.pageX - scrollRef.current.offsetLeft;
-    const walk = (x - startX) * 1.5;
-    scrollRef.current.scrollLeft = scrollLeft - walk;
-  };
-
-  const handleMouseUpOrLeave = () => setIsDragging(false);
-
   return (
-    <div
-      ref={scrollRef}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUpOrLeave}
-      onMouseLeave={handleMouseUpOrLeave}
-      className="flex items-center gap-2 overflow-x-auto scrollbar-hide py-2 px-1 cursor-grab active:cursor-grabbing select-none"
-      role="tablist"
-      aria-label="Selector de quincenas"
-    >
-      {quincenas.length === 0 && (
-        <span className="text-gray-500 text-sm italic px-2">
-          No hay quincenas disponibles
-        </span>
-      )}
-
-      {quincenas.map((q, idx) => (
+    <div className="flex items-center gap-3">
+      {quincenas.map((label, idx) => (
         <button
-          key={idx}
-          onClick={() => setQuincenaActiva(q)}
-          aria-pressed={quincenaActiva === q}
-          role="tab"
-          className={`h-10 px-4 text-sm sm:text-base shadow transition rounded-none border flex items-center whitespace-nowrap
-            ${
-              quincenaActiva === q
-                ? "bg-blue-900 text-white border-blue-900"
-                : "bg-gray-200 text-gray-800 border-gray-400 hover:bg-gray-300"
-            }`}
+          key={`${label}-${idx}`}
+          onClick={() => onSelectIndex(idx)}
+          className={`h-10 px-4 py-2 text-sm font-medium shadow transition rounded-none ${
+            activeIndex === idx ? "bg-blue-900 text-white" : "border border-blue-900 text-blue-900 hover:bg-blue-100"
+          }`}
         >
-          {q}
+          {label}
         </button>
       ))}
 
       <button
         onClick={agregarQuincena}
-        className="h-10 px-4 flex items-center justify-center bg-green-600 text-white border border-green-700 hover:bg-green-700 transition rounded-none shadow"
-        title="Agregar nueva quincena"
+        aria-label="Agregar quincena"
+        className="h-10 w-10 rounded-none bg-green-600 text-white hover:bg-green-700 shadow flex items-center justify-center text-xl"
       >
-        <Plus size={18} />
+        +
       </button>
     </div>
   );

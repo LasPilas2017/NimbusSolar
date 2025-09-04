@@ -1,149 +1,204 @@
 // src/componentes/Proyectos/VistaDetalleProyecto/ContenedorPrincipal/ContenedorPrincipal.jsx
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import Resumen from "../Resumen/Resumen";
 import Produccion from "../Produccion/Produccion";
 import Planilla from "../Planilla/Planilla";
 import CajaChica from "../CajaChica/CajaChica";
 import EncabezadoProyecto from "./EncabezadoProyecto";
 import SelectorQuincenas from "./SelectorQuincenas";
+import ResumenGeneral from "../ResumenGeneral/ResumenGeneral";
 
 const TABS = ["Resumen", "Producción", "Planilla", "Caja Chica"];
 
-export default function ContenedorPrincipal({
-  proyecto = {},
-  onVolver = () => {},
-}) {
+export default function ContenedorPrincipal({ proyecto = {}, onVolver = () => {} }) {
   // Tabs
   const [tabActiva, setTabActiva] = useState("Resumen");
 
-  // Quincenas
-  const [quincenas, setQuincenas] = useState(["1ra. Quincena"]);
-  const [quincenaActiva, setQuincenaActiva] = useState(null); // null => Resumen General
-  const [fechasQuincenas, setFechasQuincenas] = useState([]);
+  // Estado: usamos ÍNDICE activo (no nombre) para evitar conflictos
+  const [quincenas, setQuincenas] = useState([]);              // labels visibles: "1ra. Quincena" | "2da. Quincena"
+  const [fechasQuincenas, setFechasQuincenas] = useState([]);  // [{inicio:"YYYY-MM-DD", fin:"YYYY-MM-DD"}]
+  const [quincenaActivaIdx, setQuincenaActivaIdx] = useState(null); // null => Resumen General
 
-  // ===== Lógica para agregar la siguiente quincena =====
-  const agregarQuincena = () => {
-    const ultimaIndex = quincenas.length - 1;
-    const ultimaFecha = fechasQuincenas[ultimaIndex];
+  // Modal crear quincena
+  const [mostrarInicio, setMostrarInicio] = useState(false);
+  const [mesInicio, setMesInicio] = useState("");       // "YYYY-MM"
+  const [mitad, setMitad] = useState("primera");        // "primera" | "segunda"
 
-    if (!ultimaFecha || !ultimaFecha.fin) {
-      alert("Debes guardar la quincena actual antes de agregar una nueva.");
+  // Utils
+  const fmtDMY = (iso) => {
+    if (!iso) return "";
+    const [y, m, d] = iso.split("-");
+    return `${d}/${m}/${y}`;
+  };
+  const formatearRango = (r) => (r?.inicio && r?.fin ? `${fmtDMY(r.inicio)} al ${fmtDMY(r.fin)}` : null);
+
+  const rangoSeleccionado = useMemo(
+    () => (quincenaActivaIdx === null ? null : fechasQuincenas[quincenaActivaIdx] || null),
+    [quincenaActivaIdx, fechasQuincenas]
+  );
+
+  const cambiarQuincenaIdx = (idxOrNull) => {
+    setQuincenaActivaIdx(idxOrNull);
+    if (idxOrNull !== null) setTabActiva("Resumen");
+  };
+
+  // Siempre pedir mes/mitad al presionar +
+  const agregarQuincena = () => setMostrarInicio(true);
+
+  // Confirmar creación
+  const confirmarInicioQuincena = () => {
+    if (!mesInicio) { alert("Selecciona el mes."); return; }
+    const [anio, mes] = mesInicio.split("-").map(Number);
+    const mm = String(mes).padStart(2, "0");
+
+    const inicio = mitad === "primera" ? `${anio}-${mm}-01` : `${anio}-${mm}-16`;
+    const fin    = mitad === "primera" ? `${anio}-${mm}-15` : `${anio}-${mm}-${new Date(anio, mes, 0).getDate()}`;
+
+    // Evita duplicados por mes/mitad
+    const yaPrimera = fechasQuincenas.some((q) => q.inicio === `${anio}-${mm}-01`);
+    const yaSegunda = fechasQuincenas.some((q) => q.inicio === `${anio}-${mm}-16`);
+    if ((mitad === "primera" && yaPrimera) || (mitad === "segunda" && yaSegunda)) {
+      alert("Ya existe esa quincena para ese mes.");
       return;
     }
 
-    const finAnterior = new Date(ultimaFecha.fin);
-    const diaFin = finAnterior.getDate();
-    const mesFin = finAnterior.getMonth();
-    const anioFin = finAnterior.getFullYear();
-    const ultimoDiaDelMes = new Date(anioFin, mesFin + 1, 0).getDate();
+    const nombre = mitad === "primera" ? "1ra. Quincena" : "2da. Quincena";
+    const newIndex = quincenas.length;
 
-    let nuevoInicio;
-    if (diaFin === 15) {
-      nuevoInicio = new Date(anioFin, mesFin, 16);
-    } else if (diaFin === ultimoDiaDelMes) {
-      nuevoInicio = new Date(anioFin, mesFin + 1, 1);
-    } else {
-      nuevoInicio = new Date(finAnterior);
-      nuevoInicio.setDate(nuevoInicio.getDate() + 1);
-    }
+    setQuincenas((prev) => [...prev, nombre]);
+    setFechasQuincenas((prev) => [...prev, { inicio, fin }]);
 
-    const inicioStr = nuevoInicio.toISOString().split("T")[0];
+    setMostrarInicio(false);
+    setMesInicio(""); setMitad("primera");
 
-    const calcularFechaFin = (inicio) => {
-      const [a, m, d] = inicio.split("-").map(Number);
-      if (d === 1) return `${a}-${String(m).padStart(2, "0")}-15`;
-      if (d === 16) {
-        const ultimo = new Date(a, m, 0).getDate();
-        return `${a}-${String(m).padStart(2, "0")}-${ultimo}`;
-      }
-      return null;
-    };
-
-    const finStr = calcularFechaFin(inicioStr);
-    const numero = quincenas.length + 1;
-    const sufijo = numero === 2 ? "2da. Quincena" : `${numero}ª. Quincena`;
-
-    setQuincenas((prev) => [...prev, sufijo]);
-    setFechasQuincenas((prev) => [...prev, { inicio: inicioStr, fin: finStr }]);
-    setQuincenaActiva(sufijo);
+    // Activamos por ÍNDICE la recién creada
+    setQuincenaActivaIdx(newIndex);
+    setTabActiva("Resumen");
   };
-  // =====================================================
 
   return (
     <div className="w-full max-w-6xl mx-auto p-4 bg-white/70 rounded-3xl shadow-lg">
+      {/* Modal crear quincena */}
+      {mostrarInicio && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl p-5 w-full max-w-md">
+            <h3 className="text-lg font-semibold text-slate-900 mb-3">Iniciar quincena</h3>
+
+            <label className="block text-sm text-slate-700 mb-1">Mes</label>
+            <input
+              type="month"
+              className="w-full border rounded-md px-3 py-2 mb-3"
+              value={mesInicio}
+              onChange={(e) => setMesInicio(e.target.value)}
+            />
+
+            <div className="flex items-center gap-6 mb-4">
+              <label className="flex items-center gap-2">
+                <input type="radio" name="mitad" value="primera" checked={mitad === "primera"} onChange={(e) => setMitad(e.target.value)} />
+                1ra (1–15)
+              </label>
+              <label className="flex items-center gap-2">
+                <input type="radio" name="mitad" value="segunda" checked={mitad === "segunda"} onChange={(e) => setMitad(e.target.value)} />
+                2da (16–fin)
+              </label>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button className="px-3 py-1.5 rounded-md bg-slate-200 text-slate-800 hover:bg-slate-300 font-semibold" onClick={() => setMostrarInicio(false)}>
+                Cancelar
+              </button>
+              <button className="px-3 py-1.5 rounded-md bg-blue-600 text-white hover:bg-blue-700 font-semibold" onClick={confirmarInicioQuincena}>
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Encabezado del proyecto */}
       <EncabezadoProyecto
         proyecto={proyecto}
         fechas={fechasQuincenas}
-        quincenaActiva={quincenaActiva}
+        quincenaActiva={quincenaActivaIdx !== null ? quincenas[quincenaActivaIdx] : null} // compat
         quincenas={quincenas}
       />
 
-      {/* Resumen General / Selector de Quincenas */}
+      {/* Botones superiores */}
       <div className="flex justify-center items-center gap-3 mb-4">
         <button
-          onClick={() => setQuincenaActiva(null)}
-          className={`h-10 px-4 py-2 text-sm font-medium shadow transition flex items-center rounded-none
-            ${
-              quincenaActiva === null
-                ? "bg-blue-900 text-white"
-                : "border border-blue-900 text-blue-900 hover:bg-blue-100"
-            }`}
+          onClick={() => { setTabActiva("Resumen"); cambiarQuincenaIdx(null); }}
+          className={`h-10 px-4 py-2 text-sm font-medium shadow transition flex items-center rounded-none ${
+            quincenaActivaIdx === null
+              ? "bg-white text-blue-900 border border-blue-900"
+              : "border border-blue-900 text-blue-900 hover:bg-blue-100"
+          }`}
         >
           Resumen General
         </button>
 
-        <SelectorQuincenas
-          quincenas={quincenas}
-          quincenaActiva={quincenaActiva}
-          setQuincenaActiva={setQuincenaActiva}
-          agregarQuincena={agregarQuincena}
-        />
-      </div>
-
-      {/* Tabs */}
-      <div className="flex justify-center gap-2 my-4 flex-wrap">
-        {TABS.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setTabActiva(tab)}
-            className={`px-4 py-2 text-sm font-semibold transition shadow rounded-none
-              ${
-                tabActiva === tab
-                  ? "bg-blue-900 text-white"
-                  : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-              }`}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
-
-      {/* Contenido dinámico por tab */}
-      <div className="p-4 rounded-2xl bg-white/70 shadow">
-        {tabActiva === "Resumen" && (
-          <Resumen
-            quincenaSeleccionada={quincenaActiva}
-            onCambiarQuincena={setQuincenaActiva}
-            proyecto={proyecto}
+        {/* Cuando hay quincenas aparece el selector; si no, solo el "+" */}
+        {quincenas.length > 0 ? (
+          <SelectorQuincenas
             quincenas={quincenas}
-            fechas={fechasQuincenas}
+            activeIndex={quincenaActivaIdx}
+            onSelectIndex={cambiarQuincenaIdx}
+            agregarQuincena={agregarQuincena}
           />
+        ) : (
+          <button
+            onClick={agregarQuincena}
+            aria-label="Agregar quincena"
+            className="h-10 w-10 rounded-none bg-green-600 text-white hover:bg-green-700 shadow flex items-center justify-center text-xl"
+          >
+            +
+          </button>
         )}
+      </div>
 
-        {tabActiva === "Producción" && (
-          <Produccion quincenaSeleccionada={quincenaActiva} />
-        )}
+      {/* Tabs: solo si hay quincena activa */}
+      {quincenaActivaIdx !== null && (
+        <div className="flex justify-center gap-2 my-4 flex-wrap">
+          {TABS.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setTabActiva(tab)}
+              className={`px-4 py-2 text-sm font-semibold transition shadow rounded-none ${
+                tabActiva === tab ? "bg-blue-900 text-white" : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+      )}
 
-        {tabActiva === "Planilla" && (
-          <Planilla
-            quincenaSeleccionada={quincenaActiva}
-            onCambiarQuincena={setQuincenaActiva}
-          />
-        )}
-
-        {tabActiva === "Caja Chica" && (
-          <CajaChica quincenaSeleccionada={quincenaActiva} />
+      {/* Contenido */}
+      <div className="p-4 rounded-2xl bg-white/70 shadow">
+        {quincenaActivaIdx === null ? (
+          <ResumenGeneral />
+        ) : (
+          <>
+            {tabActiva === "Resumen" && (
+              <Resumen quincena={formatearRango(rangoSeleccionado)} />
+            )}
+            {tabActiva === "Producción" && (
+              <Produccion
+                rango={quincenaActivaIdx !== null ? fechasQuincenas[quincenaActivaIdx] : null}
+              />
+            )}
+            {tabActiva === "Planilla" && (
+              <Planilla
+                quincenaSeleccionada={quincenaActivaIdx !== null ? quincenas[quincenaActivaIdx] : null}
+                onCambiarQuincena={(q) => {
+                  const idx = quincenas.findIndex((x) => x === q);
+                  cambiarQuincenaIdx(idx >= 0 ? idx : null);
+                }}
+              />
+            )}
+            {tabActiva === "Caja Chica" && (
+              <CajaChica quincenaSeleccionada={quincenaActivaIdx !== null ? quincenas[quincenaActivaIdx] : null} />
+            )}
+          </>
         )}
       </div>
     </div>
