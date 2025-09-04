@@ -11,20 +11,15 @@ import ResumenGeneral from "../ResumenGeneral/ResumenGeneral";
 const TABS = ["Resumen", "Producción", "Planilla", "Caja Chica"];
 
 export default function ContenedorPrincipal({ proyecto = {}, onVolver = () => {} }) {
-  // Tabs
   const [tabActiva, setTabActiva] = useState("Resumen");
+  const [quincenas, setQuincenas] = useState([]);
+  const [fechasQuincenas, setFechasQuincenas] = useState([]);
+  const [quincenaActivaIdx, setQuincenaActivaIdx] = useState(null);
 
-  // Estado: usamos ÍNDICE activo (no nombre) para evitar conflictos
-  const [quincenas, setQuincenas] = useState([]);              // labels visibles: "1ra. Quincena" | "2da. Quincena"
-  const [fechasQuincenas, setFechasQuincenas] = useState([]);  // [{inicio:"YYYY-MM-DD", fin:"YYYY-MM-DD"}]
-  const [quincenaActivaIdx, setQuincenaActivaIdx] = useState(null); // null => Resumen General
-
-  // Modal crear quincena
   const [mostrarInicio, setMostrarInicio] = useState(false);
-  const [mesInicio, setMesInicio] = useState("");       // "YYYY-MM"
-  const [mitad, setMitad] = useState("primera");        // "primera" | "segunda"
+  const [mesInicio, setMesInicio] = useState("");
+  const [mitad, setMitad] = useState("primera");
 
-  // Utils
   const fmtDMY = (iso) => {
     if (!iso) return "";
     const [y, m, d] = iso.split("-");
@@ -42,10 +37,8 @@ export default function ContenedorPrincipal({ proyecto = {}, onVolver = () => {}
     if (idxOrNull !== null) setTabActiva("Resumen");
   };
 
-  // Siempre pedir mes/mitad al presionar +
   const agregarQuincena = () => setMostrarInicio(true);
 
-  // Confirmar creación
   const confirmarInicioQuincena = () => {
     if (!mesInicio) { alert("Selecciona el mes."); return; }
     const [anio, mes] = mesInicio.split("-").map(Number);
@@ -54,7 +47,6 @@ export default function ContenedorPrincipal({ proyecto = {}, onVolver = () => {}
     const inicio = mitad === "primera" ? `${anio}-${mm}-01` : `${anio}-${mm}-16`;
     const fin    = mitad === "primera" ? `${anio}-${mm}-15` : `${anio}-${mm}-${new Date(anio, mes, 0).getDate()}`;
 
-    // Evita duplicados por mes/mitad
     const yaPrimera = fechasQuincenas.some((q) => q.inicio === `${anio}-${mm}-01`);
     const yaSegunda = fechasQuincenas.some((q) => q.inicio === `${anio}-${mm}-16`);
     if ((mitad === "primera" && yaPrimera) || (mitad === "segunda" && yaSegunda)) {
@@ -71,13 +63,13 @@ export default function ContenedorPrincipal({ proyecto = {}, onVolver = () => {}
     setMostrarInicio(false);
     setMesInicio(""); setMitad("primera");
 
-    // Activamos por ÍNDICE la recién creada
     setQuincenaActivaIdx(newIndex);
     setTabActiva("Resumen");
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto p-4 bg-white/70 rounded-3xl shadow-lg">
+    // ⬇️ Full width: sin max-w, sin card, paddings ligeros y responsivos
+    <div className="w-full max-w-none mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 2xl:px-10">
       {/* Modal crear quincena */}
       {mostrarInicio && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
@@ -119,7 +111,7 @@ export default function ContenedorPrincipal({ proyecto = {}, onVolver = () => {}
       <EncabezadoProyecto
         proyecto={proyecto}
         fechas={fechasQuincenas}
-        quincenaActiva={quincenaActivaIdx !== null ? quincenas[quincenaActivaIdx] : null} // compat
+        quincenaActiva={quincenaActivaIdx !== null ? quincenas[quincenaActivaIdx] : null}
         quincenas={quincenas}
       />
 
@@ -136,7 +128,6 @@ export default function ContenedorPrincipal({ proyecto = {}, onVolver = () => {}
           Resumen General
         </button>
 
-        {/* Cuando hay quincenas aparece el selector; si no, solo el "+" */}
         {quincenas.length > 0 ? (
           <SelectorQuincenas
             quincenas={quincenas}
@@ -155,7 +146,7 @@ export default function ContenedorPrincipal({ proyecto = {}, onVolver = () => {}
         )}
       </div>
 
-      {/* Tabs: solo si hay quincena activa */}
+      {/* Tabs */}
       {quincenaActivaIdx !== null && (
         <div className="flex justify-center gap-2 my-4 flex-wrap">
           {TABS.map((tab) => (
@@ -172,19 +163,15 @@ export default function ContenedorPrincipal({ proyecto = {}, onVolver = () => {}
         </div>
       )}
 
-      {/* Contenido */}
-      <div className="p-4 rounded-2xl bg-white/70 shadow">
+      {/* Contenido (full-bleed, sin card que limite) */}
+      <div className="pb-4">
         {quincenaActivaIdx === null ? (
           <ResumenGeneral />
         ) : (
           <>
-            {tabActiva === "Resumen" && (
-              <Resumen quincena={formatearRango(rangoSeleccionado)} />
-            )}
+            {tabActiva === "Resumen" && <Resumen quincena={formatearRango(rangoSeleccionado)} />}
             {tabActiva === "Producción" && (
-              <Produccion
-                rango={quincenaActivaIdx !== null ? fechasQuincenas[quincenaActivaIdx] : null}
-              />
+              <Produccion rango={quincenaActivaIdx !== null ? fechasQuincenas[quincenaActivaIdx] : null} />
             )}
             {tabActiva === "Planilla" && (
               <Planilla

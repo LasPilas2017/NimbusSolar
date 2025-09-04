@@ -5,10 +5,14 @@
   --col-dinero:    110px;   /* Dinero GANADO */
   --col-trabajo:   110px;   /* Trabajo HECHO */
 
-  --head1: 38px;            /* altura aprox. de 1ª fila de header */
+  /* alturas de filas sticky del thead */
+  --head1: 38px;            /* fila 1: día */
+  --head2: 30px;            /* fila 2: SUMA del día */
+  /* la fila 3 (cant/total) se calcula con top: var(--head1)+var(--head2) */
 
   --grid: #d9d9d9;          /* líneas tipo Excel */
   --header: #203864;        /* azul cabecera (fila 1) */
+  --header-sum: #254b92;    /* azul para fila 2 (suma del día) */
   --header-sub: #2e4a7f;    /* azul subcabecera (cant/total) */
   --text-header: #ffffff;
   --row-alt: #fff7e6;       /* zebra odd */
@@ -43,27 +47,47 @@
 }
 
 /* ===== Encabezados (estilo visual) ===== */
-.table-excel thead tr:first-child th {
+/* Fila 1: DÍA */
+.table-excel thead tr:nth-child(1) th {
   background: var(--header);
   color: var(--text-header);
   font-weight: 700;
   text-align: center;
 }
+
+/* Fila 2: SUMA del día (una celda por día con colspan="2") */
 .table-excel thead tr:nth-child(2) th {
+  background: var(--header-sum);
+  color: var(--text-header);
+  font-weight: 700;
+  text-align: center;
+}
+
+/* Fila 3: cant / total */
+.table-excel thead tr:nth-child(3) th {
   background: var(--header-sub);
   color: var(--text-header);
   font-weight: 600;
   text-transform: lowercase;
+  text-align: center;
 }
 
-/* Zebra + hover */
-.table-excel tbody tr:nth-child(odd) td { background: var(--row-alt); }
-.table-excel tbody tr:nth-child(even) td { background: var(--row-bg); }
-.table-excel tbody tr:hover td { background: var(--row-hover); }
-
-/* Alineaciones utilitarias */
-.td-center { text-align: center; }
-.td-right  { text-align: right;  }
+/* ===== STICKY TOP (las 3 filas del thead) ===== */
+.table-excel thead tr:nth-child(1) th { /* Día */
+  position: sticky;
+  top: 0;
+  z-index: 12;                       /* arriba de todo el thead */
+}
+.table-excel thead tr:nth-child(2) th { /* Suma del día */
+  position: sticky;
+  top: var(--head1);
+  z-index: 11;
+}
+.table-excel thead tr:nth-child(3) th { /* cant/total */
+  position: sticky;
+  top: calc(var(--head1) + var(--head2));
+  z-index: 10;
+}
 
 /* ===== Columnas sticky (izquierda fija) ===== */
 .st-actividad,
@@ -79,14 +103,18 @@
 .st-dinero    { left: var(--col-actividad); min-width: var(--col-dinero); max-width: var(--col-dinero); }
 .st-trabajo   { left: calc(var(--col-actividad) + var(--col-dinero)); min-width: var(--col-trabajo); max-width: var(--col-trabajo); }
 
-/* Fondo sólido en sticky para que NADA se vea por debajo */
-.table-excel thead .st-actividad { background: var(--header) !important; }
-.table-excel thead .st-dinero    { background: var(--header) !important; }
-.table-excel thead .st-trabajo   { background: var(--header) !important; }
+/* Fondos sólidos para sticky de las 3 filas en las columnas fijas */
+.table-excel thead tr:nth-child(1) .st-actividad,
+.table-excel thead tr:nth-child(1) .st-dinero,
+.table-excel thead tr:nth-child(1) .st-trabajo { background: var(--header) !important; }
 
-.table-excel thead tr:nth-child(2) .st-actividad { background: var(--header-sub) !important; }
-.table-excel thead tr:nth-child(2) .st-dinero    { background: var(--header-sub) !important; }
-.table-excel thead tr:nth-child(2) .st-trabajo   { background: var(--header-sub) !important; }
+.table-excel thead tr:nth-child(2) .st-actividad,
+.table-excel thead tr:nth-child(2) .st-dinero,
+.table-excel thead tr:nth-child(2) .st-trabajo { background: var(--header-sum) !important; }
+
+.table-excel thead tr:nth-child(3) .st-actividad,
+.table-excel thead tr:nth-child(3) .st-dinero,
+.table-excel thead tr:nth-child(3) .st-trabajo { background: var(--header-sub) !important; }
 
 /* Cuerpo: fondo sólido respetando zebra */
 .table-excel tbody tr:nth-child(odd)  .st-actividad,
@@ -109,34 +137,18 @@
   pointer-events: none;
 }
 
-/* ===== Encabezados sticky: solo las 3 primeras columnas ===== */
-/* Resetea sticky para TODOS los th del thead (fechas NO sticky) */
-.table-excel thead th {
-  position: static !important;
-  top: auto !important;
-  z-index: auto !important;
-}
+/* Asegura que las celdas sticky de la izquierda en THEAD queden sobre el resto */
+.table-excel thead .st-actividad { z-index: 15 !important; }
+.table-excel thead .st-dinero    { z-index: 15 !important; }
+.table-excel thead .st-trabajo   { z-index: 15 !important; }
 
-/* Vuelve a activar sticky solo para PRODUCCIÓN / DINERO / TRABAJO */
-.table-excel thead tr:first-child .st-actividad,
-.table-excel thead tr:first-child .st-dinero,
-.table-excel thead tr:first-child .st-trabajo {
-  position: sticky !important;
-  top: 0 !important;                /* fila 1 */
-  z-index: 10 !important;           /* por encima de headers de fechas */
-}
-
-/* Si tienes subheader (cant/total) en esas 3, fíjalo también */
-.table-excel thead tr:nth-child(2) .st-actividad,
-.table-excel thead tr:nth-child(2) .st-dinero,
-.table-excel thead tr:nth-child(2) .st-trabajo {
-  position: sticky !important;
-  top: var(--head1) !important;     /* alineado bajo fila 1 */
-  z-index: 10 !important;
-}
-
-/* Subcolumnas de días */
+/* Subcolumnas de días (no cambian) */
 .col-cant, .col-total { min-width: 92px; text-align: center; }
+
+/* Zebra + hover */
+.table-excel tbody tr:nth-child(odd) td  { background: var(--row-alt); }
+.table-excel tbody tr:nth-child(even) td { background: var(--row-bg); }
+.table-excel tbody tr:hover td { background: var(--row-hover); }
 
 /* Fila TOTAL estilo Excel */
 .row-total td {
@@ -146,40 +158,23 @@
 
 /* Overlay de guardado en toda la pantalla */
 .saving-overlay {
-  position: fixed;         /* ✅ ya no dentro del contenedor */
-  top: 0;
-  left: 0;
-  width: 100vw;            /* cubre todo */
-  height: 100vh;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
   background: rgba(255, 255, 255, 0.8);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  z-index: 9999;           /* bien arriba de todo */
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+  z-index: 9999;
 }
 
 /* Loader circular */
 .loader {
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
+  width: 100px; height: 100px; border-radius: 50%;
   box-shadow:
     rgba(0, 0, 0, 0.4) 0px 2px 4px,
     rgba(0, 0, 0, 0.3) 0px 7px 13px -3px,
     rgba(0, 0, 0, 0.2) 0px -3px 0px inset;
   animation: rotate 2.0s infinite linear;
 }
+@keyframes rotate { 100% { transform: rotate(1turn); } }
 
-@keyframes rotate {
-  100% {
-    transform: rotate(1turn);
-  }
-}
-
-.saving-text {
-  font-size: 18px;
-  font-weight: bold;
-  color: #1f2937; /* gris oscuro */
-}
+.saving-text { font-size: 18px; font-weight: bold; color: #1f2937; }

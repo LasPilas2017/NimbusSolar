@@ -1,26 +1,33 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "../../../EstilosCSS/TablaProduccion.css";
 
-/** Utilidades */
+/** ---- DEMO ----
+ * Activa datos ficticios para ver la tabla llena.
+ * (puedes poner en false cuando ya tengas datos reales)
+ */
+const DEMO = true;
+
+/** Generador determinístico de enteros en [min,max] a partir de una cadena */
+function hashInt(str, min = 0, max = 6) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0;
+  h = Math.abs(h);
+  return min + (h % (max - min + 1));
+}
+
+/** Formato Quetzales */
 const GTQ = (n) =>
   "Q" + Number(n || 0).toLocaleString("es-GT", { maximumFractionDigits: 2 });
 
-/**
- * Construye arreglo de fechas entre inicio y fin (ISO: YYYY-MM-DD).
- * - Encabezado como: "lun, 21 jul"
- * - `soloLaborables = true` => excluye sábados y domingos
- */
+/** Fechas laborales: "lun, 21 jul" */
 function buildFechas(rango, soloLaborables = true) {
   if (!rango?.inicio || !rango?.fin) return [];
-
   const out = [];
   const start = new Date(rango.inicio + "T00:00:00");
   const end = new Date(rango.fin + "T00:00:00");
-
   for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
     const dow = d.getDay(); // 0 dom, 6 sáb
     if (soloLaborables && (dow === 0 || dow === 6)) continue;
-
     const wd = new Intl.DateTimeFormat("es-ES", { weekday: "short" })
       .format(d)
       .replace(".", "");
@@ -34,7 +41,6 @@ function buildFechas(rango, soloLaborables = true) {
 }
 
 export default function ProduccionEstiloExcel({ rango }) {
-  // Actividades y tarifas
   const actividades = useMemo(
     () => [
       { id: "hincado", nombre: "Hincado", tarifa: 75 },
@@ -48,18 +54,18 @@ export default function ProduccionEstiloExcel({ rango }) {
     []
   );
 
-  // Fechas dinámicas según la quincena (por defecto solo días laborales)
   const fechas = useMemo(() => buildFechas(rango, true), [rango]);
 
-  // Estado: cantidades por actividad/fecha
   const [cantidades, setCantidades] = useState({});
 
-  // Reiniciar matriz cuando cambien fechas/actividades
+  // Inicializa matriz; si DEMO, llena con cantidades ficticias (0..6)
   useEffect(() => {
     const base = {};
     for (const a of actividades) {
       base[a.id] = {};
-      for (const f of fechas) base[a.id][f] = 0;
+      for (const f of fechas) {
+        base[a.id][f] = DEMO ? hashInt(`${a.id}|${f}`, 0, 6) : 0;
+      }
     }
     setCantidades(base);
   }, [actividades, fechas]);
@@ -67,10 +73,10 @@ export default function ProduccionEstiloExcel({ rango }) {
   const [edit, setEdit] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Helpers de totales
+  // Totales
   const totalCelda = (actId, fecha) => {
     const act = actividades.find((a) => a.id === actId);
-    const cant = Number(cantidades[actId]?.[fecha] || 0);
+    const cant = Number(cantidades[actId]?.[fecha] ?? 0);
     return cant * (act?.tarifa || 0);
   };
 
@@ -79,7 +85,7 @@ export default function ProduccionEstiloExcel({ rango }) {
 
   const totalColCant = (fecha) =>
     actividades.reduce(
-      (acc, a) => acc + Number(cantidades[a.id]?.[fecha] || 0),
+      (acc, a) => acc + Number(cantidades[a.id]?.[fecha] ?? 0),
       0
     );
 
@@ -89,7 +95,7 @@ export default function ProduccionEstiloExcel({ rango }) {
   const totalGeneralQ = () =>
     actividades.reduce((acc, a) => acc + totalFilaQ(a.id), 0);
 
-  // Edición de celda (solo cant)
+  // Edición
   const onChangeCant = (actId, fecha, value) => {
     if (!edit || saving) return;
     const v = value === "" ? "" : Math.max(0, Number(value));
@@ -99,7 +105,6 @@ export default function ProduccionEstiloExcel({ rango }) {
     }));
   };
 
-  // Guardar (simulado)
   const onGuardar = async () => {
     if (saving) return;
     setSaving(true);
@@ -117,7 +122,6 @@ export default function ProduccionEstiloExcel({ rango }) {
 
   return (
     <div className="table-excel mt-6">
-      {/* Overlay de guardado */}
       {saving && (
         <div className="saving-overlay">
           <div className="loader"></div>
@@ -125,10 +129,8 @@ export default function ProduccionEstiloExcel({ rango }) {
         </div>
       )}
 
-      {/* Barra de acciones */}
       <div className="flex items-center justify-between -mt-4 mb-0">
         <div className="text-sm text-gray-600">{saving ? "• guardando…" : ""}</div>
-
         {!edit ? (
           <button
             className="px-3 py-1.5 rounded-md bg-blue-600 text-white hover:bg-blue-700 text-sm font-semibold"
@@ -148,11 +150,10 @@ export default function ProduccionEstiloExcel({ rango }) {
         )}
       </div>
 
-      {/* ⚠️ El scroll horizontal va en este wrapper */}
       <div className="scroll-x">
         <table>
           <thead>
-            {/* Fila 1: encabezado principal */}
+            {/* Fila 1: Día */}
             <tr>
               <th className="st-actividad">PRODUCCIÓN</th>
               <th className="st-dinero">
@@ -166,22 +167,21 @@ export default function ProduccionEstiloExcel({ rango }) {
               ))}
             </tr>
 
-            {/* Fila 2: totales por columna */}
-            <tr className="row-total">
-              <th className="st-actividad">TOTAL</th>
+            {/* Fila 2: Suma de TOTAL (Q) por día — una celda por día (colspan=2) */}
+            <tr>
+              <th className="st-actividad"></th>
               <th className="st-dinero td-center">{GTQ(totalGeneralQ())}</th>
               <th className="st-trabajo td-center">
                 {fechas.reduce((acc, f) => acc + totalColCant(f), 0)}
               </th>
               {fechas.map((f) => (
-                <React.Fragment key={`tot-${f}`}>
-                  <th className="td-center">{totalColCant(f)}</th>
-                  <th className="td-center">{GTQ(totalColQ(f))}</th>
-                </React.Fragment>
+                <th key={`sum-${f}`} className="td-center sum-dia" colSpan={2}>
+                  {GTQ(totalColQ(f))}
+                </th>
               ))}
             </tr>
 
-            {/* Fila 3: sub-headers cant/total */}
+            {/* Fila 3: subencabezado cant / total */}
             <tr>
               <th className="st-actividad"></th>
               <th className="st-dinero"></th>
@@ -202,7 +202,7 @@ export default function ProduccionEstiloExcel({ rango }) {
                 <td className="st-dinero td-center">{GTQ(totalFilaQ(a.id))}</td>
                 <td className="st-trabajo td-center">
                   {fechas.reduce(
-                    (acc, f) => acc + Number(cantidades[a.id]?.[f] || 0),
+                    (acc, f) => acc + Number(cantidades[a.id]?.[f] ?? 0),
                     0
                   )}
                 </td>
@@ -216,13 +216,13 @@ export default function ProduccionEstiloExcel({ rango }) {
                           type="number"
                           min={0}
                           className="w-24 px-2 py-1 border rounded text-right"
-                          value={cantidades[a.id]?.[f]}
+                          value={cantidades[a.id]?.[f] ?? 0}
                           onChange={(e) => onChangeCant(a.id, f, e.target.value)}
                           onKeyDown={onKeyDownInput}
                           disabled={saving}
                         />
                       ) : (
-                        <span>{Number(cantidades[a.id]?.[f] || 0)}</span>
+                        <span>{Number(cantidades[a.id]?.[f] ?? 0)}</span>
                       )}
                     </td>
 

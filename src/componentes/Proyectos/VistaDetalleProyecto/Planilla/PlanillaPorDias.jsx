@@ -1,5 +1,7 @@
+// src/VistaDetalleProyecto/Planilla/PlanillaPorDias.jsx
 import React from 'react';
 import { FiCheck } from 'react-icons/fi';
+import "./EstiloExcelPlanilla.css"; // 👈 usar el mismo estilo que Planilla
 
 const diasQuincena = [
   '01/07/25', '02/07/25', '03/07/25', '04/07/25', '05/07/25',
@@ -22,56 +24,59 @@ export default function PlanillaPorDias() {
   });
 
   return (
-    <div className="overflow-x-auto border border-black w-full">
-      <table className="text-xs text-center border-collapse border border-black min-w-max">
-        <thead>
-          <tr>
-            {diasQuincena.map((dia, index) => (
-              <th key={index} colSpan={3} className="border border-black px-1 py-1 min-w-[90px]">
-                {dia}
-              </th>
-            ))}
-          </tr>
+    <div className="table-planilla w-full">
+      <div className="scroll-x">
+        <table>
+          <thead>
+            {/* fila principal con fechas */}
+            <tr>
+              {diasQuincena.map((dia, index) => (
+                <th key={index} colSpan={3} className="col-dia">
+                  {dia}
+                </th>
+              ))}
+            </tr>
 
-          {/* Fila con totales por día */}
-          <tr>
-            {totales.map((total, i) => (
-              <React.Fragment key={i}>
-                <th className="border border-black px-1 py-1 bg-gray-200">Totales</th>
-                <th className="border border-black px-1 py-1 bg-gray-200">{total.bp}</th>
-                <th className="border border-black px-1 py-1 bg-gray-200">{total.h}</th>
-              </React.Fragment>
-            ))}
-          </tr>
-
-          {/* Sub-encabezados B.A. / B.P. / H por día */}
-          <tr>
-            {diasQuincena.map((_, i) => (
-              <React.Fragment key={i}>
-                <th className="border border-black px-1 py-1">B.A.</th>
-                <th className="border border-black px-1 py-1">B.P.</th>
-                <th className="border border-black px-1 py-1">H</th>
-              </React.Fragment>
-            ))}
-          </tr>
-        </thead>
-
-        <tbody>
-          {datosPorPersona.map((persona) => (
-            <tr key={persona.id}>
-              {persona.dias.map((dia, j) => (
-                <React.Fragment key={j}>
-                  <td className="border border-black px-1 py-1">
-                    {dia.ba && <FiCheck className="text-green-600 mx-auto" />}
-                  </td>
-                  <td className="border border-black px-1 py-1">{dia.bp}</td>
-                  <td className="border border-black px-1 py-1">{dia.h}</td>
+            {/* fila de totales */}
+            <tr className="row-total">
+              {totales.map((total, i) => (
+                <React.Fragment key={i}>
+                  <th className="td-center">Totales</th>
+                  <th className="td-center">{total.bp}</th>
+                  <th className="td-center">{total.h}</th>
                 </React.Fragment>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+
+            {/* sub-encabezados */}
+            <tr>
+              {diasQuincena.map((_, i) => (
+                <React.Fragment key={i}>
+                  <th className="col-cant">B.A.</th>
+                  <th className="col-total">B.P.</th>
+                  <th className="col-total">H</th>
+                </React.Fragment>
+              ))}
+            </tr>
+          </thead>
+
+          <tbody>
+            {datosPorPersona.map((persona) => (
+              <tr key={persona.id}>
+                {persona.dias.map((dia, j) => (
+                  <React.Fragment key={j}>
+                    <td className="td-center">
+                      {dia.ba && <FiCheck className="text-green-600 mx-auto" />}
+                    </td>
+                    <td className="td-center">{dia.bp}</td>
+                    <td className="td-center">{dia.h}</td>
+                  </React.Fragment>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
