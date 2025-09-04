@@ -6,7 +6,7 @@ import {
   FiChevronsRight
 } from 'react-icons/fi';
 
-import Login from './Login';
+import Login from './Login/Login';
 import Personal from './componentes/personal/Personal';
 import Contabilidad from './componentes/contabilidad/Contabilidad';
 import VistaMovimientos from './componentes/VistaMovimientos';
