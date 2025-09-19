@@ -26,9 +26,14 @@ export default function Contabilidad() {
   const [vistaActual, setVistaActual] = useState("");
   const [mostrarCategorias, setMostrarCategorias] = useState(false);
 
+  // 🔹 Estado para sub-vista de Facturas
+  const [vistaFacturas, setVistaFacturas] = useState(""); // "porCobrar" | "cobradas" | ""
+
   // Oculta categorías al cambiar de vista
   useEffect(() => {
     setMostrarCategorias(false);
+    // Al salir de "facturas" resetea su subvista
+    if (vistaActual !== "facturas") setVistaFacturas("");
   }, [vistaActual]);
 
   // Datos para resumen de utilidades
@@ -112,9 +117,7 @@ export default function Contabilidad() {
               <div className="w-full lg:w-1/3 flex justify-center items-center">
                 <div className="w-full max-w-xs bg-green-100 border border-green-600 rounded-2xl shadow-md p-4 text-center">
                   <div>{dineroLiquido.icono}</div>
-                  <h3 className="font-semibold text-green-800 mb-1">
-                    {dineroLiquido.titulo}
-                  </h3>
+                  <h3 className="font-semibold text-green-800 mb-1">{dineroLiquido.titulo}</h3>
                   <p className="text-2xl font-bold text-green-700 mb-4">
                     Q. {dineroLiquido.valor.toLocaleString()}
                   </p>
@@ -161,19 +164,19 @@ export default function Contabilidad() {
             Caja chica
           </button>
 
-
+          {/* 🔹 Botón Facturas: abre submenú (por cobrar / cobradas) */}
           <button
-              onClick={() => {
-                setVistaActual("facturas");
-                setMostrarTransacciones(false);
-                setMostrarCategorias(false);
-              }}
-              className="w-44 flex items-center justify-center gap-2 bg-white/70 text-black font-medium py-2 rounded-xl shadow hover:scale-105 transition"
-            >
-              <FiFileText size={18} />
-              Facturas
-            </button>
-
+            onClick={() => {
+              setVistaActual("facturas");
+              setVistaFacturas(""); // reinicia la subvista
+              setMostrarTransacciones(false);
+              setMostrarCategorias(false);
+            }}
+            className="w-44 flex items-center justify-center gap-2 bg-white/70 text-black font-medium py-2 rounded-xl shadow hover:scale-105 transition"
+          >
+            <FiFileText size={18} />
+            Facturas
+          </button>
         </div>
 
         {/* Submenú Ingresos y Egresos */}
@@ -182,9 +185,7 @@ export default function Contabilidad() {
             <button
               onClick={() => setVistaActual("ingresos")}
               className={`w-44 flex items-center justify-center gap-2 font-medium py-2 rounded-b-xl shadow hover:scale-105 transition ${
-                vistaActual === "ingresos"
-                  ? "bg-white text-black font-bold"
-                  : "bg-white/80 text-black"
+                vistaActual === "ingresos" ? "bg-white text-black font-bold" : "bg-white/80 text-black"
               }`}
             >
               <FiDollarSign size={18} />
@@ -194,9 +195,7 @@ export default function Contabilidad() {
             <button
               onClick={() => setVistaActual("egresos")}
               className={`w-44 flex items-center justify-center gap-2 font-medium py-2 rounded-b-xl shadow hover:scale-105 transition ${
-                vistaActual === "egresos"
-                  ? "bg-white text-black font-bold"
-                  : "bg-white/80 text-black"
+                vistaActual === "egresos" ? "bg-white text-black font-bold" : "bg-white/80 text-black"
               }`}
             >
               <FiFileText size={18} />
@@ -205,9 +204,33 @@ export default function Contabilidad() {
           </div>
         )}
 
-        {/* Botón Categorías estilizado con animación */}
+        {/* 🔹 Submenú de Facturas: Cuentas por Cobrar / Cuentas Cobradas */}
+        {vistaActual === "facturas" && (
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mt-4">
+            <button
+              onClick={() => setVistaFacturas("porCobrar")}
+              className={`w-44 flex items-center justify-center gap-2 font-medium py-2 rounded-b-xl shadow hover:scale-105 transition ${
+                vistaFacturas === "porCobrar" ? "bg-white text-black font-bold" : "bg-white/80 text-black"
+              }`}
+            >
+              <FiFileText size={18} />
+              Cuentas por Cobrar
+            </button>
+            <button
+              onClick={() => setVistaFacturas("cobradas")}
+              className={`w-44 flex items-center justify-center gap-2 font-medium py-2 rounded-b-xl shadow hover:scale-105 transition ${
+                vistaFacturas === "cobradas" ? "bg-white text-black font-bold" : "bg-white/80 text-black"
+              }`}
+            >
+              <FiTrendingUp size={18} />
+              Cuentas Cobradas
+            </button>
+          </div>
+        )}
+
+        {/* Botón Categorías estilizado con animación (oculto en Facturas) */}
         <AnimatePresence>
-         {vistaActual && vistaActual !== "facturas" && (
+          {vistaActual && vistaActual !== "facturas" && (
             <motion.div
               key="boton-categorias"
               initial={{ opacity: 0, y: -10 }}
@@ -225,38 +248,51 @@ export default function Contabilidad() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Vistas principales */}
         {vistaActual === "caja" && <AsignacionDeCajaChica />}
 
-        
-       {/* Vista de ingresos */}
-      {vistaActual === "ingresos" && (
-        <>
-          {mostrarCategorias && (
-            <div className="mt-4">
-              <GestionCategorias tipo="ingreso" />
-            </div>
-          )}
-          <TotalIngresos onCerrar={() => setVistaActual("")} />
-        </>
-      )}
+        {/* Vista de ingresos */}
+        {vistaActual === "ingresos" && (
+          <>
+            {mostrarCategorias && (
+              <div className="mt-4">
+                <GestionCategorias tipo="ingreso" />
+              </div>
+            )}
+            <TotalIngresos onCerrar={() => setVistaActual("")} />
+          </>
+        )}
 
-      {/* Vista de egresos */}
-      {vistaActual === "egresos" && (
-        <>
-          {mostrarCategorias && (
-            <div className="mt-4">
-              <GestionCategorias tipo="egreso" />
-            </div>
-          )}
-          <TotalEgresos onCerrar={() => setVistaActual("")} />
-        </>
-      )}
+        {/* Vista de egresos */}
+        {vistaActual === "egresos" && (
+          <>
+            {mostrarCategorias && (
+              <div className="mt-4">
+                <GestionCategorias tipo="egreso" />
+              </div>
+            )}
+            <TotalEgresos onCerrar={() => setVistaActual("")} />
+          </>
+        )}
 
-    {vistaActual === "facturas" && <Facturas />}
-
-          
+        {/* 🔹 Render de sub-vistas de Facturas */}
+        {vistaActual === "facturas" && (
+          <div className="mt-4">
+            {vistaFacturas === "porCobrar" && <Facturas />}
+            {vistaFacturas === "cobradas" && (
+              <div className="mt-4 p-6 bg-white shadow rounded-md text-center">
+                <h2 className="text-xl font-bold text-gray-800">
+                  Aquí irán las Cuentas Cobradas
+                </h2>
+                <p className="text-gray-600 mt-2">
+                  (Puedes crear un componente <strong>FacturasCobradas.jsx</strong> y renderizarlo aquí cuando esté listo.)
+                </p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
-   
     </div>
   );
 }
