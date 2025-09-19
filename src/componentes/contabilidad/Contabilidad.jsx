@@ -17,6 +17,7 @@ import TotalIngresos from "./TotalIngresos";
 import TotalEgresos from "./TotalEgresos";
 import GestionCategorias from "./Categorias";
 import AsignacionDeCajaChica from "./AsignacionDeCajaChica";
+import Facturas from "./Facturas";
 
 export default function Contabilidad() {
   // Estados principales para mostrar vistas y secciones
@@ -161,10 +162,18 @@ export default function Contabilidad() {
           </button>
 
 
-          <button className="w-44 flex items-center justify-center gap-2 bg-white/70 text-black font-medium py-2 rounded-xl shadow hover:scale-105 transition">
-            <FiFileText size={18} />
-            Facturas
-          </button>
+          <button
+              onClick={() => {
+                setVistaActual("facturas");
+                setMostrarTransacciones(false);
+                setMostrarCategorias(false);
+              }}
+              className="w-44 flex items-center justify-center gap-2 bg-white/70 text-black font-medium py-2 rounded-xl shadow hover:scale-105 transition"
+            >
+              <FiFileText size={18} />
+              Facturas
+            </button>
+
         </div>
 
         {/* Submenú Ingresos y Egresos */}
@@ -198,7 +207,7 @@ export default function Contabilidad() {
 
         {/* Botón Categorías estilizado con animación */}
         <AnimatePresence>
-          {vistaActual && (
+         {vistaActual && vistaActual !== "facturas" && (
             <motion.div
               key="boton-categorias"
               initial={{ opacity: 0, y: -10 }}
@@ -220,31 +229,34 @@ export default function Contabilidad() {
 
         
        {/* Vista de ingresos */}
-{vistaActual === "ingresos" && (
-  <>
-    {mostrarCategorias && (
-      <div className="mt-4">
-        <GestionCategorias tipo="ingreso" />
-      </div>
-    )}
-    <TotalIngresos onCerrar={() => setVistaActual("")} />
-  </>
-)}
+      {vistaActual === "ingresos" && (
+        <>
+          {mostrarCategorias && (
+            <div className="mt-4">
+              <GestionCategorias tipo="ingreso" />
+            </div>
+          )}
+          <TotalIngresos onCerrar={() => setVistaActual("")} />
+        </>
+      )}
 
-{/* Vista de egresos */}
-{vistaActual === "egresos" && (
-  <>
-    {mostrarCategorias && (
-      <div className="mt-4">
-        <GestionCategorias tipo="egreso" />
-      </div>
-    )}
-    <TotalEgresos onCerrar={() => setVistaActual("")} />
-  </>
-)}
+      {/* Vista de egresos */}
+      {vistaActual === "egresos" && (
+        <>
+          {mostrarCategorias && (
+            <div className="mt-4">
+              <GestionCategorias tipo="egreso" />
+            </div>
+          )}
+          <TotalEgresos onCerrar={() => setVistaActual("")} />
+        </>
+      )}
+
+    {vistaActual === "facturas" && <Facturas />}
 
           
       </div>
+   
     </div>
   );
 }
