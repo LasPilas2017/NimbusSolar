@@ -18,6 +18,7 @@ import TotalEgresos from "./TotalEgresos";
 import GestionCategorias from "./Categorias";
 import AsignacionDeCajaChica from "./AsignacionDeCajaChica";
 import Facturas from "./Facturas";
+import CuentasCobradas from "./CuentasCobradas";
 
 export default function Contabilidad() {
   // Estados principales para mostrar vistas y secciones
@@ -168,7 +169,7 @@ export default function Contabilidad() {
           <button
             onClick={() => {
               setVistaActual("facturas");
-              setVistaFacturas(""); // reinicia la subvista
+              setVistaFacturas("porCobrar"); // abre por defecto Cuentas por Cobrar
               setMostrarTransacciones(false);
               setMostrarCategorias(false);
             }}
@@ -280,16 +281,7 @@ export default function Contabilidad() {
         {vistaActual === "facturas" && (
           <div className="mt-4">
             {vistaFacturas === "porCobrar" && <Facturas />}
-            {vistaFacturas === "cobradas" && (
-              <div className="mt-4 p-6 bg-white shadow rounded-md text-center">
-                <h2 className="text-xl font-bold text-gray-800">
-                  Aquí irán las Cuentas Cobradas
-                </h2>
-                <p className="text-gray-600 mt-2">
-                  (Puedes crear un componente <strong>FacturasCobradas.jsx</strong> y renderizarlo aquí cuando esté listo.)
-                </p>
-              </div>
-            )}
+            {vistaFacturas === "cobradas" && <CuentasCobradas />}
           </div>
         )}
       </div>
