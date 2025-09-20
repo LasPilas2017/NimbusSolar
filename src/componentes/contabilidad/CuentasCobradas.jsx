@@ -7,49 +7,46 @@ const qtz = new Intl.NumberFormat("es-GT", {
   minimumFractionDigits: 2,
 });
 
-// === IVA ===
 const IVA_RATE = 0.12;
 
-// === Helpers numéricos ===
+// === Helpers ===
 const toNum = (v) => {
   const n = Number(String(v).replace(/[, ]/g, ""));
   return isNaN(n) ? 0 : n;
 };
 
-// Dado SIN IVA -> calcula IVA y CON IVA
 const fromSinIva = (sinIva) => {
   const iva = sinIva * IVA_RATE;
   const conIva = sinIva + iva;
   return { sinIva, iva, conIva };
 };
 
-// Dado IVA -> calcula SIN IVA y CON IVA
 const fromIva = (iva) => {
   const sinIva = iva / IVA_RATE;
   const conIva = sinIva + iva;
   return { sinIva, iva, conIva };
 };
 
-// Dado CON IVA -> calcula SIN IVA e IVA
 const fromConIva = (conIva) => {
   const sinIva = conIva / (1 + IVA_RATE);
   const iva = conIva - sinIva;
   return { sinIva, iva, conIva };
 };
 
+// Mock inicial (agregamos 'pagado')
 const COBRADAS_MOCK = [
-  { id: 1, fecha: "10/09/25", fechaCobro: "20/09/25", concepto: "20 mesas de paneles", categoria: "La Maquina", sinIva: 50000 },
-  { id: 2, fecha: "26/08/25", fechaCobro: "05/09/25", concepto: "100 Hincas", categoria: "Zambo", sinIva: 10000 },
-  { id: 3, fecha: "22/08/25", fechaCobro: "01/09/25", concepto: "20 mesas de estructura", categoria: "Proyectos Domiciliares", sinIva: 10000 },
+  { id: 1, fecha: "10/09/25", fechaCobro: "20/09/25", concepto: "20 mesas de paneles", categoria: "La Maquina", sinIva: 50000, pagado: true },
+  { id: 2, fecha: "26/08/25", fechaCobro: "05/09/25", concepto: "100 Hincas", categoria: "Zambo", sinIva: 10000, pagado: false },
+  { id: 3, fecha: "22/08/25", fechaCobro: "01/09/25", concepto: "20 mesas de estructura", categoria: "Proyectos Domiciliares", sinIva: 10000, pagado: true },
 ];
 
 export default function CuentasCobradas() {
   const [rows, setRows] = useState(COBRADAS_MOCK);
   const [openMenuRow, setOpenMenuRow] = useState(null);
-  const [editRowId, setEditRowId] = useState(null); // id en edición
+  const [editRowId, setEditRowId] = useState(null);
   const menuRef = useRef(null);
 
-  // --- Nuevo Cobro (form) ---
+  // --- Form de “Nuevo cobro” ---
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({
     fecha: "",
@@ -59,18 +56,11 @@ export default function CuentasCobradas() {
     sinIva: "",
     iva: "",
     conIva: "",
-    lastEdited: "sinIva", // controla recalculo
+    pagado: false,       // ✅ checkbox SOLO para indicar si ya se pagó
+    lastEdited: "sinIva",
   });
 
-  // --- Totales ---
-  const totals = useMemo(() => {
-    const sinIva = rows.reduce((acc, r) => acc + (r.sinIva || 0), 0);
-    const iva = sinIva * IVA_RATE;
-    const conIva = sinIva + iva;
-    return { sinIva, iva, conIva };
-  }, [rows]);
-
-  // Cerrar menú al hacer clic fuera
+  // Cerrar menú contextual al hacer clic fuera
   useEffect(() => {
     function handleClickOutside(e) {
       if (!menuRef.current) return;
@@ -84,9 +74,16 @@ export default function CuentasCobradas() {
     setOpenMenuRow((curr) => (curr === rowId ? null : rowId));
   };
 
-  // ======================
-  // Nuevo cobro: handlers
-  // ======================
+  // === Totales (Cobro final usa SIEMPRE Con IVA) ===
+  const totals = useMemo(() => {
+    const sinIva = rows.reduce((a, r) => a + toNum(r.sinIva || 0), 0);
+    const iva = sinIva * IVA_RATE;
+    const conIva = sinIva + iva;
+    const cobroFinal = conIva; // definimos “cobro final” = Con IVA
+    return { sinIva, iva, conIva, cobroFinal };
+  }, [rows]);
+
+  // === Nuevo cobro ===
   const handleNewClick = () => {
     setShowForm((s) => !s);
     setForm({
@@ -97,11 +94,11 @@ export default function CuentasCobradas() {
       sinIva: "",
       iva: "",
       conIva: "",
+      pagado: false,
       lastEdited: "sinIva",
     });
   };
 
-  // Recalcula los 3 montos a partir del campo editado
   const recalcMoney = (baseField, value, current) => {
     const v = toNum(value);
     if (baseField === "sinIva") {
@@ -112,7 +109,6 @@ export default function CuentasCobradas() {
       const { sinIva, iva, conIva } = fromIva(v);
       return { ...current, sinIva, iva, conIva, lastEdited: "iva" };
     }
-    // conIva
     const { sinIva, iva, conIva } = fromConIva(v);
     return { ...current, sinIva, iva, conIva, lastEdited: "conIva" };
   };
@@ -120,6 +116,8 @@ export default function CuentasCobradas() {
   const handleFormChange = (field, value) => {
     if (field === "sinIva" || field === "iva" || field === "conIva") {
       setForm((f) => recalcMoney(field, value, f));
+    } else if (field === "pagado") {
+      setForm((f) => ({ ...f, pagado: !!value }));
     } else {
       setForm((f) => ({ ...f, [field]: value }));
     }
@@ -131,7 +129,6 @@ export default function CuentasCobradas() {
     const concepto = form.concepto?.trim();
     const categoria = form.categoria?.trim();
 
-    // Si dejó vacíos los montos, interpreta 0
     const sinIva = toNum(form.sinIva);
     const iva = toNum(form.iva);
     const conIva = toNum(form.conIva);
@@ -140,14 +137,11 @@ export default function CuentasCobradas() {
       alert("Completa Fecha de ingreso, Fecha de cobro, Concepto y Categoría.");
       return;
     }
-
-    // Si los tres son 0, no tiene sentido
     if (sinIva === 0 && iva === 0 && conIva === 0) {
       alert("Ingresa al menos uno de los montos (Con IVA / Sin IVA / IVA).");
       return;
     }
 
-    // Normaliza montos según el último editado
     let money = { sinIva, iva, conIva };
     if (form.lastEdited === "iva") money = fromIva(iva);
     else if (form.lastEdited === "conIva") money = fromConIva(conIva);
@@ -163,6 +157,7 @@ export default function CuentasCobradas() {
         concepto,
         categoria,
         sinIva: money.sinIva,
+        pagado: !!form.pagado, // ✅ se guarda el estado de pago
       },
     ]);
 
@@ -175,6 +170,7 @@ export default function CuentasCobradas() {
       sinIva: "",
       iva: "",
       conIva: "",
+      pagado: false,
       lastEdited: "sinIva",
     });
   };
@@ -189,13 +185,12 @@ export default function CuentasCobradas() {
       sinIva: "",
       iva: "",
       conIva: "",
+      pagado: false,
       lastEdited: "sinIva",
     });
   };
 
-  // ======================
-  // Editar fila existente
-  // ======================
+  // === Edición ===
   const [editDraft, setEditDraft] = useState(null);
 
   const startEdit = (row) => {
@@ -212,6 +207,7 @@ export default function CuentasCobradas() {
       sinIva: row.sinIva,
       iva,
       conIva,
+      pagado: !!row.pagado,
       lastEdited: "sinIva",
     });
   };
@@ -220,6 +216,8 @@ export default function CuentasCobradas() {
     if (!editDraft) return;
     if (field === "sinIva" || field === "iva" || field === "conIva") {
       setEditDraft((d) => recalcMoney(field, value, d));
+    } else if (field === "pagado") {
+      setEditDraft((d) => ({ ...d, pagado: !!value }));
     } else {
       setEditDraft((d) => ({ ...d, [field]: value }));
     }
@@ -252,6 +250,7 @@ export default function CuentasCobradas() {
               concepto: editDraft.concepto,
               categoria: editDraft.categoria,
               sinIva: money.sinIva,
+              pagado: !!editDraft.pagado, // ✅ guardar estado de pago
             }
           : r
       )
@@ -273,9 +272,8 @@ export default function CuentasCobradas() {
 
   return (
     <div className="w-full">
-      {/* CONTENEDOR sin bordes redondeados (estilo Excel) */}
       <div className="mx-auto max-w-6xl overflow-hidden border border-slate-400 bg-white">
-        {/* Franja superior con '+' a la derecha */}
+        {/* Header */}
         <div className="bg-[#1d2a3b] px-3 sm:px-6 py-3">
           <div className="flex items-center justify-between">
             <div className="w-8" />
@@ -292,38 +290,40 @@ export default function CuentasCobradas() {
           </div>
         </div>
 
-        {/* Línea fina bajo título */}
         <div className="px-6 pt-2">
           <div className="border-t border-slate-300" />
         </div>
 
-        {/* TABLA principal */}
+        {/* Tabla */}
         <div className="px-4 pb-6 pt-2">
           <div className="overflow-auto border border-slate-400">
             <table className="min-w-full border-collapse text-[14px]">
               <thead ref={menuRef}>
-                {/* === Fila de TOTALES alineada a las columnas === */}
+                {/* Totales */}
                 <tr className="bg-white">
-                  {/* acción + 5 columnas de info (ingreso, cobro, concepto, categoría) */}
                   <th className="w-10 border-b border-slate-300"></th>
                   <th className="w-32 border-b border-slate-300"></th>
                   <th className="w-32 border-b border-slate-300"></th>
                   <th className="border-b border-slate-300"></th>
                   <th className="w-60 border-b border-slate-300"></th>
 
-                  {/* Totales */}
                   <th className="w-40 border border-amber-300 bg-amber-100 px-3 py-2 text-right font-semibold text-amber-700">
                     {qtz.format(totals.conIva)}
                   </th>
                   <th className="w-40 border border-amber-300 bg-amber-50 px-3 py-2 text-right font-semibold text-slate-900">
                     {qtz.format(totals.sinIva)}
                   </th>
+                  {/* Col IVA tiene check; aquí solo total monetario del IVA */}
                   <th className="w-40 border border-amber-300 bg-amber-100 px-3 py-2 text-right font-semibold text-amber-700">
                     {qtz.format(totals.iva)}
                   </th>
+                  {/* NUEVA Col: Cobro final */}
+                  <th className="w-44 border border-amber-300 bg-amber-200 px-3 py-2 text-right font-semibold text-amber-800">
+                    {qtz.format(totals.cobroFinal)}
+                  </th>
                 </tr>
 
-                {/* === Encabezados (sticky) === */}
+                {/* Encabezados */}
                 <tr className="bg-[#e9edf5] text-slate-800">
                   <th className="sticky left-0 top-0 z-20 w-10 border border-slate-300 py-2 bg-[#e9edf5]"></th>
                   <th className="top-0 border border-slate-300 px-3 py-2 text-left font-semibold sticky bg-[#e9edf5]">
@@ -345,16 +345,18 @@ export default function CuentasCobradas() {
                     Sin Iva
                   </th>
                   <th className="top-0 w-40 border border-slate-300 px-3 py-2 text-right font-semibold sticky bg-[#e9edf5]">
-                    Iva
+                    Iva <span className="text-xs font-normal">(✓ pagado)</span>
+                  </th>
+                  <th className="top-0 w-44 border border-slate-300 px-3 py-2 text-right font-semibold sticky bg-[#e9edf5]">
+                    Cobro final
                   </th>
                 </tr>
               </thead>
 
               <tbody>
-                {/* === Fila de captura (Nuevo cobro) === */}
+                {/* Fila de captura */}
                 {showForm && (
                   <tr className="bg-white">
-                    {/* Acciones: Guardar / Cancelar */}
                     <td className="sticky left-0 z-10 border border-slate-300 bg-white px-0 text-center">
                       <div className="flex items-center justify-center gap-1 py-1">
                         <button
@@ -374,7 +376,6 @@ export default function CuentasCobradas() {
                       </div>
                     </td>
 
-                    {/* Fecha ingreso */}
                     <td className="border border-slate-300 px-2 py-1">
                       <input
                         type="text"
@@ -385,7 +386,6 @@ export default function CuentasCobradas() {
                       />
                     </td>
 
-                    {/* Fecha cobro */}
                     <td className="border border-slate-300 px-2 py-1">
                       <input
                         type="text"
@@ -396,7 +396,6 @@ export default function CuentasCobradas() {
                       />
                     </td>
 
-                    {/* Concepto */}
                     <td className="border border-slate-300 px-2 py-1">
                       <input
                         type="text"
@@ -407,7 +406,6 @@ export default function CuentasCobradas() {
                       />
                     </td>
 
-                    {/* Categoría */}
                     <td className="border border-slate-300 px-2 py-1">
                       <input
                         type="text"
@@ -418,7 +416,7 @@ export default function CuentasCobradas() {
                       />
                     </td>
 
-                    {/* Con IVA (editable) */}
+                    {/* Con IVA */}
                     <td className="border border-amber-300 bg-amber-50 px-2 py-1">
                       <input
                         type="number"
@@ -430,7 +428,7 @@ export default function CuentasCobradas() {
                       />
                     </td>
 
-                    {/* Sin IVA (editable) */}
+                    {/* Sin IVA */}
                     <td className="border border-amber-300 bg-amber-50 px-2 py-1">
                       <input
                         type="number"
@@ -442,32 +440,50 @@ export default function CuentasCobradas() {
                       />
                     </td>
 
-                    {/* IVA (editable) */}
+                    {/* IVA + checkbox pagado (solo indicador) */}
                     <td className="border border-amber-300 bg-amber-50 px-2 py-1">
-                      <input
-                        type="number"
-                        step="0.01"
-                        placeholder="0.00"
-                        value={form.iva}
-                        onChange={(e) => handleFormChange("iva", e.target.value)}
-                        className="w-full text-right outline-none"
-                      />
+                      <div className="flex items-center justify-end gap-2">
+                        <input
+                          type="number"
+                          step="0.01"
+                          placeholder="0.00"
+                          value={form.iva}
+                          onChange={(e) => handleFormChange("iva", e.target.value)}
+                          className="w-28 text-right outline-none"
+                        />
+                        <input
+                          type="checkbox"
+                          checked={form.pagado}
+                          onChange={(e) => handleFormChange("pagado", e.target.checked)}
+                          title="Marcar como pagado"
+                          className="h-4 w-4 accent-emerald-600"
+                        />
+                      </div>
+                    </td>
+
+                    {/* Cobro final (muestra; se guarda implícitamente via sinIva) */}
+                    <td className="border border-amber-300 bg-amber-100 px-2 py-1 text-right">
+                      {(() => {
+                        const v = toNum(form.conIva) || fromSinIva(toNum(form.sinIva)).conIva;
+                        return qtz.format(v);
+                      })()}
                     </td>
                   </tr>
                 )}
 
-                {/* === Filas de datos === */}
+                {/* Filas de datos */}
                 {rows.map((r, idx) => {
                   const isEditing = editRowId === r.id;
-                  const iva = r.sinIva * IVA_RATE;
-                  const conIva = r.sinIva + iva;
+                  const iva = toNum(r.sinIva) * IVA_RATE;
+                  const conIva = toNum(r.sinIva) + iva;
+                  const cobroFinal = conIva; // definición fija
 
                   return (
                     <tr
                       key={r.id}
                       className={`${idx % 2 === 0 ? "bg-white" : "bg-slate-50"} hover:bg-[#f5fbff]`}
                     >
-                      {/* Columna izquierda (botón 3 líneas) STICKY */}
+                      {/* Botón menú / acciones */}
                       <td className="sticky left-0 z-10 border border-slate-300 bg-inherit px-0 text-center relative overflow-visible">
                         {!isEditing ? (
                           <div className="relative">
@@ -486,17 +502,29 @@ export default function CuentasCobradas() {
                             {openMenuRow === r.id && (
                               <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 z-20 w-40 border border-slate-300 bg-white shadow">
                                 <button
-                                  className="block w-full px-3 py-2 text-left text-sm hover:bg-slate-100"
-                                  onClick={() => startEdit(r)}
-                                >
-                                  Modificar
-                                </button>
-                                <button
-                                  className="block w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
-                                  onClick={() => handleDelete(r)}
-                                >
-                                  Eliminar
-                                </button>
+                                className="block w-full px-3 py-2 text-left text-sm hover:bg-slate-100"
+                                onClick={() => handleEdit(r)}
+                              >
+                                Modificar
+                              </button>
+                              <button
+                                className="block w-full px-3 py-2 text-left text-sm hover:bg-slate-100"
+                                onClick={() => handleEdit(r)}
+                              >
+                                Abono
+                              </button>
+                              <button
+                                className="block w-full px-3 py-2 text-left text-sm hover:bg-slate-100"
+                                onClick={() => handleEdit(r)}
+                              >
+                                Cobrado
+                              </button>
+                              <button
+                                className="block w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+                                onClick={() => handleDelete(r)}
+                              >
+                                Eliminar
+                              </button>
                               </div>
                             )}
                           </div>
@@ -520,7 +548,6 @@ export default function CuentasCobradas() {
                         )}
                       </td>
 
-                      {/* === Celdas: modo ver / modo edición === */}
                       {/* Fecha ingreso */}
                       <td className="whitespace-nowrap border border-slate-300 px-3 py-2 text-slate-900">
                         {isEditing ? (
@@ -607,19 +634,46 @@ export default function CuentasCobradas() {
                         )}
                       </td>
 
-                      {/* IVA */}
-                      <td className="whitespace-nowrap border border-amber-300 bg-amber-50 px-3 py-2 text-right">
+                      {/* IVA + checkbox pagado */}
+                      <td className="whitespace-nowrap border border-amber-300 bg-amber-50 px-3 py-2">
                         {isEditing ? (
-                          <input
-                            type="number"
-                            step="0.01"
-                            value={editDraft.iva}
-                            onChange={(e) => editChange("iva", e.target.value)}
-                            className="w-full text-right outline-none"
-                          />
+                          <div className="flex items-center justify-end gap-2">
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={editDraft.iva}
+                              onChange={(e) => editChange("iva", e.target.value)}
+                              className="w-28 text-right outline-none"
+                            />
+                            <input
+                              type="checkbox"
+                              checked={!!editDraft.pagado}
+                              onChange={(e) => editChange("pagado", e.target.checked)}
+                              title="Marcar como pagado"
+                              className="h-4 w-4 accent-emerald-600"
+                            />
+                          </div>
                         ) : (
-                          qtz.format(iva)
+                          <div className="flex items-center justify-end gap-2">
+                            <span className="text-right w-28">{qtz.format(iva)}</span>
+                            <input
+                              type="checkbox"
+                              checked={!!r.pagado}
+                              onChange={(e) =>
+                                setRows((prev) =>
+                                  prev.map((x) => (x.id === r.id ? { ...x, pagado: e.target.checked } : x))
+                                )
+                              }
+                              title="Marcar como pagado"
+                              className="h-4 w-4 accent-emerald-600"
+                            />
+                          </div>
                         )}
+                      </td>
+
+                      {/* Cobro final (siempre Con IVA) */}
+                      <td className="whitespace-nowrap border border-amber-300 bg-amber-100 px-3 py-2 text-right">
+                        {qtz.format(cobroFinal)}
                       </td>
                     </tr>
                   );
@@ -628,9 +682,9 @@ export default function CuentasCobradas() {
             </table>
           </div>
 
-          {/* Nota */}
           <p className="mt-3 text-xs text-slate-500">
-            * Columnas y encabezado fijos, totales alineados, bordes rectos estilo Excel. IVA al {Math.round(IVA_RATE * 100)}%.
+            * Columnas y encabezado fijos, bordes rectos estilo Excel. IVA al {Math.round(IVA_RATE * 100)}%. El checkbox en
+            la columna IVA solo indica si la cuenta fue <em>pagada</em>.
           </p>
         </div>
       </div>

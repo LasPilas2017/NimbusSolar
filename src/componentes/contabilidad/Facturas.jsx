@@ -33,13 +33,14 @@ export default function Facturas() {
 
   const sinIvaNumber = Number(form.sinIva || 0);
   const ivaCalc = sinIvaNumber * IVA_RATE;
-  const conIvaCalc = sinIvaNumber + ivaCalc;
+  const conIvaCalc = sinIvaNumber + ivaCalc; // = Cobro final
 
   const totals = useMemo(() => {
     const sinIva = rows.reduce((acc, r) => acc + (r.sinIva || 0), 0);
     const iva = sinIva * IVA_RATE;
     const conIva = sinIva + iva;
-    return { sinIva, iva, conIva };
+    const cobroFinal = conIva; // Cobro final = Con IVA
+    return { sinIva, iva, conIva, cobroFinal };
   }, [rows]);
 
   // Cerrar menú al hacer clic fuera
@@ -58,7 +59,6 @@ export default function Facturas() {
 
   const handleEdit = (row) => {
     setOpenMenuRow(null);
-    // Conecta aquí tu modal/form real
     alert(`Modificar: ${row.concepto}`);
   };
 
@@ -89,10 +89,7 @@ export default function Facturas() {
     }
 
     const nextId = rows.length ? Math.max(...rows.map((r) => r.id)) + 1 : 1;
-    setRows((prev) => [
-      ...prev,
-      { id: nextId, fecha, concepto, categoria, sinIva },
-    ]);
+    setRows((prev) => [...prev, { id: nextId, fecha, concepto, categoria, sinIva }]);
     setShowForm(false);
     setForm({ fecha: "", concepto: "", categoria: "", sinIva: "" });
   };
@@ -133,23 +130,28 @@ export default function Facturas() {
           <div className="overflow-auto border border-slate-400">
             <table className="min-w-full border-collapse text-[14px]">
               <thead ref={menuRef}>
-                {/* === Fila de TOTALES alineada a las columnas === */}
+                {/* === Fila de TOTALES === */}
                 <tr className="bg-white">
-                  {/* Vacíos para alinear con las primeras 4 columnas */}
                   <th className="w-10 border-b border-slate-300"></th>
                   <th className="w-32 border-b border-slate-300"></th>
                   <th className="border-b border-slate-300"></th>
                   <th className="w-60 border-b border-slate-300"></th>
 
-                  {/* Totales con estilo amarillo y sin bordes redondeados */}
+                  {/* Con IVA */}
                   <th className="w-40 border border-amber-300 bg-amber-100 px-3 py-2 text-right font-semibold text-amber-700">
                     {qtz.format(totals.conIva)}
                   </th>
+                  {/* Sin IVA */}
                   <th className="w-40 border border-amber-300 bg-amber-50 px-3 py-2 text-right font-semibold text-slate-900">
                     {qtz.format(totals.sinIva)}
                   </th>
+                  {/* IVA */}
                   <th className="w-40 border border-amber-300 bg-amber-100 px-3 py-2 text-right font-semibold text-amber-700">
                     {qtz.format(totals.iva)}
+                  </th>
+                  {/* COBRO FINAL (== Con IVA) */}
+                  <th className="w-44 border border-amber-300 bg-amber-200 px-3 py-2 text-right font-semibold text-amber-800">
+                    {qtz.format(totals.cobroFinal)}
                   </th>
                 </tr>
 
@@ -174,6 +176,9 @@ export default function Facturas() {
                   <th className="top-0 w-40 border border-slate-300 px-3 py-2 text-right font-semibold sticky bg-[#e9edf5]">
                     Iva
                   </th>
+                  <th className="top-0 w-44 border border-slate-300 px-3 py-2 text-right font-semibold sticky bg-[#e9edf5]">
+                    Cobro final
+                  </th>
                 </tr>
               </thead>
 
@@ -181,7 +186,7 @@ export default function Facturas() {
                 {/* === Fila de captura (Nuevo Ingreso) === */}
                 {showForm && (
                   <tr className="bg-white">
-                    {/* Columna de acciones: Guardar / Cancelar */}
+                    {/* acciones */}
                     <td className="sticky left-0 z-10 border border-slate-300 bg-white px-0 text-center">
                       <div className="flex items-center justify-center gap-1 py-1">
                         <button
@@ -255,6 +260,11 @@ export default function Facturas() {
                     <td className="border border-amber-300 bg-amber-50 px-2 py-1 text-right">
                       {qtz.format(ivaCalc || 0)}
                     </td>
+
+                    {/* COBRO FINAL (solo lectura, = Con IVA) */}
+                    <td className="border border-amber-300 bg-amber-100 px-2 py-1 text-right font-semibold">
+                      {qtz.format(conIvaCalc || 0)}
+                    </td>
                   </tr>
                 )}
 
@@ -262,13 +272,14 @@ export default function Facturas() {
                 {rows.map((r, idx) => {
                   const iva = (r.sinIva || 0) * IVA_RATE;
                   const conIva = (r.sinIva || 0) + iva;
+                  const cobroFinal = conIva;
 
                   return (
                     <tr
                       key={r.id}
                       className={`${idx % 2 === 0 ? "bg-white" : "bg-slate-50"} hover:bg-[#f5fbff]`}
                     >
-                      {/* Columna izquierda (botón 3 líneas) STICKY */}
+                      {/* Botón menú */}
                       <td className="sticky left-0 z-10 border border-slate-300 bg-inherit px-0 text-center relative overflow-visible">
                         <div className="relative">
                           <button
@@ -292,6 +303,18 @@ export default function Facturas() {
                                 Modificar
                               </button>
                               <button
+                                className="block w-full px-3 py-2 text-left text-sm hover:bg-slate-100"
+                                onClick={() => handleEdit(r)}
+                              >
+                                Abono
+                              </button>
+                              <button
+                                className="block w-full px-3 py-2 text-left text-sm hover:bg-slate-100"
+                                onClick={() => handleEdit(r)}
+                              >
+                                Cobrado
+                              </button>
+                              <button
                                 className="block w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
                                 onClick={() => handleDelete(r)}
                               >
@@ -312,15 +335,21 @@ export default function Facturas() {
                         {r.categoria}
                       </td>
 
-                      {/* Columnas de dinero con fondo amarillo y bordes (sin redondeo) */}
+                      {/* Con IVA */}
                       <td className="whitespace-nowrap border border-amber-300 bg-amber-50 px-3 py-2 text-right font-semibold">
                         {qtz.format(conIva)}
                       </td>
+                      {/* Sin IVA */}
                       <td className="whitespace-nowrap border border-amber-300 bg-amber-50 px-3 py-2 text-right">
                         {qtz.format(r.sinIva || 0)}
                       </td>
+                      {/* IVA */}
                       <td className="whitespace-nowrap border border-amber-300 bg-amber-50 px-3 py-2 text-right">
                         {qtz.format(iva)}
+                      </td>
+                      {/* COBRO FINAL */}
+                      <td className="whitespace-nowrap border border-amber-300 bg-amber-100 px-3 py-2 text-right font-semibold">
+                        {qtz.format(cobroFinal)}
                       </td>
                     </tr>
                   );
@@ -331,7 +360,7 @@ export default function Facturas() {
 
           {/* Nota */}
           <p className="mt-3 text-xs text-slate-500">
-            * Columnas y encabezado fijos, totales alineados, bordes rectos estilo Excel. IVA al {Math.round(IVA_RATE * 100)}%.
+            * Columnas y encabezado fijos, bordes rectos estilo Excel. IVA al {Math.round(IVA_RATE * 100)}%. “Cobro final” = Con IVA.
           </p>
         </div>
       </div>
