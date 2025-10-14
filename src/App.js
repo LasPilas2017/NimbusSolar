@@ -19,6 +19,11 @@ import { guardarLog } from './utils';
 import TotalIngresos from "./componentes/contabilidad/TotalIngresos";
 import TotalEgresos from "./componentes/contabilidad/TotalEgresos";
 import Proyectos from './componentes/Proyectos/Proyectos';
+import Menuprincipal from "./componentes/Ventas/Menuprincipal";
+
+
+
+
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -223,8 +228,9 @@ export default function App() {
                   </>
                 )}
                 {esAdmin && tab === "ventas" && (
-                  <div className="text-center text-xl font-semibold">Sección de Ventas (Próximamente)</div>
+                  <Menuprincipal rolUsuario="admin" user={usuario} />
                 )}
+
                 {esAdmin && tab === "existencias" && (
                   <div className="text-center text-xl font-semibold">Existencias (Próximamente)</div>
                 )}
