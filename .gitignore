@@ -8,3 +8,4 @@ Thumbs.db
 
 # Ignorar archivos de instalación
 *.msi
+.env

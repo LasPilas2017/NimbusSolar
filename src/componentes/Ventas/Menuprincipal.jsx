@@ -81,10 +81,7 @@ export default function Menuprincipal({ rolUsuario = "invitado", user = null }) 
   return (
     // 👉 sin overflow ni contenedor limitado: toda la página
     <div className="w-full min-h-screen">
-      {/* Título (si lo querés 100% full, puedes quitar este padding) */}
-      <div className="px-4 sm:px-6 md:px-8 py-4">
-        <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900">Ventas</h1>
-      </div>
+      
 
       {/* Contenido del módulo activo ocupando todo el espacio */}
       <Suspense fallback={<div className="p-6 text-gray-500">Cargando módulo…</div>}>
