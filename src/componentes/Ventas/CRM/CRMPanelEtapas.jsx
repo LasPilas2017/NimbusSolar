@@ -23,8 +23,9 @@ export default function CRMPanelEtapas({
 
   return (
     <div
-      className={`w-full bg-white rounded-xl shadow-sm border border-amber-200 px-3 pt-2 pb-0 min-h-[70px] md:min-h-[100px] h-full ${className}`}
-    >
+  className={`w-full bg-white rounded-xl shadow-sm border border-amber-200 px-2 pt-1 pb-[2px] h-full overflow-hidden ${className}`}
+>
+
       {/* 6 columnas; items-start para no “estirar” por textos largos */}
       <div className="grid grid-cols-6 gap-3 justify-items-center items-start">
         {Array.from({ length: 6 }).map((_, i) => (
@@ -69,12 +70,13 @@ function StageCard({ value = 0, percent = 0, label = "", color }) {
       </div>
 
       {/* Etiqueta (alto fijo para que todas midan igual) */}
-      <div
-        className="mt-1 text-center text-[13px] font-semibold text-gray-700 flex items-center justify-center whitespace-nowrap"
-        style={{ height: "28px" }}
-      >
-        {label}
-      </div>
+     <div
+  className="text-center text-[13px] font-semibold text-gray-700 flex items-center justify-center whitespace-nowrap"
+  style={{ height: "28px" }}
+>
+  {label}
+</div>
+
     </div>
   );
 }
