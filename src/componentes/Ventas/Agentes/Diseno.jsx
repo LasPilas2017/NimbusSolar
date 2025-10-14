@@ -374,7 +374,6 @@ export default function Diseno() {
               style={{ background: THEME.header, borderRight: `1px solid ${THEME.border}` }}
             >
               {DATA.reduce((a, r) => a + (r.comision || 0), 0).toFixed(2)}%
-
             </div>
 
             {/* Cierres (suma) */}

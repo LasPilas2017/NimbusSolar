@@ -4,7 +4,7 @@ import CRMPanelGeneral from "./CRMPanelGeneral";
 import CRMPanelEtapas from "./CRMPanelEtapas";
 import CRMPanelConversion from "./CRMPanelConversion";
 import CRMTablaProspectos from "./CRMTablaProspectos";
-
+import FORMTablaProspectos from "./FORMTablaProspectos";
 /**
  * Exportaciones nombradas:
  * te permiten cargar piezas sueltas del CRM si algún día las quieres
