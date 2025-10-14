@@ -4,10 +4,10 @@ import { ChevronDown, Search, X, ArrowUp, ArrowDown } from "lucide-react";
 /**
  * CRMTablaProspectos
  * - Bandas de color por colSpan (sticky)
- * - Cita/Candidato/Cotización -> columna única "Notas" con lupa
- * - Modal con Formulario + Historial
- * - Fecha y Hora automáticas (no editables) en un solo campo
- * - Persistencia localStorage por ID de prospecto
+ * - Columna "Notas" con lupa -> Modal (Formulario + Historial)
+ * - Fecha/hora automáticas (no editables)
+ * - Seguimiento con detección de soporte: date nativo o fallback texto YYYY-MM-DD
+ * - Persistencia en localStorage por ID
  */
 export default function CRMTablaProspectos({
   rows = [],
@@ -38,7 +38,6 @@ export default function CRMTablaProspectos({
       <div className="overflow-x-auto">
         <table className="min-w-[1200px] w-full text-sm">
           <thead className="z-20">
-            {/* ===== Fila 1: Bandas de color ===== */}
             <tr className="sticky top-0 h-8">
               <GroupBand colSpan={3} color="#1976D2" title="Información de Prospecto" />
               <GroupBand colSpan={2} color="#7341B2" title="Información de Prospección" />
@@ -48,29 +47,23 @@ export default function CRMTablaProspectos({
               <GroupBand colSpan={4} color="#1565C0" title="Evaluación de Prospección" />
             </tr>
 
-            {/* ===== Fila 2: Títulos ===== */}
             <tr className="sticky top-8 z-10 bg-[#EAF2FB] text-gray-900">
               <Th>ID</Th>
               <Th>Prospecto</Th>
               <Th>Condición</Th>
-
               <Th className="bg-[#EEE8F8]">Agente</Th>
               <Th className="bg-[#EEE8F8]">Canal</Th>
-
               <Th className="bg-[#FBE9EA]">
                 <div className="flex items-center gap-1">
                   Fecha 1 <ChevronDown size={14} />
                 </div>
               </Th>
-
               <Th>Notas</Th>
-
               <Th className="bg-[#DFF5EA]">
                 <div className="flex items-center gap-1">
                   Fecha 5 <ChevronDown size={14} />
                 </div>
               </Th>
-
               <Th>Días</Th>
               <Th>Avance</Th>
               <Th>Estatus</Th>
@@ -101,10 +94,8 @@ export default function CRMTablaProspectos({
                     <Td>{r.id}</Td>
                     <Td left>{r.prospecto}</Td>
                     <Td>{r.condicion}</Td>
-
                     <Td>{r.agente}</Td>
                     <Td>{r.canal}</Td>
-
                     <Td>{fmtFecha(r.fecha1)}</Td>
 
                     {/* Notas + Lupa */}
@@ -125,7 +116,6 @@ export default function CRMTablaProspectos({
                     </Td>
 
                     <Td>{fmtFecha(r.fecha5)}</Td>
-
                     <Td>{r.dias}</Td>
                     <Td>{r.avance}</Td>
                     <Td>{r.estatus}</Td>
@@ -136,7 +126,6 @@ export default function CRMTablaProspectos({
         </table>
       </div>
 
-      {/* Modal */}
       {rowActivo && (
         <ModalRegistroContactos
           row={rowActivo}
@@ -149,7 +138,7 @@ export default function CRMTablaProspectos({
   );
 }
 
-/* ---------- Subcomponentes visuales ---------- */
+/* ---------- Subcomponentes ---------- */
 
 function GroupBand({ colSpan, color, title }) {
   return (
@@ -162,88 +151,83 @@ function GroupBand({ colSpan, color, title }) {
     </th>
   );
 }
-
 function Th({ children, className = "" }) {
   return (
-    <th
-      className={`px-3 py-2 font-semibold text-[13px] text-left border-b border-amber-200 whitespace-nowrap ${className}`}
-    >
+    <th className={`px-3 py-2 font-semibold text-[13px] text-left border-b border-amber-200 ${className}`}>
       {children}
     </th>
   );
 }
-
 function Td({ children, left = false, className = "" }) {
   return (
-    <td
-      className={`px-3 py-3 text-gray-800 ${left ? "text-left" : "text-center"} ${className}`}
-    >
+    <td className={`px-3 py-3 text-gray-800 ${left ? "text-left" : "text-center"} ${className}`}>
       {children}
     </td>
   );
 }
-
 function fmtFecha(d) {
   if (!d) return "";
   try {
     const f = new Date(d);
-    if (isNaN(f)) return d;
-    return f.toLocaleDateString();
+    return isNaN(f) ? d : f.toLocaleDateString();
   } catch {
     return d;
   }
 }
 
-/* =================== Helpers de tiempo =================== */
-
-// 'YYYY-MM-DD' en hora local
+/* ---------- Helpers tiempo ---------- */
 function getHoyLocal() {
   const d = new Date();
   d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
   return d.toISOString().slice(0, 10);
 }
-
-// 'HH:MM' en hora local
 function getHoraLocal() {
   const d = new Date();
-  const h = String(d.getHours()).padStart(2, "0");
-  const m = String(d.getMinutes()).padStart(2, "0");
-  return `${h}:${m}`;
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
-
-// Texto "YYYY-MM-DD HH:MM" (para mostrar en el input combinado)
 function getAhoraTexto() {
   return `${getHoyLocal()} ${getHoraLocal()}`;
+}
+
+/* ---------- Detección de soporte <input type="date"> ---------- */
+function useSupportsDateInput() {
+  const [supports, setSupports] = useState(true);
+  useEffect(() => {
+    try {
+      const input = document.createElement("input");
+      input.setAttribute("type", "date");
+      const invalid = input.type !== "date";
+      setSupports(!invalid);
+    } catch {
+      setSupports(false);
+    }
+  }, []);
+  return supports;
 }
 
 /* =================== Modal Registro & Historial =================== */
 
 function ModalRegistroContactos({ row, onClose, readStored, writeStored }) {
-  // Estado de reloj en vivo (solo para mostrar, no editable)
   const [ahoraTexto, setAhoraTexto] = useState(getAhoraTexto());
   const [gestion, setGestion] = useState("Contacto");
+  const [seguimiento, setSeguimiento] = useState("");
   const [canal, setCanal] = useState("WhatsApp");
   const [tipo, setTipo] = useState("Entrante");
   const [comentario, setComentario] = useState("");
 
-  // Tick del reloj (actualiza cada 1s)
+  const supportsDate = useSupportsDateInput();
+
+  // Reloj en vivo
   useEffect(() => {
     const t = setInterval(() => setAhoraTexto(getAhoraTexto()), 1000);
     return () => clearInterval(t);
   }, []);
 
-  // Historial combinado: backend + localStorage
+  // Historial combinado
   const historial = useMemo(() => {
     const almacenado = readStored?.(row?.id) ?? [];
     const base = Array.isArray(row?.historialContactos) ? row.historialContactos : [];
-    const seen = new Set();
-    const all = [...base, ...almacenado].filter((h) => {
-      const key = `${h.fecha}__${h.hora || ""}__${h.comentario}__${h.gestion || ""}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-    // Orden descendente por fecha + hora (si existen)
+    const all = [...base, ...almacenado];
     return all.sort((a, b) => {
       const ta = `${a.fecha || ""} ${a.hora || ""}`;
       const tb = `${b.fecha || ""} ${b.hora || ""}`;
@@ -251,24 +235,30 @@ function ModalRegistroContactos({ row, onClose, readStored, writeStored }) {
     });
   }, [row, readStored]);
 
-  // Guardar (localStorage)
+  // Guardar
   const handleSubmit = () => {
     if (!comentario.trim()) return;
+    // Validar seguimiento si viene por fallback texto
+    if (!supportsDate && seguimiento && !/^\d{4}-\d{2}-\d{2}$/.test(seguimiento)) {
+      alert("Formato de seguimiento inválido. Usa YYYY-MM-DD.");
+      return;
+    }
     const nuevo = {
-      fecha: getHoyLocal(),     // <-- auto
-      hora: getHoraLocal(),     // <-- auto
-      gestion,                  // <-- select
-      canal,                    // <-- select
-      tipo,                     // <-- select
+      fecha: getHoyLocal(),
+      hora: getHoraLocal(),
+      gestion,
+      seguimiento: seguimiento || "",
+      canal,
+      tipo,
       comentario: comentario.trim(),
     };
     const prev = readStored?.(row?.id) ?? [];
-    const next = [nuevo, ...prev];
-    writeStored?.(row?.id, next);
+    writeStored?.(row?.id, [nuevo, ...prev]);
     setComentario("");
+    // no limpiamos seguimiento para poder agregar varios con misma fecha de seguimiento
   };
 
-  // Esc para cerrar
+  // Cerrar con ESC
   useEffect(() => {
     const onKey = (e) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
@@ -278,11 +268,7 @@ function ModalRegistroContactos({ row, onClose, readStored, writeStored }) {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center">
       {/* Fondo */}
-      <div
-        className="absolute inset-0 bg-black/50"
-        onClick={onClose}
-        aria-hidden="true"
-      />
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} aria-hidden="true" />
       {/* Dialog */}
       <div className="relative z-[101] w-[880px] max-w-[95vw] rounded-2xl bg-white shadow-2xl border border-slate-200 overflow-hidden">
         {/* Header */}
@@ -290,45 +276,66 @@ function ModalRegistroContactos({ row, onClose, readStored, writeStored }) {
           <h3 className="font-semibold text-lg">
             Registro de contactos — {row?.prospecto?.toUpperCase?.() || `#${row?.id}`}
           </h3>
-          <button
-            className="rounded-full hover:bg-white/10 p-1"
-            onClick={onClose}
-            aria-label="Cerrar"
-          >
+          <button className="rounded-full hover:bg-white/10 p-1" onClick={onClose} aria-label="Cerrar">
             <X size={20} />
           </button>
         </div>
 
-        {/* Formulario */}
+        {/* Form */}
         <div className="p-4 space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {/* Columna 1: Fecha y hora automáticas (no editable) + Gestión */}
+            {/* Columna 1: Fecha/hora auto + Gestión y Seguimiento */}
             <div className="flex flex-col">
-              <label className="text-[13px] font-medium text-slate-700 mb-1">
-                Fecha y hora (auto)
-              </label>
+              <label className="text-[13px] font-medium text-slate-700 mb-1">Fecha y hora (auto)</label>
               <input
                 value={ahoraTexto}
                 readOnly
                 disabled
                 className="h-10 rounded-lg border border-slate-300 px-3 bg-slate-50 text-slate-700"
               />
-              <label className="text-[13px] font-medium text-slate-700 mt-3 mb-1">
-                Tipo de gestión
-              </label>
-              <select
-                value={gestion}
-                onChange={(e) => setGestion(e.target.value)}
-                className="h-10 rounded-lg border border-slate-300 px-3 outline-none focus:ring-2 focus:ring-slate-300"
-              >
-                <option>Contacto</option>
-                <option>No contesta</option>
-                <option>Cotización</option>
-                <option>Cita</option>
-                <option>Visita Tecnica</option>
-                <option>Cierre</option>
-                <option>Proceso de Instalación</option>
-              </select>
+              <div className="flex gap-2 mt-3">
+                <div className="flex flex-col flex-1">
+                  <label className="text-[13px] font-medium text-slate-700 mb-1">Tipo de gestión</label>
+                  <select
+                    value={gestion}
+                    onChange={(e) => setGestion(e.target.value)}
+                    className="h-10 rounded-lg border border-slate-300 px-3 outline-none focus:ring-2 focus:ring-slate-300"
+                    onMouseDown={(e) => e.stopPropagation()}
+                  >
+                    <option>Contacto</option>
+                    <option>No contesta</option>
+                    <option>Cotización</option>
+                    <option>Cita</option>
+                    <option>Visita Tecnica</option>
+                    <option>Cierre</option>
+                    <option>Proceso de Instalación</option>
+                  </select>
+                </div>
+
+                <div className="flex flex-col flex-1">
+                  <label className="text-[13px] font-medium text-slate-700 mb-1">Seguimiento</label>
+
+                  {supportsDate ? (
+                    <input
+                      type="date"
+                      value={seguimiento}
+                      onChange={(e) => setSeguimiento(e.target.value)}
+                      className="h-10 rounded-lg border border-slate-300 px-3 outline-none focus:ring-2 focus:ring-slate-300"
+                      onMouseDown={(e) => e.stopPropagation()}
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="YYYY-MM-DD"
+                      value={seguimiento}
+                      onChange={(e) => setSeguimiento(e.target.value)}
+                      className="h-10 rounded-lg border border-slate-300 px-3 outline-none focus:ring-2 focus:ring-slate-300"
+                      onMouseDown={(e) => e.stopPropagation()}
+                    />
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* Columna 2: Canal */}
@@ -338,6 +345,7 @@ function ModalRegistroContactos({ row, onClose, readStored, writeStored }) {
                 value={canal}
                 onChange={(e) => setCanal(e.target.value)}
                 className="h-10 rounded-lg border border-slate-300 px-3 outline-none focus:ring-2 focus:ring-slate-300"
+                onMouseDown={(e) => e.stopPropagation()}
               >
                 <option>WhatsApp</option>
                 <option>Llamada</option>
@@ -348,13 +356,12 @@ function ModalRegistroContactos({ row, onClose, readStored, writeStored }) {
 
             {/* Columna 3: Tipo de comunicación */}
             <div className="flex flex-col">
-              <label className="text-[13px] font-medium text-slate-700 mb-1">
-                Tipo de comunicación
-              </label>
+              <label className="text-[13px] font-medium text-slate-700 mb-1">Tipo de comunicación</label>
               <select
                 value={tipo}
                 onChange={(e) => setTipo(e.target.value)}
                 className="h-10 rounded-lg border border-slate-300 px-3 outline-none focus:ring-2 focus:ring-slate-300"
+                onMouseDown={(e) => e.stopPropagation()}
               >
                 <option>Entrante</option>
                 <option>Saliente</option>
@@ -371,21 +378,16 @@ function ModalRegistroContactos({ row, onClose, readStored, writeStored }) {
               rows={3}
               className="rounded-lg border border-slate-300 px-3 py-2 outline-none focus:ring-2 focus:ring-slate-300"
               placeholder="Ej. Cliente solicita comparar inversores de 5kW y 8kW..."
+              onMouseDown={(e) => e.stopPropagation()}
             />
           </div>
 
-          {/* Botones */}
+          {/* Acciones */}
           <div className="flex justify-end gap-3">
-            <button
-              className="h-10 px-4 rounded-lg border border-slate-300 hover:bg-slate-50"
-              onClick={onClose}
-            >
+            <button className="h-10 px-4 rounded-lg border border-slate-300 hover:bg-slate-50" onClick={onClose}>
               Cerrar
             </button>
-            <button
-              className="h-10 px-4 rounded-lg bg-[#183659] text-white hover:brightness-110"
-              onClick={handleSubmit}
-            >
+            <button className="h-10 px-4 rounded-lg bg-[#183659] text-white hover:brightness-110" onClick={handleSubmit}>
               Agregar contacto
             </button>
           </div>
@@ -394,35 +396,31 @@ function ModalRegistroContactos({ row, onClose, readStored, writeStored }) {
         {/* Historial */}
         <div className="px-4 pb-5">
           <div className="rounded-xl border border-slate-200 overflow-hidden">
-            <div className="bg-[#183659] text-white px-4 py-2 font-semibold">
-              Historial
-            </div>
+            <div className="bg-[#183659] text-white px-4 py-2 font-semibold">Historial</div>
             <div className="max-h-[320px] overflow-y-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-slate-50 text-slate-700">
-                    <th className="text-left px-3 py-2">Fecha</th>
-                    <th className="text-left px-3 py-2">Hora</th>
-                    <th className="text-left px-3 py-2">Gestión</th>
-                    <th className="text-left px-3 py-2">Canal</th>
-                    <th className="text-left px-3 py-2">Comentario</th>
+                    <th className="px-3 py-2 text-left">Fecha</th>
+                    <th className="px-3 py-2 text-left">Hora</th>
+                    <th className="px-3 py-2 text-left">Gestión</th>
+                    <th className="px-3 py-2 text-left">Seguimiento</th>
+                    <th className="px-3 py-2 text-left">Canal</th>
+                    <th className="px-3 py-2 text-left">Comentario</th>
                   </tr>
                 </thead>
                 <tbody>
                   {historial.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="px-3 py-4 text-center text-slate-500">
-                        Sin registros todavía.
-                      </td>
+                      <td colSpan={6} className="px-3 py-4 text-center text-slate-500">Sin registros todavía.</td>
                     </tr>
                   ) : (
-                    historial.map((h, idx) => (
-                      <tr key={idx} className={idx % 2 ? "bg-white" : "bg-[#FAFAFA]"}>
+                    historial.map((h, i) => (
+                      <tr key={i} className={i % 2 ? "bg-white" : "bg-[#FAFAFA]"}>
                         <td className="px-3 py-2">{h.fecha}</td>
                         <td className="px-3 py-2">{h.hora || ""}</td>
-                        <td className="px-3 py-2">
-                          <GestionBadge gestion={h.gestion || "Contacto"} />
-                        </td>
+                        <td className="px-3 py-2">{h.gestion}</td>
+                        <td className="px-3 py-2">{h.seguimiento || "—"}</td>
                         <td className="px-3 py-2">
                           <CanalBadge canal={h.canal} />{" "}
                           {h.tipo === "Entrante" ? (
@@ -446,7 +444,6 @@ function ModalRegistroContactos({ row, onClose, readStored, writeStored }) {
 }
 
 /* ---------- Helpers visuales ---------- */
-
 function CanalBadge({ canal = "Otro" }) {
   const color =
     canal === "WhatsApp"
@@ -456,28 +453,5 @@ function CanalBadge({ canal = "Otro" }) {
       : canal === "Correo"
       ? "bg-indigo-100 text-indigo-700"
       : "bg-slate-100 text-slate-700";
-  return (
-    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${color}`}>
-      {canal}
-    </span>
-  );
-}
-
-function GestionBadge({ gestion = "Contacto" }) {
-  const map = {
-    "Contacto": "bg-emerald-100 text-emerald-700",
-    "Cita": "bg-orange-100 text-orange-700",
-    "Candidato": "bg-yellow-100 text-yellow-700",
-    "Cotización": "bg-green-100 text-green-700",
-    "Cierre": "bg-teal-100 text-teal-700",
-    "No contesta": "bg-rose-100 text-rose-700",
-    "Visita Tecnica": "bg-indigo-100 text-indigo-700",
-    "Proceso de Instalación": "bg-cyan-100 text-cyan-700",
-  };
-  const cls = map[gestion] || "bg-slate-100 text-slate-700";
-  return (
-    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${cls}`}>
-      {gestion}
-    </span>
-  );
+  return <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${color}`}>{canal}</span>;
 }
