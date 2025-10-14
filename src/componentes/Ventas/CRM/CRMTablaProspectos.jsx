@@ -2,13 +2,13 @@ import React, { useEffect, useMemo, useState } from "react";
 import { ChevronDown, Search, X, ArrowUp, ArrowDown } from "lucide-react";
 
 /**
- * CRMTablaProspectos
- * - Bandas de color por colSpan (sticky)
- * - Columna "Notas" con lupa -> Modal (Formulario + Historial)
- * - Fecha/hora automáticas (no editables)
- * - Seguimiento con detección de soporte: date nativo o fallback texto YYYY-MM-DD
- * - Persistencia en localStorage por ID
+ * CRMTablaProspectos (completo)
+ * - DÍAS: desde último contacto efectivo (gestión != "No contesta"); fallback: fecha1
+ * - AVANCE: según última gestión (25/50/75/100)
+ * - ESTATUS y VENTA editables (select) + GUARDAR con persistencia en localStorage (por ID)
+ * - Modal de Notas con historial (persistencia local)
  */
+
 export default function CRMTablaProspectos({
   rows = [],
   onRowClick,
@@ -16,7 +16,17 @@ export default function CRMTablaProspectos({
 }) {
   const [rowActivo, setRowActivo] = useState(null);
 
-  // Helpers de almacenamiento
+  // Totales simulados de ventas (temporal hasta conexión a base de datos)
+const [salesTotals, setSalesTotals] = useState(() => {
+  const totals = {};
+  for (const r of rows) {
+    // valor simulado, puedes cambiarlo por datos reales o cálculos
+    totals[r.id] = Math.floor(Math.random() * 50000) + 1000;
+  }
+  return totals;
+});
+
+  /** ---------- Historial (persistencia existente) ---------- */
   const readStored = (id) => {
     if (typeof window === "undefined") return [];
     try {
@@ -33,20 +43,99 @@ export default function CRMTablaProspectos({
     } catch {}
   };
 
+  /** ---------- Meta por fila (estatus/venta) ---------- */
+  const metaKey = (id) => `crm_row_meta:${id}`;
+  const loadRowMeta = (id) => {
+    try {
+      const raw = localStorage.getItem(metaKey(id));
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  };
+  const saveRowMeta = (id, meta) => {
+    try {
+      localStorage.setItem(metaKey(id), JSON.stringify(meta));
+    } catch {}
+  };
+
+  // Estado único para todos los rows (evita hooks dentro del map)
+  const [rowMeta, setRowMeta] = useState({}); // { [id]: { estatus, venta } }
+
+  // Inicializa rowMeta con lo guardado o valores del row
+  useEffect(() => {
+    const next = {};
+    for (const r of rows) {
+      const saved = loadRowMeta(r.id);
+      next[r.id] = {
+        estatus: saved?.estatus ?? r.estatus ?? "Por Iniciar",
+        venta: saved?.venta ?? (r.venta ? "Sí" : "No"),
+      };
+    }
+    setRowMeta(next);
+  }, [rows]);
+
+  /** ---------- Cálculos DÍAS / AVANCE ---------- */
+  const mergeHistorial = (row) => {
+    const loc = readStored(row.id) ?? [];
+    const base = Array.isArray(row.historialContactos) ? row.historialContactos : [];
+    const all = [...base, ...loc];
+    // Ordena DESC por fecha+hora
+    return all.sort((a, b) => {
+      const ta = `${a.fecha || ""} ${a.hora || ""}`;
+      const tb = `${b.fecha || ""} ${b.hora || ""}`;
+      return ta < tb ? 1 : ta > tb ? -1 : 0;
+    });
+  };
+
+
+  const lastEffectiveContactDate = (row) => {
+    const hist = mergeHistorial(row);
+    const eff = hist.find(
+      (h) => (h.gestion || "").toLowerCase() !== "no contesta" && h.fecha
+    );
+    return eff?.fecha || row.fecha1 || null;
+  };
+
+  const diffDaysFrom = (yyyy_mm_dd) => {
+    if (!yyyy_mm_dd) return "";
+    const a = new Date(yyyy_mm_dd);
+    if (isNaN(a)) return "";
+    const today = new Date();
+    a.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+    const ms = today - a;
+    return Math.max(0, Math.round(ms / (1000 * 60 * 60 * 24)));
+  };
+
+  const avanceFromLastGestion = (row) => {
+    const hist = mergeHistorial(row);
+    const g = (hist[0]?.gestion || "").toLowerCase();
+    if (g.includes("cierre")) return 100;
+    if (g.includes("visita")) return 75;
+    if (g.includes("cotiz")) return 50;
+    if (g.includes("contacto") || g.includes("seguim")) return 25;
+    return 0;
+    // Nota: puedes ajustar aquí si agregas nuevas gestiones
+  };
+
+  /** ---------- Render ---------- */
   return (
     <div className="bg-white rounded-xl border border-amber-200 shadow-sm p-3">
       <div className="overflow-x-auto">
-        <table className="min-w-[1200px] w-full text-sm">
+        <table className="min-w-[1280px] w-full text-sm">
           <thead className="z-20">
+            {/* Bandas superiores (colSpan ajustado a nuevas columnas) */}
             <tr className="sticky top-0 h-8">
               <GroupBand colSpan={3} color="#1976D2" title="Información de Prospecto" />
               <GroupBand colSpan={2} color="#7341B2" title="Información de Prospección" />
               <GroupBand colSpan={1} color="#9B1B17" title="Contacto" />
               <GroupBand colSpan={1} color="#1565C0" title="Evaluación de Prospección" />
               <GroupBand colSpan={1} color="#1FA15D" title="Cierre" />
-              <GroupBand colSpan={4} color="#1565C0" title="Evaluación de Prospección" />
+              <GroupBand colSpan={6} color="#1565C0" title="Evaluación de Prospección" />
             </tr>
 
+            {/* Encabezados */}
             <tr className="sticky top-8 z-10 bg-[#EAF2FB] text-gray-900">
               <Th>ID</Th>
               <Th>Prospecto</Th>
@@ -68,6 +157,8 @@ export default function CRMTablaProspectos({
               <Th>Avance</Th>
               <Th>Estatus</Th>
               <Th>Venta</Th>
+              <Th>Total Ventas</Th>
+              <Th>Guardar</Th>
             </tr>
           </thead>
 
@@ -75,57 +166,119 @@ export default function CRMTablaProspectos({
             {rows.length === 0
               ? [...Array(10)].map((_, i) => (
                   <tr key={i} className={i % 2 ? "bg-white" : "bg-[#FAFAFA]"}>
-                    {Array.from({ length: 12 }).map((__, j) => (
+                    {Array.from({ length: 13 }).map((__, j) => (
                       <td key={j} className="px-3 py-3 text-center text-red-500/70">
                         {j === 0 ? "0" : ""}
                       </td>
                     ))}
                   </tr>
                 ))
-              : rows.map((r, i) => (
-                  <tr
-                    key={r.id ?? i}
-                    onClick={(e) => {
-                      if ((e.target)?.closest?.("button")) return;
-                      onRowClick?.(r);
-                    }}
-                    className={`transition ${i % 2 ? "bg-white" : "bg-[#FAFAFA]"} hover:bg-blue-50 cursor-pointer`}
-                  >
-                    <Td>{r.id}</Td>
-                    <Td left>{r.prospecto}</Td>
-                    <Td>{r.condicion}</Td>
-                    <Td>{r.agente}</Td>
-                    <Td>{r.canal}</Td>
-                    <Td>{fmtFecha(r.fecha1)}</Td>
+              : rows.map((r, i) => {
+                  const meta = rowMeta[r.id] || { estatus: "Por Iniciar", venta: "No" };
 
-                    {/* Notas + Lupa */}
-                    <Td left className="max-w-[380px]">
-                      <div className="flex items-center gap-2">
-                        <span className="truncate" title={r.notas || ""}>
-                          {r.notas || "—"}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setRowActivo(r)}
-                          className="ml-auto inline-flex items-center justify-center rounded-full border border-slate-300 hover:border-slate-400 hover:bg-slate-50 transition h-7 w-7"
-                          title="Ver/Agregar contactos"
+                  const dias = diffDaysFrom(lastEffectiveContactDate(r));
+                  const avance = avanceFromLastGestion(r);
+
+                  const handleMetaChange = (patch) => {
+                    setRowMeta((prev) => ({
+                      ...prev,
+                      [r.id]: { ...(prev[r.id] || {}), ...patch },
+                    }));
+                  };
+                  const handleSave = () => {
+                    const toSave = rowMeta[r.id] || {};
+                    saveRowMeta(r.id, toSave);
+                  };
+
+                  return (
+                    <tr
+                      key={r.id ?? i}
+                      onClick={(e) => {
+                        if ((e.target)?.closest?.("button,select")) return;
+                        onRowClick?.(r);
+                      }}
+                      className={`transition ${
+                        i % 2 ? "bg-white" : "bg-[#FAFAFA]"
+                      } hover:bg-blue-50`}
+                    >
+                      <Td>{r.id}</Td>
+                      <Td left>{r.prospecto}</Td>
+                      <Td>{r.condicion}</Td>
+                      <Td>{r.agente}</Td>
+                      <Td>{r.canal}</Td>
+                      <Td>{fmtFecha(r.fecha1)}</Td>
+
+                      {/* Notas + Lupa */}
+                      <Td left className="max-w-[380px]">
+                        <div className="flex items-center gap-2">
+                          <span className="truncate" title={r.notas || ""}>
+                            {r.notas || "—"}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setRowActivo(r)}
+                            className="ml-auto inline-flex items-center justify-center rounded-full border border-slate-300 hover:border-slate-400 hover:bg-slate-50 transition h-7 w-7"
+                            title="Ver/Agregar contactos"
+                          >
+                            <Search size={16} />
+                          </button>
+                        </div>
+                      </Td>
+
+                      <Td>{fmtFecha(r.fecha5)}</Td>
+
+                      {/* DÍAS */}
+                      <Td>{dias === "" ? "—" : dias}</Td>
+
+                      {/* AVANCE */}
+                      <Td>{avance ? `${avance}%` : "—"}</Td>
+
+                      {/* ESTATUS */}
+                      <Td>
+                        <select
+                          value={meta.estatus}
+                          onChange={(e) => handleMetaChange({ estatus: e.target.value })}
+                          className="h-9 rounded-md border border-slate-300 px-2 bg-white"
                         >
-                          <Search size={16} />
-                        </button>
-                      </div>
-                    </Td>
+                          <option>Por Iniciar</option>
+                          <option>Proceso de Instalación</option>
+                          <option>Finalizado</option>
+                        </select>
+                      </Td>
 
-                    <Td>{fmtFecha(r.fecha5)}</Td>
-                    <Td>{r.dias}</Td>
-                    <Td>{r.avance}</Td>
-                    <Td>{r.estatus}</Td>
-                    <Td>{r.venta ? "Sí" : "No"}</Td>
-                  </tr>
-                ))}
+                      {/* VENTA */}
+<Td>
+  <select
+    value={meta.venta}
+    onChange={(e) => handleMetaChange({ venta: e.target.value })}
+    className="h-9 rounded-md border border-slate-300 px-2 bg-white"
+  >
+    <option>Sí</option>
+    <option>No</option>
+  </select>
+</Td>
+
+{/* TOTAL VENTAS */}
+<Td>{fmtMoney(salesTotals[r.id] || 0)}</Td>
+
+{/* GUARDAR */}
+<Td>
+  <button
+    type="button"
+    onClick={handleSave}
+    className="h-9 px-3 rounded-md bg-emerald-600 text-white hover:bg-emerald-500"
+  >
+    Guardar
+  </button>
+</Td>
+                    </tr>
+                  );
+                })}
           </tbody>
         </table>
       </div>
 
+      {/* Modal Notas/Historial */}
       {rowActivo && (
         <ModalRegistroContactos
           row={rowActivo}
@@ -138,7 +291,7 @@ export default function CRMTablaProspectos({
   );
 }
 
-/* ---------- Subcomponentes ---------- */
+/* ---------- Subcomponentes visuales ---------- */
 
 function GroupBand({ colSpan, color, title }) {
   return (
@@ -174,8 +327,21 @@ function fmtFecha(d) {
     return d;
   }
 }
+// ---- Formato de moneda ----
+function fmtMoney(n = 0) {
+  try {
+    return new Intl.NumberFormat("es-GT", {
+      style: "currency",
+      currency: "GTQ", // Cambia a "USD" o "PEN" si prefieres otra moneda
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(n || 0);
+  } catch {
+    return `Q ${Number(n || 0).toFixed(2)}`;
+  }
+}
 
-/* ---------- Helpers tiempo ---------- */
+/* =================== Helpers de tiempo =================== */
 function getHoyLocal() {
   const d = new Date();
   d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
@@ -189,15 +355,14 @@ function getAhoraTexto() {
   return `${getHoyLocal()} ${getHoraLocal()}`;
 }
 
-/* ---------- Detección de soporte <input type="date"> ---------- */
+/* ---------- Soporte <input type="date"> ---------- */
 function useSupportsDateInput() {
   const [supports, setSupports] = useState(true);
   useEffect(() => {
     try {
       const input = document.createElement("input");
       input.setAttribute("type", "date");
-      const invalid = input.type !== "date";
-      setSupports(!invalid);
+      setSupports(input.type === "date");
     } catch {
       setSupports(false);
     }
@@ -217,13 +382,13 @@ function ModalRegistroContactos({ row, onClose, readStored, writeStored }) {
 
   const supportsDate = useSupportsDateInput();
 
-  // Reloj en vivo
+  // reloj en vivo
   useEffect(() => {
     const t = setInterval(() => setAhoraTexto(getAhoraTexto()), 1000);
     return () => clearInterval(t);
   }, []);
 
-  // Historial combinado
+  // historial combinado
   const historial = useMemo(() => {
     const almacenado = readStored?.(row?.id) ?? [];
     const base = Array.isArray(row?.historialContactos) ? row.historialContactos : [];
@@ -235,10 +400,8 @@ function ModalRegistroContactos({ row, onClose, readStored, writeStored }) {
     });
   }, [row, readStored]);
 
-  // Guardar
   const handleSubmit = () => {
     if (!comentario.trim()) return;
-    // Validar seguimiento si viene por fallback texto
     if (!supportsDate && seguimiento && !/^\d{4}-\d{2}-\d{2}$/.test(seguimiento)) {
       alert("Formato de seguimiento inválido. Usa YYYY-MM-DD.");
       return;
@@ -255,10 +418,9 @@ function ModalRegistroContactos({ row, onClose, readStored, writeStored }) {
     const prev = readStored?.(row?.id) ?? [];
     writeStored?.(row?.id, [nuevo, ...prev]);
     setComentario("");
-    // no limpiamos seguimiento para poder agregar varios con misma fecha de seguimiento
   };
 
-  // Cerrar con ESC
+  // cerrar con ESC
   useEffect(() => {
     const onKey = (e) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
@@ -281,29 +443,20 @@ function ModalRegistroContactos({ row, onClose, readStored, writeStored }) {
           </button>
         </div>
 
-        {/* Form */}
+        {/* Formulario */}
         <div className="p-4 space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {/* Columna 1: Fecha/hora auto + Gestión y Seguimiento */}
+            {/* Columna 1: Fecha/hora auto + Gestión/Seguimiento */}
             <div className="flex flex-col">
               <label className="text-[13px] font-medium text-slate-700 mb-1">Fecha y hora (auto)</label>
-              <input
-                value={ahoraTexto}
-                readOnly
-                disabled
-                className="h-10 rounded-lg border border-slate-300 px-3 bg-slate-50 text-slate-700"
-              />
+              <input value={ahoraTexto} readOnly disabled className="h-10 rounded-lg border border-slate-300 px-3 bg-slate-50 text-slate-700" />
               <div className="flex gap-2 mt-3">
                 <div className="flex flex-col flex-1">
                   <label className="text-[13px] font-medium text-slate-700 mb-1">Tipo de gestión</label>
-                  <select
-                    value={gestion}
-                    onChange={(e) => setGestion(e.target.value)}
-                    className="h-10 rounded-lg border border-slate-300 px-3 outline-none focus:ring-2 focus:ring-slate-300"
-                    onMouseDown={(e) => e.stopPropagation()}
-                  >
+                  <select value={gestion} onChange={(e) => setGestion(e.target.value)} className="h-10 rounded-lg border border-slate-300 px-3">
                     <option>Contacto</option>
                     <option>No contesta</option>
+                    <option>Seguimiento</option>
                     <option>Cotización</option>
                     <option>Cita</option>
                     <option>Visita Tecnica</option>
@@ -311,28 +464,12 @@ function ModalRegistroContactos({ row, onClose, readStored, writeStored }) {
                     <option>Proceso de Instalación</option>
                   </select>
                 </div>
-
                 <div className="flex flex-col flex-1">
                   <label className="text-[13px] font-medium text-slate-700 mb-1">Seguimiento</label>
-
                   {supportsDate ? (
-                    <input
-                      type="date"
-                      value={seguimiento}
-                      onChange={(e) => setSeguimiento(e.target.value)}
-                      className="h-10 rounded-lg border border-slate-300 px-3 outline-none focus:ring-2 focus:ring-slate-300"
-                      onMouseDown={(e) => e.stopPropagation()}
-                    />
+                    <input type="date" value={seguimiento} onChange={(e) => setSeguimiento(e.target.value)} className="h-10 rounded-lg border border-slate-300 px-3" />
                   ) : (
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="YYYY-MM-DD"
-                      value={seguimiento}
-                      onChange={(e) => setSeguimiento(e.target.value)}
-                      className="h-10 rounded-lg border border-slate-300 px-3 outline-none focus:ring-2 focus:ring-slate-300"
-                      onMouseDown={(e) => e.stopPropagation()}
-                    />
+                    <input type="text" inputMode="numeric" placeholder="YYYY-MM-DD" value={seguimiento} onChange={(e) => setSeguimiento(e.target.value)} className="h-10 rounded-lg border border-slate-300 px-3" />
                   )}
                 </div>
               </div>
@@ -341,12 +478,7 @@ function ModalRegistroContactos({ row, onClose, readStored, writeStored }) {
             {/* Columna 2: Canal */}
             <div className="flex flex-col">
               <label className="text-[13px] font-medium text-slate-700 mb-1">Canal</label>
-              <select
-                value={canal}
-                onChange={(e) => setCanal(e.target.value)}
-                className="h-10 rounded-lg border border-slate-300 px-3 outline-none focus:ring-2 focus:ring-slate-300"
-                onMouseDown={(e) => e.stopPropagation()}
-              >
+              <select value={canal} onChange={(e) => setCanal(e.target.value)} className="h-10 rounded-lg border border-slate-300 px-3">
                 <option>WhatsApp</option>
                 <option>Llamada</option>
                 <option>Correo</option>
@@ -357,12 +489,7 @@ function ModalRegistroContactos({ row, onClose, readStored, writeStored }) {
             {/* Columna 3: Tipo de comunicación */}
             <div className="flex flex-col">
               <label className="text-[13px] font-medium text-slate-700 mb-1">Tipo de comunicación</label>
-              <select
-                value={tipo}
-                onChange={(e) => setTipo(e.target.value)}
-                className="h-10 rounded-lg border border-slate-300 px-3 outline-none focus:ring-2 focus:ring-slate-300"
-                onMouseDown={(e) => e.stopPropagation()}
-              >
+              <select value={tipo} onChange={(e) => setTipo(e.target.value)} className="h-10 rounded-lg border border-slate-300 px-3">
                 <option>Entrante</option>
                 <option>Saliente</option>
               </select>
@@ -372,24 +499,13 @@ function ModalRegistroContactos({ row, onClose, readStored, writeStored }) {
           {/* Comentario */}
           <div className="flex flex-col">
             <label className="text-[13px] font-medium text-slate-700 mb-1">Comentario</label>
-            <textarea
-              value={comentario}
-              onChange={(e) => setComentario(e.target.value)}
-              rows={3}
-              className="rounded-lg border border-slate-300 px-3 py-2 outline-none focus:ring-2 focus:ring-slate-300"
-              placeholder="Ej. Cliente solicita comparar inversores de 5kW y 8kW..."
-              onMouseDown={(e) => e.stopPropagation()}
-            />
+            <textarea value={comentario} onChange={(e) => setComentario(e.target.value)} rows={3} className="rounded-lg border border-slate-300 px-3 py-2" placeholder="Ej. Cliente solicita comparar inversores..." />
           </div>
 
           {/* Acciones */}
           <div className="flex justify-end gap-3">
-            <button className="h-10 px-4 rounded-lg border border-slate-300 hover:bg-slate-50" onClick={onClose}>
-              Cerrar
-            </button>
-            <button className="h-10 px-4 rounded-lg bg-[#183659] text-white hover:brightness-110" onClick={handleSubmit}>
-              Agregar contacto
-            </button>
+            <button className="h-10 px-4 rounded-lg border border-slate-300 hover:bg-slate-50" onClick={onClose}>Cerrar</button>
+            <button className="h-10 px-4 rounded-lg bg-[#183659] text-white hover:brightness-110" onClick={handleSubmit}>Agregar contacto</button>
           </div>
         </div>
 
