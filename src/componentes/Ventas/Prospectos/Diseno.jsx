@@ -1,7 +1,259 @@
-import React from "react";
+import React, { useState } from "react";
 import THEME from "../theme"; // export default
 
-/* ========= Helpers ========= */
+
+/* ================ DATA ================= */
+const DATA = [
+  {
+    id: "I2025106",
+    fecha: "2024-10-02",
+    nombre: "ANALÍ ESMERALDA RAMOS DE CHACAT",
+    empresa: "CLARO",
+    correo: "j.lopez@gmail.com",
+    telefono: "8346458111",
+    celular: "8119187047",
+    direccion: "Gavilanes #222",
+    departamento: "GUATEMALA",
+    municipio: "GUATEMALA",
+    segmento: "Industrial",
+    tipoInstalacion: "Atada a la red",
+    promedioKW: 78,
+    promedioQ: 350,
+    dias: 39,
+    estado: "Venta",
+    compras: 4000,
+  },
+  {
+    id: "I2025108",
+    fecha: "2024-10-02",
+    nombre: "JOSÉ MIGUEL REYES RAMÍREZ",
+    empresa: "TIGO",
+    correo: "ck",
+    telefono: "4444",
+    celular: "44",
+    direccion: "Zona 9",
+    departamento: "GUATEMALA",
+    municipio: "GUATEMALA",
+    segmento: "Industrial",
+    tipoInstalacion: "Atada a la red",
+    promedioKW: 54,
+    promedioQ: 125,
+    dias: 9,
+    estado: "Venta",
+    compras: 5000,
+  },
+  {
+    id: "I2025110",
+    fecha: "2024-10-02",
+    nombre: "EDWIN GUSTAVO TZIBOY CHOC",
+    empresa: "CABLEADO S.A",
+    correo: "-",
+    telefono: "-",
+    celular: "-",
+    direccion: "Guatemala Final",
+    departamento: "GUATEMALA",
+    municipio: "GUATEMALA",
+    segmento: "Industrial",
+    tipoInstalacion: "Atada a la red",
+    promedioKW: 375,
+    promedioQ: 525,
+    dias: 9,
+    estado: "Venta",
+    compras: 3000,
+  },
+  {
+    id: "I2025112",
+    fecha: "2024-10-02",
+    nombre: "JOSÉ OSWALDO CHAVAC GARCÍA",
+    empresa: "VENTAS TOTALES",
+    correo: "-",
+    telefono: "-",
+    celular: "-",
+    direccion: "Zona 0",
+    departamento: "GUATEMALA",
+    municipio: "GUATEMALA",
+    segmento: "Industrial",
+    tipoInstalacion: "Aislada",
+    promedioKW: 28,
+    promedioQ: 100,
+    dias: null,
+    estado: "Por Iniciar",
+    compras: 0,
+  },
+  {
+    id: "I2025114",
+    fecha: "2024-10-02",
+    nombre: "ENGELVER ARIOBALDO GARCIA GARCÍA",
+    empresa: "REPUESTOS S.A",
+    correo: "-",
+    telefono: "-",
+    celular: "-",
+    direccion: "-",
+    departamento: "GUATEMALA",
+    municipio: "GUATEMALA",
+    segmento: "Industrial",
+    tipoInstalacion: "Aislada",
+    promedioKW: 28,
+    promedioQ: 100,
+    dias: null,
+    estado: "Por Iniciar",
+    compras: 0,
+  },
+  {
+    id: "D2025106",
+    fecha: "2024-10-02",
+    nombre: "MARCO TULIO LOPEZ  PEREZ",
+    empresa: "CASA",
+    correo: "-",
+    telefono: "-",
+    celular: "-",
+    direccion: "-",
+    departamento: "PETEN",
+    municipio: "-",
+    segmento: "Domiciliar",
+    tipoInstalacion: "Aislada",
+    promedioKW: null,
+    promedioQ: null,
+    dias: null,
+    estado: "Por Iniciar",
+    compras: 0,
+  },
+  {
+    id: "D2025107",
+    fecha: "2024-10-02",
+    nombre: "LESVER FERNANDO LOPEZ SOC",
+    empresa: "CASA",
+    correo: "-",
+    telefono: "-",
+    celular: "-",
+    direccion: "-",
+    departamento: "FLORES",
+    municipio: "-",
+    segmento: "Domiciliar",
+    tipoInstalacion: "Aislada",
+    promedioKW: null,
+    promedioQ: null,
+    dias: null,
+    estado: "Por Iniciar",
+    compras: 0,
+  },
+  {
+    id: "D2025108",
+    fecha: "2024-10-02",
+    nombre: "CAROLAY YOMARA SAGASTUME GONZALEZ",
+    empresa: "CASA",
+    correo: "-",
+    telefono: "-",
+    celular: "-",
+    direccion: "-",
+    departamento: "PETEN",
+    municipio: "-",
+    segmento: "Domiciliar",
+    tipoInstalacion: "Aislada",
+    promedioKW: null,
+    promedioQ: null,
+    dias: null,
+    estado: "Por Iniciar",
+    compras: 0,
+  },
+  {
+    id: "D2025109",
+    fecha: "2024-10-02",
+    nombre: "ALFREDO SACUL CHOC",
+    empresa: "CASA",
+    correo: "-",
+    telefono: "-",
+    celular: "-",
+    direccion: "-",
+    departamento: "PETEN",
+    municipio: "-",
+    segmento: "Domiciliar",
+    tipoInstalacion: "Aislada",
+    promedioKW: null,
+    promedioQ: null,
+    dias: null,
+    estado: "Por Iniciar",
+    compras: 0,
+  },
+  {
+    id: "D2025110",
+    fecha: "2024-10-02",
+    nombre: "JACQUELINE JULISSA CABRERA LOARCA",
+    empresa: "CA",
+    correo: "-",
+    telefono: "-",
+    celular: "-",
+    direccion: "-",
+    departamento: "PETEN",
+    municipio: "-",
+    segmento: "Domiciliar",
+    tipoInstalacion: "Aislada",
+    promedioKW: null,
+    promedioQ: null,
+    dias: null,
+    estado: "Por Iniciar",
+    compras: 0,
+  },
+  {
+    id: "D2025111",
+    fecha: "2024-10-02",
+    nombre: "MIRSA CAROLINA GOMEZ HERNANDEZ",
+    empresa: "CA",
+    correo: "-",
+    telefono: "-",
+    celular: "-",
+    direccion: "-",
+    departamento: "FLORES",
+    municipio: "-",
+    segmento: "Domiciliar",
+    tipoInstalacion: "Aislada",
+    promedioKW: null,
+    promedioQ: null,
+    dias: null,
+    estado: "Por Iniciar",
+    compras: 0,
+  },
+  {
+    id: "D2025112",
+    fecha: "2024-10-02",
+    nombre: "JONATHAN ISAIAS IXCOY QUINTANAL",
+    empresa: "CA",
+    correo: "",
+    telefono: "",
+    celular: "",
+    direccion: "",
+    departamento: "ESCUINTLA",
+    municipio: "-",
+    segmento: "Domiciliar",
+    tipoInstalacion: "Aislada",
+    promedioKW: null,
+    promedioQ: null,
+    dias: null,
+    estado: "Por Iniciar",
+    compras: 0,
+  },
+  {
+    id: "D2025113",
+    fecha: "2024-10-02",
+    nombre: "ESTUARD CANIZALES ALVAREZ",
+    empresa: "CASA",
+    correo: "",
+    telefono: "",
+    celular: "",
+    direccion: "",
+    departamento: "ESCUINTLA",
+    municipio: "-",
+    segmento: "Domiciliar",
+    tipoInstalacion: "Aislada",
+    promedioKW: null,
+    promedioQ: null,
+    dias: null,
+    estado: "Por Iniciar",
+    compras: 0,
+  },
+];
+
+/* ================= Helpers ================ */
 const fmtQ = (n) =>
   n == null || n === ""
     ? "-"
@@ -71,228 +323,124 @@ function Cell({ children, strong, align = "left", rightBorder = true }) {
   );
 }
 
-/* ========= Datos EXACTOS que pediste ========= */
-const DATA = [
-  {
-    id: "I2025106",
-    nombre: "ANALÍ ESMERALDA RAMOS DE CHACAT",
-    empresa: "CLARO",
-    correo: "j.lopez@gmail.com",
-    telefono: "8346458111",
-    celular: "8119187047",
-    direccion: "Gavilanes #222",
-    departamento: "GUATEMALA",
-    municipio: "GUATEMALA",
-    segmento: "Industrial",
-    dias: 39,
-    estado: "Venta",
-    compras: 4000,
-  },
-  {
-    id: "I2025108",
-    fecha: "2024-10-02",
-    nombre: "JOSÉ MIGUEL REYES RAMÍREZ",
-    empresa: "TIGO",
-    correo: "ck",
-    telefono: "4444",
-    celular: "44",
-    direccion: "zONA 9",
-    departamento: "GUATEMALA",
-    municipio: "GUATEMALA",
-    segmento: "Industrial",
-    dias: 9,
-    estado: "Venta",
-    compras: 5000,
-  },
-  {
-    id: "I2025110",
-    fecha: "2024-10-02",
-    nombre: "EDWIN GUSTAVO TZIBOY CHOC",
-    empresa: "CABLEADO S.A",
-    correo: "-",
-    telefono: "-",
-    celular: "-",
-    direccion: "Guatemala Final",
-    departamento: "GUATEMALA",
-    municipio: "GUATEMALA",
-    segmento: "Industrial",
-    dias: 9,
-    estado: "Venta",
-    compras: 3000,
-  },
-  {
-    id: "I2025112",
-    fecha: "2024-10-02",
-    nombre: "JOSÉ OSWALDO CHAVAC GARCÍA",
-    empresa: "VENTAS TOTALES",
-    correo: "-",
-    telefono: "-",
-    celular: "-",
-    direccion: "Zona 0",
-    departamento: "GUATEMALA",
-    municipio: "GUATEMALA",
-    segmento: "Industrial",
-    dias: null,
-    estado: "Por Iniciar",
-    compras: 0,
-  },
-  {
-    id: "I2025114",
-    fecha: "2024-10-02",
-    nombre: "ENGELVER ARIOBALDO GARCIA GARCÍA",
-    empresa: "REPUESTOS S.A",
-    correo: "-",
-    telefono: "-",
-    celular: "-",
-    direccion: "-",
-    departamento: "GUATEMALA",
-    municipio: "GUATEMALA",
-    segmento: "Industrial",
-    dias: null,
-    estado: "Por Iniciar",
-    compras: 0,
-  },
-  {
-    id: "D2025106",
-    fecha: "2024-10-02",
-    nombre: "MARCO TULIO LOPEZ  PEREZ",
-    empresa: "CASA",
-    correo: "-",
-    telefono: "-",
-    celular: "-",
-    direccion: "-",
-    departamento: "PETEN",
-    municipio: "—",
-    segmento: "Domiciliar",
-    dias: null,
-    estado: "Por Iniciar",
-    compras: 0,
-  },
-  {
-    id: "D2025107",
-    fecha: "2024-10-02",
-    nombre: "LESVER FERNANDO LOPEZ SOC",
-    empresa: "CASA",
-    correo: "-",
-    telefono: "-",
-    celular: "-",
-    direccion: "-",
-    departamento: "FLORES",
-    municipio: "—",
-    segmento: "Domiciliar",
-    dias: null,
-    estado: "Por Iniciar",
-    compras: 0,
-  },
-  {
-    id: "D2025108",
-    fecha: "2024-10-02",
-    nombre: "CAROLAY YOMARA SAGASTUME GONZALEZ",
-    empresa: "CASA",
-    correo: "-",
-    telefono: "-",
-    celular: "-",
-    direccion: "-",
-    departamento: "PETEN",
-    municipio: "—",
-    segmento: "Domiciliar",
-    dias: null,
-    estado: "Por Iniciar",
-    compras: 0,
-  },
-  {
-    id: "D2025109",
-    fecha: "2024-10-02",
-    nombre: "ALFREDO SACUL CHOC",
-    empresa: "CASA",
-    correo: "-",
-    telefono: "-",
-    celular: "-",
-    direccion: "-",
-    departamento: "PETEN",
-    municipio: "—",
-    segmento: "Domiciliar",
-    dias: null,
-    estado: "Por Iniciar",
-    compras: 0,
-  },
-  {
-    id: "D2025110",
-    fecha: "2024-10-02",
-    nombre: "JACQUELINE JULISSA CABRERA LOARCA",
-    empresa: "CA",
-    correo: "-",
-    telefono: "-",
-    celular: "-",
-    direccion: "-",
-    departamento: "PETEN",
-    municipio: "—",
-    segmento: "Domiciliar",
-    dias: null,
-    estado: "Por Iniciar",
-    compras: 0,
-  },
-  {
-    id: "D2025111",
-    fecha: "2024-10-02",
-    nombre: "MIRSA CAROLINA GOMEZ HERNANDEZ",
-    empresa: "CA",
-    correo: "-",
-    telefono: "-",
-    celular: "-",
-    direccion: "-",
-    departamento: "FLORES",
-    municipio: "—",
-    segmento: "Domiciliar",
-    dias: null,
-    estado: "Por Iniciar",
-    compras: 0,
-  },
-  {
-    id: "D2025112",
-    fecha: "2024-10-02",
-    nombre: "JONATHAN ISAIAS IXCOY QUINTANAL",
-    empresa: "CA",
-    correo: "",
-    telefono: "",
-    celular: "",
-    direccion: "",
-    departamento: "ESCUINTLA",
-    municipio: "—",
-    segmento: "Domiciliar",
-    dias: null,
-    estado: "Por Iniciar",
-    compras: 0,
-  },
-  {
-    id: "D2025113",
-    fecha: "2024-10-02",
-    nombre: "ESTUARD CANIZALES ALVAREZ",
-    empresa: "CASA",
-    correo: "",
-    telefono: "",
-    celular: "",
-    direccion: "",
-    departamento: "ESCUINTLA",
-    municipio: "—",
-    segmento: "Domiciliar",
-    dias: null,
-    estado: "Por Iniciar",
-    compras: 0,
-  },
-];
+// Modal genérico
+function Modal({ open, title, onClose, children }) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} aria-hidden="true" />
+      <div className="relative w-full max-w-3xl rounded-2xl shadow-xl overflow-hidden">
+        <div className="px-6 py-4" style={{ background: THEME.header, color: THEME.headerText }}>
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">{title}</h2>
+            <button
+              onClick={onClose}
+              className="rounded-md px-2 py-1 text-sm"
+              style={{ background: THEME.headerDark, color: THEME.headerText }}
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+        <div className="bg-white p-6">{children}</div>
+      </div>
+    </div>
+  );
+}
 
-/* ========= Componente ========= */
+/* ====== Semilla de 5 contactos (incluye TIPO) ====== */
+function seedContactos(row) {
+  const bases = [
+    { canal: "WhatsApp", tipo: "Entrante", comentario: "Se compartió brochure y cotización preliminar." },
+    { canal: "Llamada",  tipo: "Saliente", comentario: "Pidió detalles de garantía y tiempos." },
+    { canal: "Correo",   tipo: "Saliente", comentario: "Se envió propuesta formal con despiece." },
+    { canal: "WhatsApp", tipo: "Entrante", comentario: "Confirmó recepción; revisará con gerencia." },
+    { canal: "Llamada",  tipo: "Saliente", comentario: "Agendó visita técnica para levantamiento." },
+  ];
+  const today = new Date();
+  return bases.map((b, i) => {
+    const d = new Date(today);
+    d.setDate(today.getDate() - (i + ((row.id?.charCodeAt(0) ?? 0) % 3)));
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return { fecha: `${y}-${m}-${day}`, canal: b.canal, tipo: b.tipo, comentario: b.comentario };
+  });
+}
+
+/* ====== Utilidad: última fecha de venta ====== */
+function getUltimaFechaVenta(r) {
+  // Si viene un historial explícito, tomar la fecha más reciente
+  if (Array.isArray(r.ventasHistorial) && r.ventasHistorial.length > 0) {
+    // Se espera [{ fecha: "YYYY-MM-DD", monto: number, ...}, ...]
+    const fechas = r.ventasHistorial
+      .map((v) => v.fecha)
+      .filter(Boolean)
+      .sort(); // orden lexicográfico funciona con YYYY-MM-DD
+    return fechas[fechas.length - 1] || "-";
+  }
+  // Si no hay historial pero hay compras > 0, usar la "fecha" del registro
+  if ((r.compras || 0) > 0) return r.fecha || "-";
+  // Sin ventas conocidas
+  return "-";
+}
+
+/* =============== Componente principal =============== */
 export default function Diseno() {
-  // orden y anchos como Excel (14 columnas)
+  // 18 columnas (se agregó "Última Fecha de Venta" antes de "Compras")
   const COLS =
-    "grid-cols-[110px,320px,220px,230px,140px,140px,260px,170px,170px,160px,160px,180px,150px,170px]";
+    "grid-cols-[110px,320px,220px,230px,140px,140px,260px,170px,170px,160px,160px,160px,160px,160px,180px,150px,160px,170px]";
 
   const totalClientes = DATA.length;
   const totalCompras = DATA.reduce((a, r) => a + (r.compras || 0), 0);
 
+  // Estado del modal de contactos
+  const [openRow, setOpenRow] = useState(null);
+  const [contactos, setContactos] = useState([]);
+  const [nuevo, setNuevo] = useState({
+    fecha: "",
+    canal: "WhatsApp",
+    tipo: "Entrante",
+    comentario: "",
+  });
+
+  // Estado del modal de ventas (historial)
+  const [openVentasRow, setOpenVentasRow] = useState(null);
+
+  const abrirContactos = (row) => {
+    setOpenRow(row);
+    const list =
+      Array.isArray(row.contactos) && row.contactos.length > 0
+        ? row.contactos
+        : seedContactos(row);
+    setContactos(list);
+    setNuevo({ fecha: "", canal: "WhatsApp", tipo: "Entrante", comentario: "" });
+  };
+
+  const cerrarContactos = () => {
+    setOpenRow(null);
+    setContactos([]);
+  };
+
+  const abrirVentas = (row) => {
+    setOpenVentasRow(row);
+  };
+
+  const cerrarVentas = () => {
+    setOpenVentasRow(null);
+  };
+
+  const handleAddContacto = (e) => {
+    e.preventDefault();
+    if (!nuevo.fecha || !nuevo.canal || !nuevo.tipo || !nuevo.comentario) return;
+    setContactos((prev) => [
+      { fecha: nuevo.fecha, canal: nuevo.canal, tipo: nuevo.tipo, comentario: nuevo.comentario },
+      ...prev,
+    ]);
+    setNuevo({ fecha: "", canal: "WhatsApp", tipo: "Entrante", comentario: "" });
+  };
+
   const handleDotClick = (row) => {
-    // aquí conectas tu función real (modal, navegación, etc.)
     console.log("Detalle compras:", row.id, row.nombre, row.compras);
   };
 
@@ -313,7 +461,7 @@ export default function Diseno() {
         style={{ background: THEME.stripeAlt, borderColor: THEME.border }}
       >
         {/* Encabezado */}
-        <div className={`min-w-[1600px] grid ${COLS}`}>
+        <div className={`min-w-[2110px] grid ${COLS}`}>
           {[
             "ID",
             "Nombre Completo",
@@ -325,9 +473,13 @@ export default function Diseno() {
             "Departamento",
             "Municipio",
             "Segmento",
-            "Fecha de Creación", // entre Segmento y Días Último Contacto
+            "Tipo de Instalación",
+            "Promedio / kW",
+            "Promedio / Q",
+            "Fecha de Creación",
             "Días Último Contacto",
             "Estado",
+            "Última Fecha de Venta", // 🆕
             "Compras",
           ].map((h, i, all) => (
             <div
@@ -336,8 +488,7 @@ export default function Diseno() {
               style={{
                 background: THEME.headerDark,
                 color: THEME.headerText,
-                borderRight:
-                  i === all.length - 1 ? "none" : `1px solid rgba(255,255,255,.32)`,
+                borderRight: i === all.length - 1 ? "none" : `1px solid rgba(255,255,255,.32)`,
               }}
             >
               <div className="flex items-center justify-between">
@@ -349,9 +500,11 @@ export default function Diseno() {
         </div>
 
         {/* Cuerpo */}
-        <div className="relative min-w-[1600px]" style={{ background: THEME.stripeAlt }}>
+        <div className="relative min-w-[2110px]" style={{ background: THEME.stripeAlt }}>
           {DATA.map((r, idx) => {
-            const bg = idx % 2 === 0 ? THEME.stripeAlt : THEME.stripeALT;
+            const bg = idx % 2 === 0 ? THEME.stripeAlt : THEME.stripe;
+            const ultimaVenta = getUltimaFechaVenta(r);
+
             return (
               <div
                 key={r.id}
@@ -376,16 +529,74 @@ export default function Diseno() {
                 <Cell>{r.departamento || "-"}</Cell>
                 <Cell>{r.municipio || "-"}</Cell>
                 <Cell>{r.segmento || "-"}</Cell>
-                <Cell>{r.fecha || "-"}</Cell> {/* Fecha aquí */}
-                <Cell align="center">{r.dias ?? "N/A"}</Cell>
+                <Cell>{r.tipoInstalacion || "-"}</Cell>
+                <Cell align="right">{r.promedioKW ? `${r.promedioKW} kW` : "-"}</Cell>
+                <Cell align="right">{r.promedioQ ? fmtQ(r.promedioQ) : "-"}</Cell>
+                <Cell>{r.fecha || "-"}</Cell>
 
-                {/* Estado centrado */}
+                {/* Días Último Contacto + Lupa */}
+                <Cell align="center">
+                  <div className="flex items-center justify-center gap-2">
+                    <span className="tabular-nums">{r.dias ?? "N/A"}</span>
+                    <button
+                      type="button"
+                      onClick={() => abrirContactos(r)}
+                      className="p-1 rounded hover:bg-gray-100"
+                      title="Ver registro de contactos"
+                    >
+                      {/* Ícono lupa */}
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <circle cx="11" cy="11" r="8" />
+                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                      </svg>
+                    </button>
+                  </div>
+                </Cell>
+
+                {/* Estado */}
                 <Cell align="center">
                   <BadgeEstado estado={r.estado} />
                 </Cell>
 
-                {/* Compras: punto IZQ + monto DER */}
-                <Cell rightBorder={false}>
+                {/* 🆕 Última Fecha de Venta + Lupa ventas */}
+                <Cell align="center">
+                  <div className="flex items-center justify-center gap-2">
+                    <span className="tabular-nums">{ultimaVenta}</span>
+                    <button
+                      type="button"
+                      onClick={() => abrirVentas(r)}
+                      className="p-1 rounded hover:bg-gray-100"
+                      title="Ver historial de ventas"
+                    >
+                      {/* Ícono lupa */}
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <circle cx="11" cy="11" r="8" />
+                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                      </svg>
+                    </button>
+                  </div>
+                </Cell>
+
+                {/* Compras */}
+                <Cell>
                   <div className="flex items-center justify-between">
                     <DotCompra valor={r.compras} onClick={() => handleDotClick(r)} />
                     <span className="font-semibold text-gray-900">{fmtQ(r.compras)}</span>
@@ -396,33 +607,185 @@ export default function Diseno() {
           })}
 
           {/* Fila totals */}
-          
-            <div className={`grid ${COLS}`}>
-            {/* Ocupa de ID a "Días Último Contacto" (12 columnas) */}
+          <div className={`grid ${COLS}`}>
+            {/* Ocupa de ID a Días Último Contacto (15 columnas) */}
             <div
-                className="px-4 py-3 font-bold text-white col-span-12"
-                style={{ background: THEME.header, borderRight: `1px solid ${THEME.border}` }}
+              className="px-4 py-3 font-bold text-white col-span-15"
+              style={{ background: THEME.header, borderRight: `1px solid ${THEME.border}` }}
             >
-                {totalClientes} Clientes
+              {totalClientes} Clientes
             </div>
 
-            {/* Columna de Estado (vacía) */}
+            {/* Estado (vacía) */}
             <div
-                className="px-4 py-3 font-bold text-center text-white"
-                style={{ background: THEME.header, borderRight: `1px solid ${THEME.border}` }}
+              className="px-4 py-3 font-bold text-center text-white"
+              style={{ background: THEME.header, borderRight: `1px solid ${THEME.border}` }}
             />
 
-            {/* Última columna: Compras (total) */}
+            {/* Última Fecha de Venta (vacía) */}
             <div
-                className="px-4 py-3 font-bold text-right text-white"
-                style={{ background: THEME.header }}
-            >
-                {fmtQ(totalCompras)}
-            </div>
-            </div>
+              className="px-4 py-3 font-bold text-center text-white"
+              style={{ background: THEME.header, borderRight: `1px solid ${THEME.border}` }}
+            />
 
+            {/* Compras (total) */}
+            <div
+              className="px-4 py-3 font-bold text-right text-white"
+              style={{ background: THEME.header }}
+            >
+              {fmtQ(totalCompras)}
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Modal: Registro de Contactos */}
+      <Modal
+        open={!!openRow}
+        onClose={cerrarContactos}
+        title={openRow ? `Registro de contactos — ${openRow.nombre}` : ""}
+      >
+        {/* Formulario para agregar */}
+        <form onSubmit={handleAddContacto} className="mb-4 grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+            <input
+              type="date"
+              className="w-full rounded-lg border px-3 py-2 outline-none focus:ring"
+              value={nuevo.fecha}
+              onChange={(e) => setNuevo((p) => ({ ...p, fecha: e.target.value }))}
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Canal</label>
+            <select
+              className="w-full rounded-lg border px-3 py-2 outline-none focus:ring"
+              value={nuevo.canal}
+              onChange={(e) => setNuevo((p) => ({ ...p, canal: e.target.value }))}
+              required
+            >
+              <option>WhatsApp</option>
+              <option>Llamada</option>
+              <option>Correo</option>
+              <option>Visita</option>
+            </select>
+          </div>
+
+          {/* Tipo de comunicación */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de comunicación</label>
+            <select
+              className="w-full rounded-lg border px-3 py-2 outline-none focus:ring"
+              value={nuevo.tipo}
+              onChange={(e) => setNuevo((p) => ({ ...p, tipo: e.target.value }))}
+              required
+            >
+              <option>Entrante</option>
+              <option>Saliente</option>
+            </select>
+          </div>
+
+          <div className="md:col-span-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Comentario</label>
+            <textarea
+              rows={3}
+              className="w-full rounded-lg border px-3 py-2 outline-none focus:ring"
+              placeholder="Ej. Cliente solicita comparar inversores de 5kW y 8kW…"
+              value={nuevo.comentario}
+              onChange={(e) => setNuevo((p) => ({ ...p, comentario: e.target.value }))}
+              required
+            />
+          </div>
+
+          <div className="md:col-span-4 flex items-center justify-end gap-2">
+            <button type="button" onClick={cerrarContactos} className="px-4 py-2 rounded-lg border">
+              Cerrar
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 rounded-lg text-white"
+              style={{ background: THEME.header }}
+            >
+              Agregar contacto
+            </button>
+          </div>
+        </form>
+
+        {/* Lista de registros */}
+        <div className="border rounded-xl overflow-hidden">
+          <div
+            className="grid grid-cols-[140px_200px_1fr] font-semibold text-white"
+            style={{ background: THEME.header }}
+          >
+            <div className="px-3 py-2">Fecha</div>
+            <div className="px-3 py-2">Canal</div>
+            <div className="px-3 py-2">Comentario</div>
+          </div>
+          <div>
+            {contactos.map((c, i) => {
+              const isEntrante = (c.tipo || "").toLowerCase() === "entrante";
+              const arrowColor = isEntrante ? "#16a34a" : "#dc2626"; // verde / rojo
+              const arrowPath = isEntrante
+                ? "M12 5v10m0 0l-4-4m4 4l4-4" // flecha abajo
+                : "M12 19V9m0 0l4 4m-4-4l-4 4"; // flecha arriba
+              return (
+                <div
+                  key={i}
+                  className="grid grid-cols-[140px_200px_1fr]"
+                  style={{
+                    borderTop: `1px solid ${THEME.border}`,
+                    background: i % 2 ? THEME.stripe : THEME.stripeAlt,
+                  }}
+                >
+                  <div className="px-3 py-2 tabular-nums">{c.fecha}</div>
+                  <div className="px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
+                        {c.canal}
+                      </span>
+                      {/* Flecha tipo comunicación */}
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        width="16"
+                        height="16"
+                        stroke={arrowColor}
+                        fill="none"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        title={c.tipo || ""}
+                      >
+                        <path d={arrowPath} />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="px-3 py-2">{c.comentario}</div>
+                </div>
+              );
+            })}
+            {contactos.length === 0 && (
+              <div className="px-3 py-6 text-center text-gray-500">Sin registros aún.</div>
+            )}
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal: Historial de Ventas (Próximamente) */}
+      <Modal
+        open={!!openVentasRow}
+        onClose={cerrarVentas}
+        title={openVentasRow ? `Historial de ventas — ${openVentasRow.nombre}` : ""}
+      >
+        <div className="rounded-xl border p-6 text-center text-gray-600">
+          <div className="text-xl font-semibold mb-2">Próximamente</div>
+          <p>
+            Aquí verás el detalle de ventas por fecha, monto y observación. 
+            Estamos preparando este módulo para ti. 🚧
+          </p>
+        </div>
+      </Modal>
     </div>
   );
 }
