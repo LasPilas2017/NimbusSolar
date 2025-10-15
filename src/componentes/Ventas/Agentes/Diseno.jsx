@@ -1,6 +1,8 @@
-import React from "react";
-import THEME from "../theme"; 
-import { useState, useMemo } from "react";
+import React, { useMemo, useState } from "react";
+import THEME from "./theme";
+import ModalBase from "./ModalBase";
+import FormAgentes from "./FormAgentes";
+
 //quitamos la suma de comision
 // la suma de efectividad es un promedio 
 // agregar una columna de total pago sueldo base mas comision 
@@ -147,20 +149,28 @@ const DATA = [
     ventas: 14500,
   },
 ];
-// Formato Q
+/*
+const DATA = [
+  { id: 1, nombre: "Juan Pérez", sueldoBase: 3500, ventas: 22000, comision: 4, cierres: 8, efectividad: 91, correo:"", dpi:"", telefono:"", direccion:"", ciudad:"" },
+  { id: 2, nombre: "Ana López",  sueldoBase: 3200, ventas: 26500, comision: 3.5, cierres: 10, efectividad: 97 },
+  { id: 3, nombre: "Luis Gómez", sueldoBase: 3000, ventas: 18000, comision: 4.2, cierres: 7, efectividad: 83 },
+];
+*/
+
+// ===== Utilidad: Formato de Quetzales
 const fmtQ = (n) =>
   `Q${(n ?? 0).toLocaleString("es-GT", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
 
-// Celda reutilizable
-function Cell({ children, strong, align = "left" }) {
+// ===== Celda reutilizable
+function Cell({ children, strong, align = "left", className = "" }) {
   return (
     <div
-      className={`px-4 py-2.5 text-gray-900 whitespace-nowrap ${
-        strong ? "font-semibold" : ""
-      } ${align === "right" ? "text-right" : align === "center" ? "text-center" : ""}`}
+      className={`px-4 py-3 text-gray-900 whitespace-nowrap ${strong ? "font-semibold" : ""} ${
+        align === "right" ? "text-right" : align === "center" ? "text-center" : ""
+      } ${className}`}
       style={{
         borderRight: `1px solid ${THEME.border}`,
         borderBottom: `1px solid ${THEME.border}`,
@@ -171,68 +181,74 @@ function Cell({ children, strong, align = "left" }) {
   );
 }
 
-// Modal simple
-function Modal({ open, title, children, onClose }) {
-  if (!open) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} aria-hidden="true" />
-      <div className="relative w-full max-w-2xl rounded-2xl shadow-xl overflow-hidden">
-        <div className="px-6 py-4" style={{ background: THEME.header, color: THEME.headerText }}>
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">{title}</h2>
-            <button
-              onClick={onClose}
-              className="rounded-md px-2 py-1 text-sm"
-              style={{ background: THEME.headerDark, color: THEME.headerText }}
-            >
-              ✕
-            </button>
-          </div>
-        </div>
-        <div className="bg-white p-6">{children}</div>
-      </div>
-    </div>
-  );
-}
-
 export default function Diseno() {
-  // Estado modal
+  // ===== Estado modal
   const [selected, setSelected] = useState(null);
   const [formData, setFormData] = useState(null);
 
-  // Cálculos
-  const totalEmpleados = DATA.length;
+  // ===== Cálculos base
+  const totalEmpleados = useMemo(() => DATA.length, [DATA]);
+
   const promComision = useMemo(
-    () => (totalEmpleados ? DATA.reduce((a, r) => a + (r.comision || 0), 0) / totalEmpleados : 0),
-    [totalEmpleados]
+    () =>
+      DATA.length
+        ? DATA.reduce((a, r) => a + (r.comision || 0), 0) / DATA.length
+        : 0,
+    [DATA]
   );
-  const sumaCierres = useMemo(() => DATA.reduce((a, r) => a + (r.cierres || 0), 0), []);
+
+  const sumaCierres = useMemo(
+    () => DATA.reduce((a, r) => a + (r.cierres || 0), 0),
+    [DATA]
+  );
+
   const promEfectividad = useMemo(
-    () => (totalEmpleados ? DATA.reduce((a, r) => a + (r.efectividad || 0), 0) / totalEmpleados : 0),
-    [totalEmpleados]
+    () =>
+      DATA.length
+        ? DATA.reduce((a, r) => a + (r.efectividad || 0), 0) / DATA.length
+        : 0,
+    [DATA]
   );
+
+  // ===== Totales requeridos
+  const sumaSueldoBase = useMemo(
+    () => DATA.reduce((a, r) => a + (r.sueldoBase || 0), 0),
+    [DATA]
+  );
+
+  const sumaQComision = useMemo(
+    () =>
+      DATA.reduce(
+        (a, r) => a + (((r.ventas || 0) * (r.comision || 0)) / 100),
+        0
+      ),
+    [DATA]
+  );
+
   const sumaTotalPago = useMemo(
     () =>
       DATA.reduce(
-        (a, r) => a + ((r.sueldoBase || 0) + ((r.ventas || 0) * (r.comision || 0)) / 100),
+        (a, r) =>
+          a +
+          ((r.sueldoBase || 0) + ((r.ventas || 0) * (r.comision || 0)) / 100),
         0
       ),
-    []
+    [DATA]
   );
 
-  // ⚠️ IMPORTANTE: usar espacios (con _ ) en grid-template-columns
+  // ===== Columnas (usar underscores en grid-template)
   // ID | Nombre | Sueldo Base | Q. Comisión | Total Pago | % Comisión | Cierres | Efectividad
   const COLS = "grid-cols-[80px_280px_150px_150px_160px_130px_110px_170px]";
-  const TABLE_MIN_W = "min-w-[1230px]"; // 80+280+150+150+160+130+110+170
+  const TABLE_MIN_W = "min-w-[1230px]";
 
-  // Color círculo efectividad
+  // ===== Color círculo efectividad
   const getColor = (ef) => {
-    if (ef >= 95 && ef <= 100) return "bg-green-500";
-    if (ef >= 60 && ef <= 94) return "bg-yellow-400";
+    if (ef >= 95 && ef <= 100) return "bg-emerald-500";
+    if (ef >= 60 && ef <= 94) return "bg-amber-400";
     return "bg-red-500";
   };
 
+  // ===== Handlers modal
   const openForm = (row) => {
     setSelected(row);
     setFormData({
@@ -247,7 +263,8 @@ export default function Diseno() {
     setSelected(null);
     setFormData(null);
   };
-  const handleChange = (e) => setFormData((p) => ({ ...p, [e.target.name]: e.target.value }));
+  const handleChange = (e) =>
+    setFormData((p) => ({ ...p, [e.target.name]: e.target.value }));
   const handleSave = (e) => {
     e.preventDefault();
     // TODO: guardar en Supabase/API
@@ -256,20 +273,37 @@ export default function Diseno() {
   };
 
   return (
-    <div className="w-full min-h-screen px-6 pb-10">
-      {/* Título */}
-      <div className="flex items-center gap-3 mt-2 mb-2">
+    <div
+      className="w-full min-h-screen px-6 pb-12"
+      style={{ background: THEME.background }}
+    >
+      {/* ===== Título y divider elegante */}
+      <div className="flex items-center gap-3 mt-6 mb-3">
         <div className="text-5xl leading-none">🗒️</div>
-        <h1 className="text-5xl font-semibold text-gray-900 tracking-tight">
+        <h1
+          className="text-4xl sm:text-5xl font-semibold tracking-tight"
+          style={{ color: THEME.textPrimary }}
+        >
           Catálogo de Agentes y Vendedores
         </h1>
       </div>
-      <div className="h-[4px] w-full bg-gray-800 mb-4" />
+      <div
+        className="h-[3px] w-full rounded-full mb-6"
+        style={{
+          background: `linear-gradient(90deg, ${THEME.headerDark}, ${THEME.header}, ${THEME.headerLight})`,
+        }}
+      />
 
-      {/* Tabla */}
-      <div className="w-full border border-gray-400 shadow overflow-x-auto" style={{ background: THEME.stripeAlt }}>
-        {/* Encabezado */}
-        <div className={`${TABLE_MIN_W} grid ${COLS} sticky top-0 z-10`} style={{ borderBottom: `1px solid ${THEME.border}` }}>
+      {/* ===== Tabla en tarjeta con bordes redondos + sombra suave */}
+      <div
+        className="w-full overflow-x-auto rounded-3xl shadow-lg ring-1"
+        style={{ background: THEME.surface }}
+      >
+        {/* Encabezado fijo con gradiente y bordes sutiles */}
+        <div
+          className={`${TABLE_MIN_W} grid ${COLS} sticky top-0 z-10`}
+          style={{ borderBottom: `1px solid ${THEME.border}` }}
+        >
           {[
             "ID",
             "Nombre",
@@ -282,23 +316,26 @@ export default function Diseno() {
           ].map((h, idx, arr) => (
             <div
               key={h}
-              className="px-4 py-3 font-bold whitespace-nowrap"
+              className="px-4 py-3 font-semibold whitespace-nowrap"
               style={{
-                background: THEME.headerDark,
+                background: `linear-gradient(180deg, ${THEME.headerDark}, ${THEME.header})`,
                 color: THEME.headerText,
-                borderRight: idx === arr.length - 1 ? "none" : "1px solid rgba(255,255,255,0.3)",
+                borderRight:
+                  idx === arr.length - 1
+                    ? "none"
+                    : "1px solid rgba(255,255,255,0.25)",
               }}
             >
               <div className="flex items-center justify-between">
-                <span>{h}</span>
+                <span className="tracking-wide">{h}</span>
                 <span className="ml-2 text-[10px] opacity-90">▾</span>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Cuerpo */}
-        <div className={`${TABLE_MIN_W}`} style={{ background: THEME.stripe }}>
+        {/* Cuerpo con franjas suaves y bordes discretos */}
+        <div className={`${TABLE_MIN_W}`}>
           {DATA.map((r, rowIdx) => {
             const qComision = ((r.ventas || 0) * (r.comision || 0)) / 100;
             const totalPago = (r.sueldoBase || 0) + qComision;
@@ -314,29 +351,49 @@ export default function Diseno() {
               >
                 <Cell>{r.id}</Cell>
 
-                {/* Nombre clickeable */}
+                {/* Nombre clickeable con estilo pro */}
                 <Cell strong>
                   <button
                     onClick={() => openForm(r)}
-                    className="max-w-[260px] truncate text-blue-700 underline hover:text-blue-900 transition"
+                    className="max-w-[260px] truncate underline-offset-2 hover:underline transition text-left"
+                    style={{ color: THEME.accentBlue }}
                     title="Ver/editar datos del vendedor"
                   >
                     {r.nombre}
                   </button>
                 </Cell>
 
-                <Cell align="right"><span className="tabular-nums">{fmtQ(r.sueldoBase)}</span></Cell>
-                <Cell align="right"><span className="tabular-nums">{fmtQ(qComision)}</span></Cell>
-                <Cell align="right" strong><span className="tabular-nums">{fmtQ(totalPago)}</span></Cell>
-                <Cell align="right"><span className="tabular-nums">{r.comision ? `${r.comision}%` : ""}</span></Cell>
-                <Cell align="center"><span className="tabular-nums">{r.cierres}</span></Cell>
+                <Cell align="right">
+                  <span className="tabular-nums">{fmtQ(r.sueldoBase)}</span>
+                </Cell>
+                <Cell align="right">
+                  <span className="tabular-nums">{fmtQ(qComision)}</span>
+                </Cell>
+                <Cell align="right" strong>
+                  <span className="tabular-nums">{fmtQ(totalPago)}</span>
+                </Cell>
+                <Cell align="right">
+                  <span className="tabular-nums">
+                    {r.comision ? `${r.comision}%` : ""}
+                  </span>
+                </Cell>
+                <Cell align="center">
+                  <span className="tabular-nums">{r.cierres}</span>
+                </Cell>
 
-                {/* Efectividad */}
+                {/* Efectividad con punto de estado */}
                 <Cell align="center">
                   <div className="flex items-center justify-between w-full px-2">
-                    <span className="text-gray-800 font-medium tabular-nums">{r.efectividad}%</span>
+                    <span className="font-medium tabular-nums text-gray-800">
+                      {r.efectividad}%
+                    </span>
                     <div className="flex justify-end w-5">
-                      <div className={`w-3 h-3 rounded-full ${getColor(r.efectividad)}`} title={`Efectividad: ${r.efectividad}%`} />
+                      <div
+                        className={`w-3 h-3 rounded-full ${getColor(
+                          r.efectividad
+                        )}`}
+                        title={`Efectividad: ${r.efectividad}%`}
+                      />
                     </div>
                   </div>
                 </Cell>
@@ -344,89 +401,107 @@ export default function Diseno() {
             );
           })}
 
-          {/* Footer */}
-          <div className={`grid ${COLS}`}>
+          {/* Footer resumido con fondo corporativo + línea superior sutil */}
+          <div
+            className={`grid ${COLS}`}
+            style={{ borderTop: `1px solid ${THEME.border}` }}
+          >
             {/* ID+Nombre (2 columnas) */}
             <div
-              className="px-4 py-3 font-bold text-white col-span-2"
-              style={{ background: THEME.header, borderRight: `1px solid ${THEME.border}` }}
+              className="px-4 py-3 font-semibold text-white col-span-2 rounded-bl-3xl"
+              style={{
+                background: THEME.header,
+                borderRight: `1px solid ${THEME.border}`,
+              }}
             >
               {totalEmpleados} Empleados
             </div>
 
-            {/* Sueldo Base (vacío) */}
-            <div className="px-4 py-3 font-bold text-white" style={{ background: THEME.header, borderRight: `1px solid ${THEME.border}` }} />
+            {/* Total Sueldo Base */}
+            <div
+              className="px-4 py-3 font-semibold text-right text-white"
+              style={{
+                background: THEME.header,
+                borderRight: `1px solid ${THEME.border}`,
+              }}
+              title="Suma total de Sueldo Base"
+            >
+              <span className="tabular-nums">{fmtQ(sumaSueldoBase)}</span>
+            </div>
 
-            {/* Q. Comisión (sin total) */}
-            <div className="px-4 py-3 font-bold text-white" style={{ background: THEME.header, borderRight: `1px solid ${THEME.border}` }} />
+            {/* Total Q. Comisión */}
+            <div
+              className="px-4 py-3 font-semibold text-right text-white"
+              style={{
+                background: THEME.header,
+                borderRight: `1px solid ${THEME.border}`,
+              }}
+              title="Suma total de Q. Comisión"
+            >
+              <span className="tabular-nums">{fmtQ(sumaQComision)}</span>
+            </div>
 
             {/* Total Pago general */}
             <div
-              className="px-4 py-3 font-bold text-right text-white"
-              style={{ background: THEME.header, borderRight: `1px solid ${THEME.border}` }}
+              className="px-4 py-3 font-semibold text-right text-white"
+              style={{
+                background: THEME.header,
+                borderRight: `1px solid ${THEME.border}`,
+              }}
+              title="Suma total de Total Pago"
             >
-              {fmtQ(sumaTotalPago)}
+              <span className="tabular-nums">{fmtQ(sumaTotalPago)}</span>
             </div>
 
-            {/* % Comisión (promedio) */}
+            {/* % Comisión (promedio simple) */}
             <div
-              className="px-4 py-3 font-bold text-right text-white"
-              style={{ background: THEME.header, borderRight: `1px solid ${THEME.border}` }}
+              className="px-4 py-3 font-semibold text-right text-white"
+              style={{
+                background: THEME.header,
+                borderRight: `1px solid ${THEME.border}`,
+              }}
+              title="Promedio simple de % comisión"
             >
-              {DATA.reduce((a, r) => a + (r.comision || 0), 0).toFixed(2)}%
+              {promComision.toFixed(2)}%
             </div>
 
             {/* Cierres (suma) */}
             <div
-              className="px-4 py-3 font-bold text-center text-white"
-              style={{ background: THEME.header, borderRight: `1px solid ${THEME.border}` }}
+              className="px-4 py-3 font-semibold text-center text-white"
+              style={{
+                background: THEME.header,
+                borderRight: `1px solid ${THEME.border}`,
+              }}
+              title="Suma total de cierres"
             >
               <span className="tabular-nums">{sumaCierres.toFixed(2)}</span>
             </div>
 
             {/* Efectividad (promedio) */}
-            <div className="px-4 py-3 font-bold text-center text-white" style={{ background: THEME.header }}>
+            <div
+              className="px-4 py-3 font-semibold text-center text-white rounded-br-3xl"
+              style={{ background: THEME.header }}
+              title="Promedio de efectividad"
+            >
               {promEfectividad.toFixed(2)}%
             </div>
           </div>
         </div>
       </div>
 
-      {/* Modal con campos ocultos */}
-      <Modal
+      {/* ===== Modal con formulario separado */}
+      <ModalBase
         open={!!selected}
         title={selected ? `Datos adicionales — ${selected.nombre}` : ""}
         onClose={closeForm}
       >
-        {formData && (
-          <form className="grid grid-cols-1 md:grid-cols-2 gap-4" onSubmit={handleSave}>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico</label>
-              <input type="email" name="correo" value={formData.correo} onChange={handleChange} className="w-full rounded-lg border px-3 py-2 outline-none focus:ring" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">DPI</label>
-              <input type="text" name="dpi" value={formData.dpi} onChange={handleChange} className="w-full rounded-lg border px-3 py-2 outline-none focus:ring" placeholder="###########" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
-              <input type="text" name="telefono" value={formData.telefono} onChange={handleChange} className="w-full rounded-lg border px-3 py-2 outline-none focus:ring" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Ciudad</label>
-              <input type="text" name="ciudad" value={formData.ciudad} onChange={handleChange} className="w-full rounded-lg border px-3 py-2 outline-none focus:ring" />
-            </div>
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Dirección</label>
-              <textarea name="direccion" value={formData.direccion} onChange={handleChange} rows={3} className="w-full rounded-lg border px-3 py-2 outline-none focus:ring" />
-            </div>
-            <div className="md:col-span-2 flex items-center justify-end gap-2 pt-2">
-              <button type="button" onClick={closeForm} className="px-4 py-2 rounded-lg border">Cancelar</button>
-              <button type="submit" className="px-4 py-2 rounded-lg text-white" style={{ background: THEME.header }}>Guardar</button>
-            </div>
-          </form>
-        )}
-      </Modal>
+        <FormAgentes
+          formData={formData}
+          onChange={handleChange}
+          onSave={handleSave}
+          onCancel={closeForm}
+        />
+      </ModalBase>
     </div>
   );
 }
