@@ -88,14 +88,6 @@ export default function App() {
 
   const colores = ["text-orange-500", "text-cyan-500", "text-emerald-500", "text-pink-500"];
 
-  // Padding izquierdo del contenido para usar la mayor parte de la pantalla:
-  // - Desktop + sidebar visible: dejamos ~17rem para no solaparnos (sidebar w-60 = 15rem + respiro)
-  // - Desktop + sidebar oculta: dejamos 4rem pensando en el botón fijo (simétrico arriba/izquierda)
-  // - Mobile: superpuesto, casi sin padding extra
-  const leftPadClass = isMobile
-    ? "pl-3"
-    : (mostrarBarra ? "pl-[17rem]" : "pl-16");
-
   return (
     <>
       <div className="relative min-h-screen h-screen bg-gray-50 overflow-hidden flex flex-col">
@@ -111,63 +103,66 @@ export default function App() {
           </motion.div>
         )}
 
-        {/* Sidebar */}
+        {/* Capa de difuminado detrás del contenido (no desplaza nada) */}
         <AnimatePresence>
           {mostrarBarra && (
-            <>
-              {tab !== "" && isMobile && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="fixed inset-0 z-30 backdrop-blur-sm bg-black/10"
-                  onClick={() => setMostrarBarra(false)}
-                />
-              )}
+            <motion.div
+              key="blur-overlay"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.6, ease: 'easeInOut' }}
+              className="fixed inset-0 z-20 bg-black/20 backdrop-blur-md"
+            />
+          )}
+        </AnimatePresence>
 
-              <motion.aside
-                initial={{ x: -260, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                exit={{ x: -260, opacity: 0 }}
-                transition={{ duration: 0.6, ease: 'easeInOut' }}
-                className="h-screen w-60 bg-white fixed top-0 left-0 z-40 shadow-2xl border-r border-gray-200 flex flex-col items-center justify-between"
+        {/* Sidebar con animación suave */}
+        <AnimatePresence>
+          {mostrarBarra && (
+            <motion.aside
+              initial={{ x: -260, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: -260, opacity: 0 }}
+              transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
+              className="h-screen w-60 bg-white fixed top-0 left-0 z-40 shadow-2xl border-r border-gray-200 flex flex-col items-center justify-between"
+            >
+              <motion.button
+                whileTap={{ scale: 1.2 }}
+                whileHover={{ scale: 1.3 }}
+                onClick={() => setMostrarBarra(false)}
+                className="absolute top-4 -right-12 z-50 h-20 w-12 flex items-center justify-center bg-blue-100 text-blue-800 shadow rounded-r-2xl"
               >
-                <motion.button
-                  whileTap={{ scale: 1.2 }}
-                  whileHover={{ scale: 1.3 }}
-                  onClick={() => setMostrarBarra(false)}
-                  className="absolute top-4 -right-12 z-50 h-20 w-12 flex items-center justify-center bg-blue-100 text-blue-800 shadow rounded-r-2xl"
-                >
-                  <FiChevronsLeft size={28} />
-                </motion.button>
+                <FiChevronsLeft size={28} />
+              </motion.button>
 
-                <div className="flex flex-col items-center justify-center gap-3 mt-8 w-full">
-                  {tabs.map((t, index) => (
-                    <motion.button
-                      key={t.id}
-                      whileTap={{ scale: 0.97 }}
-                      whileHover={{ scale: 1.02 }}
-                      onClick={() => cambiarTab(t.id)}
-                      className={`w-48 flex items-center gap-3 justify-start py-2 px-4 rounded-xl font-semibold text-sm hover:bg-blue-50 transition ${
-                        tab === t.id ? "bg-blue-100 text-blue-900" : "text-gray-700"
-                      }`}
-                    >
-                      <div className={`text-xl ${colores[index % colores.length]}`}>{t.icon}</div>
-                      <span className="text-sm font-medium">{t.label}</span>
-                    </motion.button>
-                  ))}
-                </div>
+              <div className="flex flex-col items-center justify-center gap-3 mt-8 w-full">
+                {tabs.map((t, index) => (
+                  <motion.button
+                    key={t.id}
+                    whileTap={{ scale: 0.97 }}
+                    whileHover={{ scale: 1.02 }}
+                    onClick={() => cambiarTab(t.id)}
+                    className={`w-48 flex items-center gap-3 justify-start py-2 px-4 rounded-xl font-semibold text-sm hover:bg-blue-50 transition ${
+                      tab === t.id ? "bg-blue-100 text-blue-900" : "text-gray-700"
+                    }`}
+                  >
+                    <div className={`text-xl ${colores[index % colores.length]}`}>{t.icon}</div>
+                    <span className="text-sm font-medium">{t.label}</span>
+                  </motion.button>
+                ))}
+              </div>
 
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
-                  whileHover={{ scale: 1.05 }}
-                  onClick={handleLogout}
-                  className="mx-auto mb-6 mt-auto flex items-center justify-center gap-2 py-2 px-4 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold w-40"
-                >
-                  <FiLogOut />
-                  <span>Salir</span>
-                </motion.button>
-              </motion.aside>
-            </>
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                whileHover={{ scale: 1.05 }}
+                onClick={handleLogout}
+                className="mx-auto mb-6 mt-auto flex items-center justify-center gap-2 py-2 px-4 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold w-40"
+              >
+                <FiLogOut />
+                <span>Salir</span>
+              </motion.button>
+            </motion.aside>
           )}
         </AnimatePresence>
 
@@ -189,16 +184,15 @@ export default function App() {
           )}
         </AnimatePresence>
 
-        {/* Contenido principal: ocupa la mayor parte de la pantalla */}
+        {/* Contenido principal: NO se desplaza cuando se abre el sidebar */}
         <main
           className={[
-            "flex-1 overflow-y-auto w-full",
-            // margen superior pequeño y simétrico
-            "pt-4",
-            // padding lateral derecho moderado
-            "pr-3 md:pr-6",
-            // padding izquierdo dinámico (según sidebar/viewport)
-            leftPadClass
+            "relative flex-1 overflow-y-auto w-full",
+            // acolchonado superior/izquierdo (simétrico con el botón), sin mover contenido
+            "pt-6 pl-16 pr-6",
+            // efecto sutil cuando la barra está abierta
+            mostrarBarra ? "blur-[1.5px] brightness-95" : "blur-0 brightness-100",
+            "transition-all duration-700 ease-in-out"
           ].join(" ")}
         >
           <div className="w-full">
