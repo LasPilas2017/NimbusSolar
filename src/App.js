@@ -21,12 +21,8 @@ import TotalEgresos from "./componentes/contabilidad/TotalEgresos";
 import Proyectos from './componentes/Proyectos/Proyectos';
 import Menuprincipal from "./componentes/Ventas/Menuprincipal";
 
-
-
-
-
 function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 768 : false);
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener('resize', handleResize);
@@ -92,30 +88,17 @@ export default function App() {
 
   const colores = ["text-orange-500", "text-cyan-500", "text-emerald-500", "text-pink-500"];
 
+  // Padding izquierdo del contenido para usar la mayor parte de la pantalla:
+  // - Desktop + sidebar visible: dejamos ~17rem para no solaparnos (sidebar w-60 = 15rem + respiro)
+  // - Desktop + sidebar oculta: dejamos 4rem pensando en el botón fijo (simétrico arriba/izquierda)
+  // - Mobile: superpuesto, casi sin padding extra
+  const leftPadClass = isMobile
+    ? "pl-3"
+    : (mostrarBarra ? "pl-[17rem]" : "pl-16");
+
   return (
     <>
-      <div className="relative min-h-screen flex flex-col bg-gray-50">
-        {/* Botones superiores */}
-        <div className="fixed top-0 left-1/2 transform -translate-x-1/2 z-40 flex gap-4 mt-0">
-          <button
-            className="px-6 py-3 rounded-b-xl bg-white/30 backdrop-blur-lg text-gray-800 font-semibold shadow-md hover:bg-white/50 transition-all duration-300"
-            onClick={() => setMostrarTransacciones(true)}
-          >
-            <div className="flex items-center gap-2">
-              <FiRepeat size={20} />
-              Transacciones
-            </div>
-          </button>
-          <button
-            className="px-6 py-3 rounded-b-xl bg-white/30 backdrop-blur-lg text-gray-800 font-semibold shadow-md hover:bg-white/50 transition-all duration-300"
-            onClick={() => setTab("cajachica")}
-          >
-            <div className="flex items-center gap-2">
-              <FiDollarSign size={20} />
-              Caja chica
-            </div>
-          </button>
-        </div>
+      <div className="relative min-h-screen h-screen bg-gray-50 overflow-hidden flex flex-col">
 
         {/* Mensaje de cierre */}
         {cerrando && (
@@ -132,7 +115,7 @@ export default function App() {
         <AnimatePresence>
           {mostrarBarra && (
             <>
-              {tab !== "" && (
+              {tab !== "" && isMobile && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -140,14 +123,15 @@ export default function App() {
                   onClick={() => setMostrarBarra(false)}
                 />
               )}
-                        <motion.aside
-              initial={{ x: -260, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: -260, opacity: 0 }}
-              transition={{ duration: 0.6, ease: 'easeInOut' }}
-              className="h-screen w-60 bg-white fixed top-0 left-0 z-40 shadow-2xl border-r border-gray-200 flex flex-col items-center justify-between"
-            >
-            <motion.button
+
+              <motion.aside
+                initial={{ x: -260, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: -260, opacity: 0 }}
+                transition={{ duration: 0.6, ease: 'easeInOut' }}
+                className="h-screen w-60 bg-white fixed top-0 left-0 z-40 shadow-2xl border-r border-gray-200 flex flex-col items-center justify-between"
+              >
+                <motion.button
                   whileTap={{ scale: 1.2 }}
                   whileHover={{ scale: 1.3 }}
                   onClick={() => setMostrarBarra(false)}
@@ -155,22 +139,24 @@ export default function App() {
                 >
                   <FiChevronsLeft size={28} />
                 </motion.button>
+
                 <div className="flex flex-col items-center justify-center gap-3 mt-8 w-full">
-                {tabs.map((t, index) => (
-                  <motion.button
-                    key={t.id}
-                    whileTap={{ scale: 0.97 }}
-                    whileHover={{ scale: 1.02 }}
-                    onClick={() => cambiarTab(t.id)}
-                    className={`w-48 flex items-center gap-3 justify-start py-2 px-4 rounded-xl font-semibold text-sm hover:bg-blue-50 transition ${
-                      tab === t.id ? "bg-blue-100 text-blue-900" : "text-gray-700"
-                    }`}
-                  >
-                    <div className={`text-xl ${colores[index % colores.length]}`}>{t.icon}</div>
-                    <span className="text-sm font-medium">{t.label}</span>
-                  </motion.button>
-                ))}
-              </div>
+                  {tabs.map((t, index) => (
+                    <motion.button
+                      key={t.id}
+                      whileTap={{ scale: 0.97 }}
+                      whileHover={{ scale: 1.02 }}
+                      onClick={() => cambiarTab(t.id)}
+                      className={`w-48 flex items-center gap-3 justify-start py-2 px-4 rounded-xl font-semibold text-sm hover:bg-blue-50 transition ${
+                        tab === t.id ? "bg-blue-100 text-blue-900" : "text-gray-700"
+                      }`}
+                    >
+                      <div className={`text-xl ${colores[index % colores.length]}`}>{t.icon}</div>
+                      <span className="text-sm font-medium">{t.label}</span>
+                    </motion.button>
+                  ))}
+                </div>
+
                 <motion.button
                   whileTap={{ scale: 0.95 }}
                   whileHover={{ scale: 1.05 }}
@@ -180,7 +166,6 @@ export default function App() {
                   <FiLogOut />
                   <span>Salir</span>
                 </motion.button>
-
               </motion.aside>
             </>
           )}
@@ -204,9 +189,19 @@ export default function App() {
           )}
         </AnimatePresence>
 
-        {/* Contenido principal */}
-        <main className="flex-1 pt-28 px-4 md:px-6 overflow-y-auto w-full">
-          <div className="w-full px-2 sm:px-4">
+        {/* Contenido principal: ocupa la mayor parte de la pantalla */}
+        <main
+          className={[
+            "flex-1 overflow-y-auto w-full",
+            // margen superior pequeño y simétrico
+            "pt-4",
+            // padding lateral derecho moderado
+            "pr-3 md:pr-6",
+            // padding izquierdo dinámico (según sidebar/viewport)
+            leftPadClass
+          ].join(" ")}
+        >
+          <div className="w-full">
             <AnimatePresence mode="wait">
               <motion.div
                 key={tab + vistaServicio}
@@ -220,6 +215,7 @@ export default function App() {
                 {esAdmin && tab === "Liquidez" && <Contabilidad usuario={usuario} />}
                 {esAdmin && tab === "VistaMovimientos" && <VistaMovimientos />}
                 {esAdmin && tab === "proyectos" && <Proyectos />}
+
                 {esAdmin && tab === "servicios" && (
                   <>
                     {vistaServicio === "principal" && <Servicios onSelect={handleSelectServicio} />}
@@ -227,6 +223,7 @@ export default function App() {
                     {vistaServicio === "maquinaria" && <Maquinaria />}
                   </>
                 )}
+
                 {esAdmin && tab === "ventas" && (
                   <Menuprincipal rolUsuario="admin" user={usuario} />
                 )}
