@@ -49,7 +49,7 @@ export default function Diseno() {
   const [showCierres, setShowCierres] = React.useState(true);
   const [showVentas, setShowVentas] = React.useState(true);
 
-  // Si es rango, evitar que fin < inicio (pero sin cambiar layout)
+  // Si es rango, evitar que fin < inicio
   React.useEffect(() => {
     if (!modoRango) return;
     const iIni = mesesNombres.indexOf(mesInicio);
@@ -73,122 +73,122 @@ export default function Diseno() {
   } = Recharts;
 
   return (
-    <div className="w-full min-h-screen px-6 pb-8">
+    <div className="w-full h-full px-2 sm:px-4 pb-6">
       {/* Encabezado (título + filtros) */}
-      <div className="bg-[#1E2733] text-white rounded-xl shadow px-5 py-4 mb-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          {/* Título a la izquierda */}
-          <h1 className="text-xl font-semibold">
+      <div className="bg-[#1E2733] text-white rounded-xl shadow px-3 sm:px-5 py-3 sm:py-4 mb-4">
+        <div className="flex flex-col gap-3 sm:gap-4">
+          {/* Título */}
+          <h1 className="text-lg sm:text-xl text-center font-semibold">
             Evaluación de Agentes y Vendedores
           </h1>
 
-          {/* Filtros en una sola línea */}
-          <div className="bg-[#E9EAEC] rounded-xl px-4 py-3 shadow-inner flex flex-wrap items-center gap-4">
-            {/* Agente */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-gray-900">Agente</span>
-              <select
-                className="rounded-lg bg-[#E9F0F9] text-gray-800 px-3 py-1 border outline-none focus:ring focus:ring-blue-200 w-[230px]"
-                value={agente}
-                onChange={(e) => setAgente(e.target.value)}
-              >
-                <option value="">Seleccionar…</option>
-                <option>Jorge Mauricio</option>
-                <option>María Pérez</option>
-                <option>Juan López</option>
-              </select>
-            </div>
+{/* === Filtros compactos (una sola línea si cabe) === */}
+<div className="bg-[#E9EAEC] rounded-xl px-3 py-2 shadow-inner
+                flex flex-wrap items-center gap-2 sm:gap-3">
 
-            {/* Año */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-gray-900">Año</span>
-              <select
-                className="rounded-lg bg-[#E9F0F9] text-gray-800 px-3 py-1 border outline-none focus:ring focus:ring-blue-200 w-[110px]"
-                value={anio}
-                onChange={(e) => setAnio(parseInt(e.target.value, 10))}
-              >
-                {[2026, 2025, 2024, 2023].map((y) => (
-                  <option key={y} value={y}>{y}</option>
-                ))}
-              </select>
-            </div>
+  {/* Agente */}
+  <div className="flex items-center gap-2 whitespace-nowrap">
+    <span className="text-sm font-semibold text-gray-900">Agente</span>
+    <select
+      className="rounded-lg bg-[#E9F0F9] text-gray-800 px-3 py-1 border outline-none
+                 focus:ring focus:ring-blue-200
+                 flex-[2_1_260px] min-w-[160px] max-w-[360px]"
+      value={agente}
+      onChange={(e) => setAgente(e.target.value)}
+    >
+      <option value="">Seleccionar…</option>
+      <option>Jorge Mauricio</option>
+      <option>María Pérez</option>
+      <option>Juan López</option>
+    </select>
+  </div>
 
-            {/* Mes + Modo (en la MISMA línea, sin mover layout) */}
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-semibold text-gray-900">Meses</span>
+  {/* Año */}
+  <div className="flex items-center gap-2 whitespace-nowrap">
+    <span className="text-sm font-semibold text-gray-900">Año</span>
+    <select
+      className="rounded-lg bg-[#E9F0F9] text-gray-800 px-3 py-1 border outline-none
+                 focus:ring focus:ring-blue-200
+                 flex-[0_0_112px] min-w-[96px]"
+      value={anio}
+      onChange={(e) => setAnio(parseInt(e.target.value, 10))}
+    >
+      {[2026, 2025, 2024, 2023].map((y) => (
+        <option key={y} value={y}>{y}</option>
+      ))}
+    </select>
+  </div>
 
-              {/* Contenedor de selects con ancho fijo para evitar “saltos” */}
-              <div className="flex items-center gap-2">
-                {/* Select 1 (inicio) */}
-                <select
-                  className="rounded-lg bg-[#E9F0F9] text-gray-800 px-3 py-1 border outline-none focus:ring focus:ring-blue-200 w-[180px]"
-                  value={mesInicio}
-                  onChange={(e) => setMesInicio(e.target.value)}
-                >
-                  {mesesNombres.map((mes) => (
-                    <option key={`inicio-${mes}`} value={mes}>{mes}</option>
-                  ))}
-                </select>
+  {/* Meses */}
+  <div className="flex items-center gap-2 flex-[2_1_420px] min-w-[280px] max-w-[560px]">
+    <span className="text-sm font-semibold text-gray-900 whitespace-nowrap">Meses</span>
 
-                {/* Separador “a” – siempre ocupa espacio (sin saltos) */}
-                <span
-                  className={`font-semibold w-4 text-center ${
-                    modoRango ? "text-gray-900" : "text-gray-400"
+    <select
+      className="rounded-lg bg-[#E9F0F9] text-gray-800 px-3 py-1 border outline-none
+                 focus:ring focus:ring-blue-200
+                 flex-[1_1_180px] min-w-[140px]"
+      value={mesInicio}
+      onChange={(e) => setMesInicio(e.target.value)}
+    >
+      {mesesNombres.map((mes) => (
+        <option key={`inicio-${mes}`} value={mes}>{mes}</option>
+      ))}
+    </select>
+
+    <span className={`font-semibold text-center px-1 w-3 sm:w-4
+                      ${modoRango ? "text-gray-900" : "text-gray-400"}`}>a</span>
+
+    <select
+      disabled={!modoRango}
+      aria-disabled={!modoRango}
+      className={`rounded-lg px-3 py-1 border outline-none
+                  flex-[1_1_180px] min-w-[140px] transition
+                  ${modoRango
+                    ? "bg-[#E9F0F9] text-gray-800 focus:ring focus:ring-blue-200"
+                    : "bg-gray-100 text-gray-400 pointer-events-none opacity-70"
                   }`}
-                >
-                  a
-                </span>
+      value={mesFin}
+      onChange={(e) => setMesFin(e.target.value)}
+    >
+      {mesesNombres.map((mes) => (
+        <option key={`fin-${mes}`} value={mes}>{mes}</option>
+      ))}
+    </select>
+  </div>
 
-                {/* Select 2 (fin) – SIEMPRE visible, solo se deshabilita en Mes único */}
-                <select
-                  disabled={!modoRango}
-                  className={`rounded-lg px-3 py-1 border outline-none focus:ring w-[180px] transition
-                    ${modoRango
-                      ? "bg-[#E9F0F9] text-gray-800 focus:ring-blue-200"
-                      : "bg-gray-100 text-gray-400 pointer-events-none"
-                    }`}
-                  value={mesFin}
-                  onChange={(e) => setMesFin(e.target.value)}
-                >
-                  {mesesNombres.map((mes) => (
-                    <option key={`fin-${mes}`} value={mes}>{mes}</option>
-                  ))}
-                </select>
-              </div>
+  {/* Modo */}
+  <div className="flex items-center gap-2 whitespace-nowrap">
+    <span className="text-sm font-semibold text-gray-900">Modo</span>
+    <div className="flex rounded-md overflow-hidden border">
+      <button
+        type="button"
+        onClick={() => setModoRango(false)}
+        className={`px-3 py-1 text-sm text-gray-900
+                    ${!modoRango ? "bg-white font-semibold" : "bg-gray-100"} hover:bg-white`}
+      >
+        Mes único
+      </button>
+      <button
+        type="button"
+        onClick={() => setModoRango(true)}
+        className={`px-3 py-1 text-sm text-gray-900
+                    ${modoRango ? "bg-white font-semibold" : "bg-gray-100"}
+                    hover:bg-white border-l`}
+      >
+        Rango
+      </button>
+    </div>
+  </div>
+</div>
 
-              {/* Modo (botonera) */}
-              <div className="flex items-center gap-2 ml-2">
-                <span className="text-sm font-semibold text-gray-900">Modo</span>
-                <div className="flex rounded-md overflow-hidden border">
-                  <button
-                    type="button"
-                    onClick={() => setModoRango(false)}
-                    className={`px-3 py-1 text-sm text-gray-900 ${
-                      !modoRango ? "bg-white font-semibold" : "bg-gray-100"
-                    } hover:bg-white`}
-                  >
-                    Mes único
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setModoRango(true)}
-                    className={`px-3 py-1 text-sm text-gray-900 ${
-                      modoRango ? "bg-white font-semibold" : "bg-gray-100"
-                    } hover:bg-white border-l`}
-                  >
-                    Rango
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+
         </div>
       </div>
 
       {/* Contenido principal */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* === Análisis Global (a la izquierda, más angosto) === */}
-        <div className="lg:col-span-4">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
+        {/* Análisis Global */}
+        <div className="lg:col-span-4 min-w-0">
           <div className="bg-white shadow border border-gray-500 overflow-hidden">
             <div className="bg-gray-100 text-gray-700 font-semibold px-4 py-2 border-b border-gray-500">
               Análisis Global
@@ -210,7 +210,6 @@ export default function Diseno() {
                   <div className="px-3 py-1 border-t border-gray-400 text-right">{fmtQ(r.ventas)}</div>
                 </div>
               ))}
-
               <div className="grid grid-cols-4 bg-gray-50 font-semibold border-t-2 border-gray-700">
                 <div className="px-3 py-1 border-r border-gray-700">Total</div>
                 <div className="px-3 py-1 border-r border-gray-700 text-right">{totalProspectos}</div>
@@ -221,13 +220,12 @@ export default function Diseno() {
           </div>
         </div>
 
-        {/* === Análisis de Vendedor (al centro, más ancho) === */}
-        <div className="lg:col-span-3">
+        {/* Análisis de Vendedor */}
+        <div className="lg:col-span-3 min-w-0">
           <div className="bg-white shadow border border-gray-500">
             <div className="bg-gray-100 text-gray-700 font-semibold px-4 py-2 border-b border-gray-500">
               Análisis de Vendedor
             </div>
-
             <div className="text-sm">
               {[
                 ["Prospectos", totalProspectos, "text-gray-800"],
@@ -255,134 +253,46 @@ export default function Diseno() {
           </div>
         </div>
 
-        {/* === Gráfico (a la derecha) === */}
-        <div className="lg:col-span-5">
+        {/* Gráfico */}
+        <div className="lg:col-span-5 min-w-0">
           <div className="bg-white shadow border border-gray-500 rounded-md overflow-hidden">
-            {/* Checkboxes */}
-           <div className="flex flex-wrap justify-center items-center gap-6 px-3 py-2 border-b border-gray-200 text-sm">
-             <span className="font-semibold text-gray-700">Ver:</span>
-
+            <div className="flex flex-wrap justify-center items-center gap-4 sm:gap-6 px-3 py-2 border-b border-gray-200 text-sm">
+              <span className="font-semibold text-gray-700">Ver:</span>
               <label className="inline-flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={showProspectos}
-                  onChange={(e) => setShowProspectos(e.target.checked)}
-                  className="h-4 w-4 accent-red-500"
-                />
+                <input type="checkbox" checked={showProspectos} onChange={(e) => setShowProspectos(e.target.checked)} className="h-4 w-4 accent-red-500" />
                 <span>Prospectos</span>
               </label>
-
               <label className="inline-flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={showCierres}
-                  onChange={(e) => setShowCierres(e.target.checked)}
-                  className="h-4 w-4 accent-blue-600"
-                />
+                <input type="checkbox" checked={showCierres} onChange={(e) => setShowCierres(e.target.checked)} className="h-4 w-4 accent-blue-600" />
                 <span>Cierres</span>
               </label>
-
               <label className="inline-flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={showVentas}
-                  onChange={(e) => setShowVentas(e.target.checked)}
-                  className="h-4 w-4 accent-emerald-600"
-                />
+                <input type="checkbox" checked={showVentas} onChange={(e) => setShowVentas(e.target.checked)} className="h-4 w-4 accent-emerald-600" />
                 <span>Ventas (GTQ)</span>
               </label>
             </div>
 
-           
             {/* Chart */}
-<div className="h-[320px] w-full">
-  <ResponsiveContainer width="100%" height="100%">
-    <ComposedChart
-      data={demo}
-      margin={{ top: 6, right: 6, bottom: 6, left: 6 }}   // << menos margen externo
-    >
-      <CartesianGrid strokeDasharray="3 3" />
-
-      <XAxis
-        dataKey="mes"
-        tick={{ fontSize: 12 }}
-        tickMargin={6}
-      />
-
-      {/* Eje izquierdo MUY angosto */}
-      <YAxis
-        yAxisId="left"
-        allowDecimals={false}
-        width={26}                      // << reserva mínima
-        tick={{ fontSize: 12 }}
-        tickMargin={4}
-      />
-
-      {/* Eje derecho angosto (ventas en GTQ) */}
-      <YAxis
-        yAxisId="right"
-        orientation="right"
-        width={54}                      // << lo más pequeño que permita tu formateo
-        tickFormatter={(v) => fmtQ(v)}
-        tick={{ fontSize: 12 }}
-        tickMargin={4}
-      />
-
-      <Tooltip
-        formatter={(val, name) =>
-          name === "ventas" || name === "Ventas" ? fmtQ(val) : val
-        }
-      />
-
-      {showProspectos && (
-        <Line
-          yAxisId="left"
-          type="monotone"
-          dataKey="prospectos"
-          name="Prospectos"
-          stroke="#EF4444"
-          strokeWidth={3}
-          isAnimationActive
-          animationDuration={900}
-          animationEasing="ease-out"
-          dot={{ r: 2 }}
-          activeDot={{ r: 6 }}
-        />
-      )}
-      {showCierres && (
-        <Line
-          yAxisId="left"
-          type="monotone"
-          dataKey="cierres"
-          name="Cierres"
-          stroke="#2563EB"
-          strokeWidth={3}
-          isAnimationActive
-          animationDuration={900}
-          animationEasing="ease-out"
-          dot={{ r: 2 }}
-          activeDot={{ r: 6 }}
-        />
-      )}
-      {showVentas && (
-        <Line
-          yAxisId="right"
-          type="monotone"
-          dataKey="ventas"
-          name="Ventas"
-          stroke="#10B981"
-          strokeWidth={3}
-          isAnimationActive
-          animationDuration={900}
-          animationEasing="ease-out"
-          dot={{ r: 2 }}
-          activeDot={{ r: 6 }}
-        />
-      )}
-    </ComposedChart>
-  </ResponsiveContainer>
-</div>
-
+            <div className="h-[260px] sm:h-[320px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={demo} margin={{ top: 6, right: 6, bottom: 6, left: 6 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="mes" tick={{ fontSize: 12 }} tickMargin={6} />
+                  <YAxis yAxisId="left" allowDecimals={false} width={26} tick={{ fontSize: 12 }} tickMargin={4} />
+                  <YAxis yAxisId="right" orientation="right" width={54} tickFormatter={(v) => fmtQ(v)} tick={{ fontSize: 12 }} tickMargin={4} />
+                  <Tooltip formatter={(val, name) => (name === "ventas" || name === "Ventas" ? fmtQ(val) : val)} />
+                  {showProspectos && (
+                    <Line yAxisId="left" type="monotone" dataKey="prospectos" name="Prospectos" stroke="#EF4444" strokeWidth={3} isAnimationActive animationDuration={900} animationEasing="ease-out" dot={{ r: 2 }} activeDot={{ r: 6 }} />
+                  )}
+                  {showCierres && (
+                    <Line yAxisId="left" type="monotone" dataKey="cierres" name="Cierres" stroke="#2563EB" strokeWidth={3} isAnimationActive animationDuration={900} animationEasing="ease-out" dot={{ r: 2 }} activeDot={{ r: 6 }} />
+                  )}
+                  {showVentas && (
+                    <Line yAxisId="right" type="monotone" dataKey="ventas" name="Ventas" stroke="#10B981" strokeWidth={3} isAnimationActive animationDuration={900} animationEasing="ease-out" dot={{ r: 2 }} activeDot={{ r: 6 }} />
+                  )}
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
       </div>

@@ -112,6 +112,7 @@ export default function App() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.6, ease: 'easeInOut' }}
+              onClick={() => setMostrarBarra(false)}
               className="fixed inset-0 z-20 bg-black/20 backdrop-blur-md"
             />
           )}
@@ -127,14 +128,29 @@ export default function App() {
               transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
               className="h-screen w-60 bg-white fixed top-0 left-0 z-40 shadow-2xl border-r border-gray-200 flex flex-col items-center justify-between"
             >
-              <motion.button
-                whileTap={{ scale: 1.2 }}
-                whileHover={{ scale: 1.3 }}
-                onClick={() => setMostrarBarra(false)}
-                className="absolute top-4 -right-12 z-50 h-20 w-12 flex items-center justify-center bg-blue-100 text-blue-800 shadow rounded-r-2xl"
+            <motion.button
+              onClick={() => setMostrarBarra(false)}
+              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.05 }}
+              className="
+                absolute top-5 -right-11 z-50
+                flex items-center justify-center
+                w-11 h-11
+                bg-white/80 backdrop-blur-sm border border-gray-300 shadow-md
+                rounded-r-xl
+                hover:bg-white hover:shadow-lg
+                transition-all duration-300 ease-in-out
+              "
+            >
+              <motion.div
+                initial={{ x: 0 }}
+                animate={{ x: [0, -3, 0] }}  /* movimiento leve hacia adentro */
+                transition={{ duration: 1.2, repeat: Infinity, repeatDelay: 4 }}
               >
-                <FiChevronsLeft size={28} />
-              </motion.button>
+                <FiChevronsLeft className="text-gray-700 text-xl" />
+              </motion.div>
+            </motion.button>
+
 
               <div className="flex flex-col items-center justify-center gap-3 mt-8 w-full">
                 {tabs.map((t, index) => (
@@ -167,22 +183,37 @@ export default function App() {
         </AnimatePresence>
 
         {/* Botón abrir sidebar */}
-        <AnimatePresence>
-          {!mostrarBarra && (
-            <motion.button
-              initial={{ x: -60, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: -60, opacity: 0 }}
-              transition={{ duration: 0.6, ease: 'easeInOut' }}
-              onClick={() => setMostrarBarra(true)}
-              className="fixed top-4 left-0 z-50 h-20 w-12 flex items-center justify-center bg-blue-100 text-blue-800 shadow rounded-r-2xl"
-              whileTap={{ scale: 0.9 }}
-              whileHover={{ scale: 1.1 }}
-            >
-              <FiChevronsRight size={28} />
-            </motion.button>
-          )}
-        </AnimatePresence>
+       <AnimatePresence>
+            {!mostrarBarra && (
+              <motion.button
+                initial={{ x: -40, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: -40, opacity: 0 }}
+                transition={{ duration: 0.4, ease: 'easeInOut' }}
+                onClick={() => setMostrarBarra(true)}
+                whileTap={{ scale: 0.95 }}
+                whileHover={{ scale: 1.05 }}
+                className="
+                  fixed top-5 left-0 z-50
+                  flex items-center justify-center
+                  w-11 h-11
+                  bg-white/80 backdrop-blur-sm border-r border-gray-300 shadow-md
+                  rounded-r-xl
+                  hover:bg-white hover:shadow-lg
+                  transition-all duration-300 ease-in-out
+                "
+              >
+                <motion.div
+                  initial={{ x: 0 }}
+                  animate={{ x: [0, 3, 0] }} // pequeño movimiento lateral al cargar
+                  transition={{ duration: 1.2, repeat: Infinity, repeatDelay: 4 }}
+                >
+                  <FiChevronsRight className="text-gray-700 text-xl" />
+                </motion.div>
+              </motion.button>
+            )}
+          </AnimatePresence>
+
 
         {/* Contenido principal: NO se desplaza cuando se abre el sidebar */}
         <main
