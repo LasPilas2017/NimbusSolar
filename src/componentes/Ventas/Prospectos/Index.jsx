@@ -1,5 +1,6 @@
 import React from "react";
 import Diseno from "./Diseno";
+import FormProspectos from "./FormProspectos"
 
 // Este archivo actúa como "puente" entre el sistema principal y tu diseño real.
 // Aquí NO se define el contenido visual, solo se llama a Diseno.jsx.

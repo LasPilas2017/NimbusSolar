@@ -1,6 +1,7 @@
+// src/componentes/Ventas/Prospectos/Diseno.jsx
 import React, { useState } from "react";
-import THEME from "../theme"; // export default
-
+import THEME from "../theme";
+import FormProspectos from "./FormProspectos";
 
 /* ================ DATA ================= */
 const DATA = [
@@ -284,9 +285,9 @@ function BadgeEstado({ estado }) {
 }
 
 function DotCompra({ valor, onClick }) {
-  let fill = "#8a929e"; // gris
-  if (valor > 0 && valor < 4000) fill = "#eab308"; // amarillo
-  if (valor >= 4000) fill = "#16a34a"; // verde
+  let fill = "#8a929e";
+  if (valor > 0 && valor < 4000) fill = "#eab308";
+  if (valor >= 4000) fill = "#16a34a";
   return (
     <button
       onClick={onClick}
@@ -311,6 +312,9 @@ function Cell({ children, strong, align = "left", rightBorder = true }) {
         strong ? "font-semibold" : ""
       } ${align === "right" ? "text-right" : align === "center" ? "text-center" : ""}`}
       style={{
+        // 👇 Fuerza a que la celda use el mismo fondo que la fila (zebra continuo)
+        background: "inherit",
+
         borderRight: rightBorder ? `2px solid ${THEME.border}` : "none",
         borderBottom: `2px solid ${THEME.border}`,
         whiteSpace: "nowrap",
@@ -337,6 +341,8 @@ function Modal({ open, title, onClose, children }) {
               onClick={onClose}
               className="rounded-md px-2 py-1 text-sm"
               style={{ background: THEME.headerDark, color: THEME.headerText }}
+              aria-label="Cerrar modal"
+              title="Cerrar"
             >
               ✕
             </button>
@@ -348,7 +354,7 @@ function Modal({ open, title, onClose, children }) {
   );
 }
 
-/* ====== Semilla de 5 contactos (incluye TIPO) ====== */
+/* ====== Semilla de contactos y utilidad ====== */
 function seedContactos(row) {
   const bases = [
     { canal: "WhatsApp", tipo: "Entrante", comentario: "Se compartió brochure y cotización preliminar." },
@@ -368,98 +374,70 @@ function seedContactos(row) {
   });
 }
 
-/* ====== Utilidad: última fecha de venta ====== */
 function getUltimaFechaVenta(r) {
-  // Si viene un historial explícito, tomar la fecha más reciente
   if (Array.isArray(r.ventasHistorial) && r.ventasHistorial.length > 0) {
-    // Se espera [{ fecha: "YYYY-MM-DD", monto: number, ...}, ...]
-    const fechas = r.ventasHistorial
-      .map((v) => v.fecha)
-      .filter(Boolean)
-      .sort(); // orden lexicográfico funciona con YYYY-MM-DD
+    const fechas = r.ventasHistorial.map((v) => v.fecha).filter(Boolean).sort();
     return fechas[fechas.length - 1] || "-";
   }
-  // Si no hay historial pero hay compras > 0, usar la "fecha" del registro
   if ((r.compras || 0) > 0) return r.fecha || "-";
-  // Sin ventas conocidas
   return "-";
 }
 
 /* =============== Componente principal =============== */
 export default function Diseno() {
-  // 18 columnas (se agregó "Última Fecha de Venta" antes de "Compras")
+  // 18 columnas (incluye "Última Fecha de Venta")
   const COLS =
     "grid-cols-[110px,320px,220px,230px,140px,140px,260px,170px,170px,160px,160px,160px,160px,160px,180px,150px,160px,170px]";
 
   const totalClientes = DATA.length;
   const totalCompras = DATA.reduce((a, r) => a + (r.compras || 0), 0);
 
-  // Estado del modal de contactos
+  // Estado modales
   const [openRow, setOpenRow] = useState(null);
   const [contactos, setContactos] = useState([]);
-  const [nuevo, setNuevo] = useState({
-    fecha: "",
-    canal: "WhatsApp",
-    tipo: "Entrante",
-    comentario: "",
-  });
-
-  // Estado del modal de ventas (historial)
   const [openVentasRow, setOpenVentasRow] = useState(null);
 
+  // Abrir / cerrar Contactos
   const abrirContactos = (row) => {
     setOpenRow(row);
     const list =
-      Array.isArray(row.contactos) && row.contactos.length > 0
-        ? row.contactos
-        : seedContactos(row);
+      Array.isArray(row.contactos) && row.contactos.length > 0 ? row.contactos : seedContactos(row);
     setContactos(list);
-    setNuevo({ fecha: "", canal: "WhatsApp", tipo: "Entrante", comentario: "" });
   };
-
   const cerrarContactos = () => {
     setOpenRow(null);
     setContactos([]);
   };
 
-  const abrirVentas = (row) => {
-    setOpenVentasRow(row);
-  };
-
-  const cerrarVentas = () => {
-    setOpenVentasRow(null);
-  };
-
-  const handleAddContacto = (e) => {
-    e.preventDefault();
-    if (!nuevo.fecha || !nuevo.canal || !nuevo.tipo || !nuevo.comentario) return;
-    setContactos((prev) => [
-      { fecha: nuevo.fecha, canal: nuevo.canal, tipo: nuevo.tipo, comentario: nuevo.comentario },
-      ...prev,
-    ]);
-    setNuevo({ fecha: "", canal: "WhatsApp", tipo: "Entrante", comentario: "" });
-  };
+  // Abrir / cerrar Ventas
+  const abrirVentas = (row) => setOpenVentasRow(row);
+  const cerrarVentas = () => setOpenVentasRow(null);
 
   const handleDotClick = (row) => {
     console.log("Detalle compras:", row.id, row.nombre, row.compras);
   };
 
   return (
-    <div className="w-full min-h-screen px-6 pb-10">
-      {/* Título */}
-      <div className="flex items-center gap-3 mt-2 mb-2">
-        <div className="text-5xl leading-none">🗂️</div>
-        <h1 className="text-5xl font-semibold text-gray-900 tracking-tight">
-          Catálogo de Prospectos
-        </h1>
-      </div>
-      <div className="h-[4px] w-full bg-gray-800 mb-4" />
+    <div className="w-full h-auto min-h-screen px-6 pb-10 overflow-y-auto">
+
+    {/* Título centrado */}
+<div className="flex flex-col items-center justify-center mt-6 mb-6 text-center">
+  <div className="flex items-center justify-center gap-3">
+    <div className="text-5xl leading-none">🗂️</div>
+    <h1 className="text-5xl font-semibold text-gray-900 tracking-tight">
+      Catálogo de Prospectos
+    </h1>
+  </div>
+  <div className="h-[4px] w-48 bg-gray-800 mt-3 rounded-full" />
+</div>
+
 
       {/* Tabla */}
-      <div
-        className="w-full border shadow overflow-x-auto"
-        style={{ background: THEME.stripeAlt, borderColor: THEME.border }}
-      >
+     <div
+  className="w-full border shadow overflow-x-auto max-h-[calc(100vh-100px)] overflow-y-auto"
+  style={{ background: THEME.stripeAlt, borderColor: THEME.border }}
+>
+
         {/* Encabezado */}
         <div className={`min-w-[2110px] grid ${COLS}`}>
           {[
@@ -479,7 +457,7 @@ export default function Diseno() {
             "Fecha de Creación",
             "Días Último Contacto",
             "Estado",
-            "Última Fecha de Venta", // 🆕
+            "Última Fecha de Venta",
             "Compras",
           ].map((h, i, all) => (
             <div
@@ -544,7 +522,6 @@ export default function Diseno() {
                       className="p-1 rounded hover:bg-gray-100"
                       title="Ver registro de contactos"
                     >
-                      {/* Ícono lupa */}
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         className="h-4 w-4"
@@ -567,7 +544,7 @@ export default function Diseno() {
                   <BadgeEstado estado={r.estado} />
                 </Cell>
 
-                {/* 🆕 Última Fecha de Venta + Lupa ventas */}
+                {/* Última Fecha de Venta + Lupa ventas */}
                 <Cell align="center">
                   <div className="flex items-center justify-center gap-2">
                     <span className="tabular-nums">{ultimaVenta}</span>
@@ -577,7 +554,6 @@ export default function Diseno() {
                       className="p-1 rounded hover:bg-gray-100"
                       title="Ver historial de ventas"
                     >
-                      {/* Ícono lupa */}
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         className="h-4 w-4"
@@ -606,36 +582,30 @@ export default function Diseno() {
             );
           })}
 
-          {/* Fila totals */}
-          <div className={`grid ${COLS}`}>
-            {/* Ocupa de ID a Días Último Contacto (15 columnas) */}
-            <div
-              className="px-4 py-3 font-bold text-white col-span-15"
-              style={{ background: THEME.header, borderRight: `1px solid ${THEME.border}` }}
-            >
-              {totalClientes} Clientes
-            </div>
+          {/* Fila totales */}
+  {/* Fila totales (clientes + total compras alineado bajo "Compras") */}
+<div className={`grid ${COLS}`}>
+  {/* Ocupa desde la columna 1 hasta la 17 */}
+  <div
+    className="px-4 py-3 font-bold text-white"
+    style={{
+      background: THEME.header,
+      borderRight: `1px solid ${THEME.border}`,
+      gridColumn: "1 / span 17", // ← abarca todas menos la última
+    }}
+  >
+    {totalClientes} Clientes
+  </div>
 
-            {/* Estado (vacía) */}
-            <div
-              className="px-4 py-3 font-bold text-center text-white"
-              style={{ background: THEME.header, borderRight: `1px solid ${THEME.border}` }}
-            />
+  {/* Última columna: total compras (alineado a la derecha) */}
+  <div
+    className="px-4 py-3 font-bold text-right text-white"
+    style={{ background: THEME.header }}
+  >
+    {fmtQ(totalCompras)}
+  </div>
+</div>
 
-            {/* Última Fecha de Venta (vacía) */}
-            <div
-              className="px-4 py-3 font-bold text-center text-white"
-              style={{ background: THEME.header, borderRight: `1px solid ${THEME.border}` }}
-            />
-
-            {/* Compras (total) */}
-            <div
-              className="px-4 py-3 font-bold text-right text-white"
-              style={{ background: THEME.header }}
-            >
-              {fmtQ(totalCompras)}
-            </div>
-          </div>
         </div>
       </div>
 
@@ -645,72 +615,10 @@ export default function Diseno() {
         onClose={cerrarContactos}
         title={openRow ? `Registro de contactos — ${openRow.nombre}` : ""}
       >
-        {/* Formulario para agregar */}
-        <form onSubmit={handleAddContacto} className="mb-4 grid grid-cols-1 md:grid-cols-4 gap-3">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
-            <input
-              type="date"
-              className="w-full rounded-lg border px-3 py-2 outline-none focus:ring"
-              value={nuevo.fecha}
-              onChange={(e) => setNuevo((p) => ({ ...p, fecha: e.target.value }))}
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Canal</label>
-            <select
-              className="w-full rounded-lg border px-3 py-2 outline-none focus:ring"
-              value={nuevo.canal}
-              onChange={(e) => setNuevo((p) => ({ ...p, canal: e.target.value }))}
-              required
-            >
-              <option>WhatsApp</option>
-              <option>Llamada</option>
-              <option>Correo</option>
-              <option>Visita</option>
-            </select>
-          </div>
-
-          {/* Tipo de comunicación */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de comunicación</label>
-            <select
-              className="w-full rounded-lg border px-3 py-2 outline-none focus:ring"
-              value={nuevo.tipo}
-              onChange={(e) => setNuevo((p) => ({ ...p, tipo: e.target.value }))}
-              required
-            >
-              <option>Entrante</option>
-              <option>Saliente</option>
-            </select>
-          </div>
-
-          <div className="md:col-span-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Comentario</label>
-            <textarea
-              rows={3}
-              className="w-full rounded-lg border px-3 py-2 outline-none focus:ring"
-              placeholder="Ej. Cliente solicita comparar inversores de 5kW y 8kW…"
-              value={nuevo.comentario}
-              onChange={(e) => setNuevo((p) => ({ ...p, comentario: e.target.value }))}
-              required
-            />
-          </div>
-
-          <div className="md:col-span-4 flex items-center justify-end gap-2">
-            <button type="button" onClick={cerrarContactos} className="px-4 py-2 rounded-lg border">
-              Cerrar
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 rounded-lg text-white"
-              style={{ background: THEME.header }}
-            >
-              Agregar contacto
-            </button>
-          </div>
-        </form>
+        <FormProspectos
+          onAdd={(contacto) => setContactos((prev) => [contacto, ...prev])}
+          onClose={cerrarContactos}
+        />
 
         {/* Lista de registros */}
         <div className="border rounded-xl overflow-hidden">
@@ -725,10 +633,10 @@ export default function Diseno() {
           <div>
             {contactos.map((c, i) => {
               const isEntrante = (c.tipo || "").toLowerCase() === "entrante";
-              const arrowColor = isEntrante ? "#16a34a" : "#dc2626"; // verde / rojo
+              const arrowColor = isEntrante ? "#16a34a" : "#dc2626";
               const arrowPath = isEntrante
-                ? "M12 5v10m0 0l-4-4m4 4l4-4" // flecha abajo
-                : "M12 19V9m0 0l4 4m-4-4l-4 4"; // flecha arriba
+                ? "M12 5v10m0 0l-4-4m4 4l4-4"
+                : "M12 19V9m0 0l4 4m-4-4l-4 4";
               return (
                 <div
                   key={i}
@@ -744,7 +652,6 @@ export default function Diseno() {
                       <span className="px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
                         {c.canal}
                       </span>
-                      {/* Flecha tipo comunicación */}
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 24 24"

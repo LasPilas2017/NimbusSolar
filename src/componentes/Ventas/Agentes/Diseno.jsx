@@ -267,14 +267,14 @@ export default function Diseno() {
     <div className="w-full min-h-screen px-6 pb-12" style={{ background: THEME.background }}>
       {/* ===== Título ===== */}
       <div className="flex items-center justify-center gap-3 mt-6 mb-3 w-full text-center">
-          <div className="text-5xl leading-none">🗒️</div>
-          <h1
-            className="text-4xl sm:text-5xl font-semibold tracking-tight"
-            style={{ color: THEME.textPrimary }}
-          >
-            Catálogo de Agentes y Vendedores
-          </h1>
-        </div>
+        <div className="text-5xl leading-none">🗒️</div>
+        <h1
+          className="text-4xl sm:text-5xl font-semibold tracking-tight"
+          style={{ color: THEME.textPrimary }}
+        >
+          Catálogo de Agentes y Vendedores
+        </h1>
+      </div>
 
       <div
         className="h-[3px] w-full rounded-full mb-6"
@@ -282,100 +282,164 @@ export default function Diseno() {
       />
 
       {/* ===== Tabla ===== */}
-      <div className="w-full overflow-x-auto rounded-3xl shadow-lg ring-1" style={{ background: THEME.surface }}>
-        {/* Encabezado */}
-        <div className={`${TABLE_W} grid ${COLS} sticky top-0 z-10`} style={{ borderBottom: `1px solid ${THEME.border}` }}>
-          {["ID", "Nombre", "Sueldo Base", "Q. Comisión", "Total Pago", "% Comisión", "Cierres", "Efectividad"].map(
-            (h, idx, arr) => (
-              <div
-                key={h}
-                className="px-4 py-3 font-semibold whitespace-nowrap"
-                style={{
-                  background: `linear-gradient(180deg, ${THEME.headerDark}, ${THEME.header})`,
-                  color: THEME.headerText,
-                  borderRight: idx === arr.length - 1 ? "none" : "1px solid rgba(255,255,255,0.25)",
-                }}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="tracking-wide">{h}</span>
-                  <span className="ml-2 text-[10px] opacity-90">▾</span>
-                </div>
-              </div>
-            )
-          )}
-        </div>
+<div
+  className="w-full rounded-3xl shadow-lg ring-1 overflow-hidden"
+  style={{ background: THEME.surface }}
+>
+  {/* Contenedor scrollable SOLO del cuerpo */}
+{/* Contenedor scrollable SOLO del cuerpo */}
+<div
+  className={`overflow-x-auto ${
+    DATA.length > 10 ? "overflow-y-auto" : "overflow-y-visible"
+  }`}
+  style={{
+    maxHeight: DATA.length > 9 ? "calc(125vh - 320px)" : "none",
+  }}
+>
 
-        {/* Cuerpo */}
-        <div className={`${TABLE_W}`}>
-          {DATA.map((r, rowIdx) => {
-            const qComision = ((r.ventas || 0) * (r.comision || 0)) / 100;
-            const totalPago = (r.sueldoBase || 0) + qComision;
-
-            return (
-              <div
-                key={r.id}
-                className={`grid ${COLS}`}
-                style={{ background: rowIdx % 2 === 0 ? THEME.stripeAlt : THEME.stripe }}
-              >
-                <Cell>{r.id}</Cell>
-                <Cell strong>
-                  <button
-                    onClick={() => openForm(r)}
-                    className="max-w-[260px] truncate underline-offset-2 hover:underline transition text-left"
-                    style={{ color: THEME.accentBlue }}
-                    title="Ver/editar datos del vendedor"
-                  >
-                    {r.nombre}
-                  </button>
-                </Cell>
-                <Cell align="right">{fmtQ(r.sueldoBase)}</Cell>
-                <Cell align="right">{fmtQ(qComision)}</Cell>
-                <Cell align="right" strong>
-                  {fmtQ(totalPago)}
-                </Cell>
-                <Cell align="right">{r.comision ? `${r.comision}%` : ""}</Cell>
-                <Cell align="center">{r.cierres}</Cell>
-                <Cell align="center">
-                  <div className="flex items-center justify-between w-full px-2">
-                    <span className="font-medium tabular-nums text-gray-800">{r.efectividad}%</span>
-                    <div className="flex justify-end w-5">
-                      <div className={`w-3 h-3 rounded-full ${getColor(r.efectividad)}`} title={`Efectividad: ${r.efectividad}%`} />
-                    </div>
-                  </div>
-                </Cell>
-              </div>
-            );
-          })}
-
-        {/* Footer */}
-          <div className={`grid ${COLS}`} style={{ borderTop: `1px solid ${THEME.border}` }}>
-            <div
-              className="px-4 py-3 font-semibold text-white col-span-2 rounded-bl-3xl"
-              style={{ background: THEME.header, borderRight: `1px solid ${THEME.border}` }}
-            >
-              {totalEmpleados} Empleados
-            </div>
-            <div className="px-4 py-3 font-semibold text-right text-white" style={{ background: THEME.header, borderRight: `1px solid ${THEME.border}` }}>
-              {fmtQ(sumaSueldoBase)}
-            </div>
-            <div className="px-4 py-3 font-semibold text-right text-white" style={{ background: THEME.header, borderRight: `1px solid ${THEME.border}` }}>
-              {fmtQ(sumaQComision)}
-            </div>
-            <div className="px-4 py-3 font-semibold text-right text-white" style={{ background: THEME.header, borderRight: `1px solid ${THEME.border}` }}>
-              {fmtQ(sumaTotalPago)}
-            </div>
-            <div className="px-4 py-3 font-semibold text-right text-white" style={{ background: THEME.header, borderRight: `1px solid ${THEME.border}` }}>
-              {promComision.toFixed(2)}%
-            </div>
-            <div className="px-4 py-3 font-semibold text-center text-white" style={{ background: THEME.header, borderRight: `1px solid ${THEME.border}` }}>
-              {sumaCierres.toFixed(2)}
-            </div>
-            <div className="px-4 py-3 font-semibold text-center text-white rounded-br-3xl" style={{ background: THEME.header }}>
-              {promEfectividad.toFixed(2)}%
-            </div>
+    {/* Encabezado fijo */}
+    <div
+      className={`${TABLE_W} grid ${COLS} sticky top-0 z-10`}
+      style={{
+        borderBottom: `1px solid ${THEME.border}`,
+        background: `linear-gradient(180deg, ${THEME.headerDark}, ${THEME.header})`,
+      }}
+    >
+      {[
+        "ID",
+        "Nombre",
+        "Sueldo Base",
+        "Q. Comisión",
+        "Total Pago",
+        "% Comisión",
+        "Cierres",
+        "Efectividad",
+      ].map((h, idx, arr) => (
+        <div
+          key={h}
+          className="px-4 py-3 font-semibold whitespace-nowrap"
+          style={{
+            color: THEME.headerText,
+            borderRight:
+              idx === arr.length - 1
+                ? "none"
+                : "1px solid rgba(255,255,255,0.25)",
+          }}
+        >
+          <div className="flex items-center justify-between">
+            <span className="tracking-wide">{h}</span>
+            <span className="ml-2 text-[10px] opacity-90">▾</span>
           </div>
         </div>
+      ))}
+    </div>
+
+    {/* Cuerpo */}
+    <div className={`${TABLE_W}`}>
+      {DATA.map((r, rowIdx) => {
+        const qComision = ((r.ventas || 0) * (r.comision || 0)) / 100;
+        const totalPago = (r.sueldoBase || 0) + qComision;
+
+        return (
+          <div
+            key={r.id}
+            className={`grid ${COLS}`}
+            style={{
+              background:
+                rowIdx % 2 === 0 ? THEME.stripeAlt : THEME.stripe,
+            }}
+          >
+            <Cell>{r.id}</Cell>
+            <Cell strong>
+              <button
+                onClick={() => openForm(r)}
+                className="max-w-[260px] truncate underline-offset-2 hover:underline transition text-left"
+                style={{ color: THEME.accentBlue }}
+                title="Ver/editar datos del vendedor"
+              >
+                {r.nombre}
+              </button>
+            </Cell>
+            <Cell align="right">{fmtQ(r.sueldoBase)}</Cell>
+            <Cell align="right">{fmtQ(qComision)}</Cell>
+            <Cell align="right" strong>
+              {fmtQ(totalPago)}
+            </Cell>
+            <Cell align="right">{r.comision ? `${r.comision}%` : ""}</Cell>
+            <Cell align="center">{r.cierres}</Cell>
+            <Cell align="center">
+              <div className="flex items-center justify-between w-full px-2">
+                <span className="font-medium tabular-nums text-gray-800">
+                  {r.efectividad}%
+                </span>
+                <div className="flex justify-end w-5">
+                  <div
+                    className={`w-3 h-3 rounded-full ${getColor(
+                      r.efectividad
+                    )}`}
+                    title={`Efectividad: ${r.efectividad}%`}
+                  />
+                </div>
+              </div>
+            </Cell>
+          </div>
+        );
+      })}
+
+      {/* Footer fijo */}
+      <div
+        className={`grid ${COLS} sticky bottom-0 z-10`}
+        style={{
+          borderTop: `1px solid ${THEME.border}`,
+          background: THEME.header,
+        }}
+      >
+        <div
+          className="px-4 py-3 font-semibold text-white col-span-2 rounded-bl-3xl"
+          style={{ borderRight: `1px solid ${THEME.border}` }}
+        >
+          {totalEmpleados} Empleados
+        </div>
+        <div
+          className="px-4 py-3 font-semibold text-right text-white"
+          style={{ borderRight: `1px solid ${THEME.border}` }}
+        >
+          {fmtQ(sumaSueldoBase)}
+        </div>
+        <div
+          className="px-4 py-3 font-semibold text-right text-white"
+          style={{ borderRight: `1px solid ${THEME.border}` }}
+        >
+          {fmtQ(sumaQComision)}
+        </div>
+        <div
+          className="px-4 py-3 font-semibold text-right text-white"
+          style={{ borderRight: `1px solid ${THEME.border}` }}
+        >
+          {fmtQ(sumaTotalPago)}
+        </div>
+        <div
+          className="px-4 py-3 font-semibold text-right text-white"
+          style={{ borderRight: `1px solid ${THEME.border}` }}
+        >
+          {promComision.toFixed(2)}%
+        </div>
+        <div
+          className="px-4 py-3 font-semibold text-center text-white"
+          style={{ borderRight: `1px solid ${THEME.border}` }}
+        >
+          {sumaCierres.toFixed(2)}
+        </div>
+        <div
+          className="px-4 py-3 font-semibold text-center text-white rounded-br-3xl"
+        >
+          {promEfectividad.toFixed(2)}%
+        </div>
       </div>
+    </div>
+  </div>
+</div>
+
 
       {/* Modal */}
       <ModalBase open={!!selected} title={selected ? `Datos adicionales — ${selected.nombre}` : ""} onClose={closeForm}>

@@ -286,7 +286,7 @@ export default function FORMTablaProspectos({ row, onClose, readStored, writeSto
               Cerrar
             </button>
             <button className="h-10 px-4 rounded-lg bg-[#183659] text-white hover:brightness-110" onClick={handleSubmit}>
-              Agregar contacto
+              Agregar Registro
             </button>
           </div>
         </div>
