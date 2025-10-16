@@ -290,7 +290,7 @@ export default function Diseno() {
 {/* Contenedor scrollable SOLO del cuerpo */}
 <div
   className={`overflow-x-auto ${
-    DATA.length > 9 ? "overflow-y-auto" : "overflow-y-visible"
+    DATA.length > 10 ? "overflow-y-auto" : "overflow-y-visible"
   }`}
   style={{
     maxHeight: DATA.length > 9 ? "calc(125vh - 320px)" : "none",
