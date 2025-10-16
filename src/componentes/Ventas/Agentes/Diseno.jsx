@@ -290,13 +290,12 @@ export default function Diseno() {
 {/* Contenedor scrollable SOLO del cuerpo */}
 <div
   className={`overflow-x-auto ${
-    DATA.length > 10 ? "overflow-y-auto" : "overflow-y-visible"
+    DATA.length > 9 ? "overflow-y-auto" : "overflow-y-visible"
   }`}
   style={{
     maxHeight: DATA.length > 9 ? "calc(125vh - 320px)" : "none",
   }}
 >
-
     {/* Encabezado fijo */}
     <div
       className={`${TABLE_W} grid ${COLS} sticky top-0 z-10`}
