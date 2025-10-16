@@ -9,7 +9,6 @@ export default function CRMPrincipal({ user, rolUsuario }) {
   const baseTotal = 320, enProceso = 0, finalizados = 3;
   const frio = 0, tibio = 0, caliente = 0;
 
-  // 6 etapas para que coincida con CRMPanelEtapas
   const etapasValores = [0, 0, 0, 0, 0, 0];
   const etapasPct     = [100, 100, 100, 100, 100, 100];
 
@@ -24,42 +23,60 @@ export default function CRMPrincipal({ user, rolUsuario }) {
     notas: i % 3 === 0 ? "Pendiente de llamada de seguimiento." : "",
   }));
 
-  return (
-    <div className="space-y-3">
-      {/* FILA SUPERIOR: 3 paneles */}
-      <div className="grid items-stretch gap-x-4 gap-y-4 lg:grid-cols-[460px,520px,260px]">
-        <CRMPanelGeneral
-          className="h-full"
-          baseTotal={baseTotal}
-          enProceso={enProceso}
-          finalizados={finalizados}
-          frio={frio}
-          tibio={tibio}
-          caliente={caliente}
-        />
+    return (
+      <div className="space-y-3 max-w-full h-screen overflow-y-auto no-scrollbar">
 
-        {/* Altura ajustada del cuadro dorado (igual a panel de la par) */}
-        <CRMPanelEtapas
-          className="min-h-[90px] md:min-h-[120px] pt-1 pb-[2px]"
-          valores={etapasValores}
-          porcentajes={etapasPct}
-        />
+      {/* FILA SUPERIOR (responsiva, con respiro lateral) */}
+      <div
+        className="
+          grid grid-cols-1 gap-4 px-[4px] items-stretch max-w-full
+          sm:grid-cols-6
+          md:grid-cols-8
+          lg:grid-cols-12
+          scale-y-[0.9]      // 🔹 Reduce toda la fila a 90% de su altura
+          origin-top          // 🔹 Aplasta desde arriba hacia abajo
+        "
+      >
+        {/* IZQUIERDA */}
+        <div className="min-w-0 w-full sm:col-span-6 md:col-span-3 lg:col-span-3">
+          <CRMPanelGeneral
+            className="h-full w-full"
+            baseTotal={baseTotal}
+            enProceso={enProceso}
+            finalizados={finalizados}
+            frio={frio}
+            tibio={tibio}
+            caliente={caliente}
+          />
+        </div>
 
-        <CRMPanelConversion
-          className="h-full"
-          compact
-          ventasCount={3}
-          ventasMonto={12000}
-          perdidasCount={0}
-          conversionPct={100}
-          cicloVenta={3.0}
-          perdidosPct={0}
-          embudoPct={0}
-          ventaPct={100}
-        />
+        {/* CENTRO */}
+        <div className="min-w-0 w-full sm:col-span-3 md:col-span-3 lg:col-span-5">
+          <CRMPanelEtapas
+            className="h-full w-full pt-1 pb-0"
+            valores={etapasValores}
+            porcentajes={etapasPct}
+          />
+        </div>
+
+        {/* DERECHA */}
+        <div className="min-w-0 w-full sm:col-span-3 md:col-span-2 lg:col-span-4">
+          <CRMPanelConversion
+            className="h-full w-full"
+            compact
+            ventasCount={3}
+            ventasMonto={12000}
+            perdidasCount={0}
+            conversionPct={100}
+            cicloVenta={3.0}
+            perdidosPct={0}
+            embudoPct={0}
+            ventaPct={100}
+          />
+        </div>
       </div>
 
-      {/* TABLA */}
+      {/* TABLA DE PROSPECTOS */}
       <CRMTablaProspectos
         rows={rows}
         onRowClick={(r) => console.log("fila:", r)}

@@ -1,0 +1,113 @@
+@keyframes borderRoll {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-border {
+  background-size: 200% 200%;
+  animation: borderRoll 4s linear infinite;
+}
+
+/* Si usas la animación lateral de etiquetas en otros lados */
+@keyframes labelPan {
+  0%   { transform: translateX(-6px); }
+  50%  { transform: translateX(6px);  }
+  100% { transform: translateX(-6px); }
+}
+.animate-label-pan {
+  animation: labelPan 2.2s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* ===== Marquee continuo para etiquetas ===== */
+@keyframes labelMarquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); } /* avanza media pista (porque duplicamos contenido) */
+}
+
+/* Contenedor de la etiqueta: recorta el contenido */
+.label-marquee {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Pista que se mueve: dos copias del texto en línea para bucle perfecto */
+.label-marquee-track {
+  display: inline-flex;
+  white-space: nowrap;
+  align-items: center;
+  gap: 2rem;                  /* espacio entre copias */
+  animation: labelMarquee 6s linear infinite; /* ajusta 6s a tu gusto */
+}
+
+/* ===== Fondo de vidrio y blob animado ===== */
+.card {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 8px 8px 18px #d6d6d6, -8px -8px 18px #ffffff;
+}
+
+.bg {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  right: 4px;
+  bottom: 4px;
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(18px);
+  border-radius: 12px;
+  overflow: hidden;
+  outline: 1.5px solid white;
+}
+
+.blob {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 50%;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  opacity: 0.8;
+  filter: blur(10px);
+  animation: blob-bounce 5s infinite ease-in-out;
+}
+
+@keyframes blob-bounce {
+  0%   { transform: translate(-100%, -100%) translate3d(0, 0, 0); }
+  25%  { transform: translate(-100%, -100%) translate3d(100%, 0, 0); }
+  50%  { transform: translate(-100%, -100%) translate3d(100%, 100%, 0); }
+  75%  { transform: translate(-100%, -100%) translate3d(0, 100%, 0); }
+  100% { transform: translate(-100%, -100%) translate3d(0, 0, 0); }
+}
+
+@keyframes labelWave {
+  0% { transform: translateY(0); opacity: .92; }
+  50% { transform: translateY(-1px); opacity: 1; }
+  100% { transform: translateY(0); opacity: .92; }
+}
+.label-anim { animation: labelWave 2.4s ease-in-out infinite; }
+
+@keyframes popIn {
+  0% { transform: scale(.96); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.value-pop { animation: popIn .45s ease-out; }
+
+
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE y Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;             /* Chrome, Safari, Opera */
+}
