@@ -20,6 +20,7 @@ import TotalIngresos from "./componentes/contabilidad/TotalIngresos";
 import TotalEgresos from "./componentes/contabilidad/TotalEgresos";
 import Proyectos from './componentes/Proyectos/Proyectos';
 import Menuprincipal from "./componentes/Ventas/Menuprincipal";
+import InventoryPage from './modules/inventario/ui/InventoryPage';
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 768 : false);
@@ -80,7 +81,7 @@ export default function App() {
     { id: "papeleria", label: "Papelería", icon: <FiFolder size={24} /> },
     { id: "personal", label: "R.R.H.H.", icon: <FiUsers size={24} /> },
     { id: "servicios", label: "Servicios", icon: <FiTool size={24} /> },
-    { id: "existencias", label: "Existencias", icon: <FiBox size={24} /> },
+    { id: "inventario", label: "Inventario", icon: <FiBox size={24} /> },
     { id: "ventas", label: "Ventas", icon: <FiDollarSign size={24} /> },
     { id: "proyectos", label: "Proyectos", icon: <FiFolder size={24} /> },
     { id: "Liquidez", label: "Finanzas", icon: <FiDollarSign size={24} /> },
@@ -253,9 +254,8 @@ export default function App() {
                   <Menuprincipal rolUsuario="admin" user={usuario} />
                 )}
 
-                {esAdmin && tab === "existencias" && (
-                  <div className="text-center text-xl font-semibold">Existencias (Próximamente)</div>
-                )}
+                {esAdmin && tab === "inventario" && <InventoryPage />}
+
                 {esAdmin && tab === "papeleria" && (
                   <div className="text-center text-xl font-semibold">Papelería (Próximamente)</div>
                 )}

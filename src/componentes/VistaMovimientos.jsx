@@ -21,7 +21,7 @@ console.log("¿Qué es supabase?", supabase);
     };
 
     obtenerLogs();
-  }, []);
+  }, []);   
 
   return (
     <div className="p-4">
