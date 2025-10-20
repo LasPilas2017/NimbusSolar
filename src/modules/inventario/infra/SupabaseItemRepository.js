@@ -75,4 +75,15 @@ export class SupabaseItemRepository extends ItemRepository {
       comentario: data.comentario ?? ""
     });
   }
+
+  // 👇 NUEVO: eliminar por id
+  async delete(id) {
+    const { error } = await supabase
+      .from("inventario")
+      .delete()
+      .eq("id", id);
+
+    if (error) throw error;
+    return true;
+  }
 }
