@@ -1,26 +1,21 @@
 // src/supabase.js
 import { createClient } from '@supabase/supabase-js';
 
-// Variables de entorno (CRA exige prefijo REACT_APP_)
-const url  = process.env.REACT_APP_SUPABASE_URL;
-const anon = process.env.REACT_APP_SUPABASE_ANON_KEY;
+// CRA: solo se exponen variables que INICIAN con REACT_APP_
+const supabaseUrl = (process.env.REACT_APP_SUPABASE_URL || '').trim();
+const supabaseKey = (process.env.REACT_APP_SUPABASE_ANON_KEY || '').trim();
 
-// Inicializamos el cliente solo si existen las variables
+// ---- Debug temporal (borra luego) ----
+console.log('[ENV] URL:', supabaseUrl);
+console.log('[ENV] ANON starts:', supabaseKey.slice(0, 16));
+console.log('[ENV] ANON length:', supabaseKey.length);
+// --------------------------------------
+
 let client = null;
-if (!url || !anon) {
-  console.warn('[Supabase] Faltan variables de entorno: REACT_APP_SUPABASE_URL o REACT_APP_SUPABASE_ANON_KEY.');
+if (!supabaseUrl || !supabaseKey) {
+  console.warn('[Supabase] Faltan REACT_APP_SUPABASE_URL o REACT_APP_SUPABASE_ANON_KEY.');
 } else {
-  client = createClient(url, anon);
+  client = createClient(supabaseUrl, supabaseKey);
 }
 
-// Exportación principal (default) y nombrada (supabase)
-export const supabase = client;
 export default client;
-
-// Función de seguridad para evitar romper la app si falta el cliente
-export const getSupabase = () => {
-  if (!client) {
-    throw new Error('Supabase no está inicializado. Verifica tus variables REACT_APP_.');
-  }
-  return client;
-};

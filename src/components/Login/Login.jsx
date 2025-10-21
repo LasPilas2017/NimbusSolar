@@ -6,8 +6,7 @@ import styles from './Login.module.css';
 import fondo from '../../assets/images/fondo.png';
 import logo from '../../assets/images/logo.png';
 
-// ⚠️ Importa el guard en vez del cliente directo
-import { getSupabase } from '../../supabase';
+// Cliente por defecto (no usamos getSupabase)
 import supabase from '../../supabase';
 
 import { SqlAuthRepository } from '../../modules/auth/infra/SqlAuthRepository';
@@ -90,15 +89,11 @@ export default function Login({ onLogin }) {
         setTimeout(() => onLogin(user), 800);
 
       } else {
-        // --- VENTAS (RPC seguro contra función login_usuario)
+        // --- VENTAS (RPC contra función login_usuario)
         if (!vEmail.trim() || !vPass) throw new Error('Ingresá usuario/correo y contraseña');
 
-        // ⛑️ Guard: si Supabase no está inicializado (p. ej., faltan ENV en Vercel), no reventamos la app.
-        let supabase;
-        try {
-          supabase = getSupabase();
-        } catch (e) {
-          console.error(e);
+        // Si el cliente no está inicializado (faltan ENV), evita llamar .rpc
+        if (!supabase) {
           setError('El servidor no tiene configuradas las variables de Supabase.');
           setCargando(false);
           return;
@@ -303,7 +298,7 @@ export default function Login({ onLogin }) {
             <span>Recordar sesión</span>
           </label>
 
-          {error && <div className={styles.error}>{error}</div>}
+        {error && <div className={styles.error}>{error}</div>}
 
           <button
             type="button"
