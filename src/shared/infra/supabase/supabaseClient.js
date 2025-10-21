@@ -1,27 +1,15 @@
-// src/infra/supabase/supabaseClient.js
 import { createClient } from '@supabase/supabase-js';
 
-// CRA inyecta solo variables que empiezan con REACT_APP_
-const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
+// Usa variables con prefijo REACT_APP_ (CRA)
+const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;          // p.ej. https://koaozymugtdawdlvhixt.supabase.co
+const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY;     // la anon public, largota
 
-// Evitamos inicializar si faltan ENV (así no truena con "supabaseUrl is required")
-let supabase = null;
+let client = null;
 
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  console.warn('[Supabase] Variables de entorno faltantes. Revisa tu .env en la raíz.');
+if (!supabaseUrl || !supabaseKey) {
+  console.warn('[Supabase] Faltan REACT_APP_SUPABASE_URL o REACT_APP_SUPABASE_ANON_KEY.');
 } else {
-  supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  client = createClient(supabaseUrl, supabaseKey);
 }
 
-export { supabase };
-
-// Chequeo opcional
-export const checkConnection = async () => {
-  if (!supabase) {
-    console.error('[Supabase] Cliente no inicializado (faltan envs).');
-    return;
-  }
-  const { error } = await supabase.from('usuarios').select('count').limit(1);
-  if (error) console.error('[Supabase] Error al conectar:', error.message);
-};
+export default client; // import supabase from '../supabase';

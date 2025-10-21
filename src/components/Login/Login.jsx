@@ -6,7 +6,10 @@ import styles from './Login.module.css';
 import fondo from '../../assets/images/fondo.png';
 import logo from '../../assets/images/logo.png';
 
+// ⚠️ Importa el guard en vez del cliente directo
+import { getSupabase } from '../../supabase';
 import supabase from '../../supabase';
+
 import { SqlAuthRepository } from '../../modules/auth/infra/SqlAuthRepository';
 import { LoginUseCase } from '../../modules/auth/application/LoginUseCase';
 import { GetSessionUseCase } from '../../modules/auth/application/GetSessionUseCase';
@@ -87,11 +90,22 @@ export default function Login({ onLogin }) {
         setTimeout(() => onLogin(user), 800);
 
       } else {
-        // --- VENTAS (RPC seguro contra tabla usuarios)
+        // --- VENTAS (RPC seguro contra función login_usuario)
         if (!vEmail.trim() || !vPass) throw new Error('Ingresá usuario/correo y contraseña');
 
+        // ⛑️ Guard: si Supabase no está inicializado (p. ej., faltan ENV en Vercel), no reventamos la app.
+        let supabase;
+        try {
+          supabase = getSupabase();
+        } catch (e) {
+          console.error(e);
+          setError('El servidor no tiene configuradas las variables de Supabase.');
+          setCargando(false);
+          return;
+        }
+
         const { data, error: err } = await supabase.rpc('login_usuario', {
-          p_usuario: vEmail.trim(),        // puede ser "admin" o un correo si así lo guardaste
+          p_usuario: vEmail.trim(),        // puede ser "admin" o correo, según tu tabla
           p_contrasena: vPass
         });
 
