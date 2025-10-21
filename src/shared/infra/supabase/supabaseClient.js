@@ -1,15 +1,25 @@
+// src/shared/infra/supabase/supabaseClient.js
 import { createClient } from '@supabase/supabase-js';
 
-// Usa variables con prefijo REACT_APP_ (CRA)
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;          // p.ej. https://koaozymugtdawdlvhixt.supabase.co
-const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY;     // la anon public, largota
+const url  = process.env.REACT_APP_SUPABASE_URL;
+const anon = process.env.REACT_APP_SUPABASE_ANON_KEY;
 
+// Creamos el cliente solo si hay ENV válidas
 let client = null;
-
-if (!supabaseUrl || !supabaseKey) {
+if (!url || !anon) {
   console.warn('[Supabase] Faltan REACT_APP_SUPABASE_URL o REACT_APP_SUPABASE_ANON_KEY.');
 } else {
-  client = createClient(supabaseUrl, supabaseKey);
+  client = createClient(url, anon);
 }
 
-export default client; // import supabase from '../supabase';
+// Guard para evitar llamadas cuando no hay cliente
+export const getSupabase = () => {
+  if (!client) {
+    throw new Error('Supabase no está inicializado (faltan variables REACT_APP_).');
+  }
+  return client;
+};
+
+// Export por conveniencia (named) y default
+export const supabase = client;
+export default client;
