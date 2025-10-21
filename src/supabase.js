@@ -1,9 +1,6 @@
-// src/supabase.js
-import { createClient } from '@supabase/supabase-js';
+// ✅ Import primero, antes de cualquier export
+import { supabase as client } from './shared/infra/supabase/supabaseClient';
 
-const supabase = createClient(
-  'https://koaozymugtdawdlvhixt.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtvYW96eW11Z3RkYXdkbHZoaXh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3NjQxMTcsImV4cCI6MjA2MzM0MDExN30.nVbAkorgWUEBuHij2P3nMAEyaHB4l_o_-MhFhF5qLZM'
-);
-
-export default supabase; // ✅ exportación por defecto
+// Reexportaciones (default + nombrada)
+export { client as supabase };
+export default client;
