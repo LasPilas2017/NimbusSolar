@@ -1,7 +1,7 @@
 import React from "react";
 
 // ✅ Hook del módulo CRM (no de ventas)
-import { useCrm } from "../../presentation/adapters/useCrm.js";
+import { useCrm } from "../../presentation/adapters/useCrmLocalMock.js";
 
 // ✅ Componentes UI del propio módulo CRM
 import CRMPanelGeneral from "./CRMPanelGeneral.jsx";

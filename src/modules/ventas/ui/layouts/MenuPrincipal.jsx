@@ -1,6 +1,15 @@
-import React, { useMemo, useState, Suspense, useEffect, useRef } from "react";
-import { Rocket } from "lucide-react";
+import React, {
+  useMemo,
+  useState,
+  Suspense,
+  useEffect,
+  useRef,
+} from "react";
+import { Rocket, Layers } from "lucide-react";
 import FloatingModuleMenu from "../components/FloatingModuleMenu/FloatingModuleMenu.jsx";
+
+// ✅ Importamos los permisos desde un archivo separado
+import { PERMISOS_POR_ROL } from "../config/permisosPorRol.js";
 
 /** Lazy robusto que también muestra qué módulo falló */
 const safeLazy = (loader, name) =>
@@ -17,34 +26,64 @@ const safeLazy = (loader, name) =>
             <code>export default function Index()</code>).
           </div>
         );
-        console.error(`[Ventas] ${name} no exporta un componente React. Revisa su Index.jsx`);
+        console.error(
+          `[Ventas] ${name} no exporta un componente React. Revisa su Index.jsx`
+        );
         return { default: Fallback };
       }
       return { default: pick };
     })
   );
 
-/** ✅ Por ahora solo cargamos Prospectos, que ya existe en ui/pages */
-const ModProspectos = safeLazy(() => import("../pages/ProspectosPage.jsx"), "Prospectos");
+/** ✅ Prospectos (ya lo tenías) */
+const ModProspectos = safeLazy(
+  () => import("../pages/ProspectosPage.jsx"),
+  "Prospectos"
+);
 
-/** ⚠️ Cuando migremos más módulos, los vamos agregando aquí */
-const PERMISOS_POR_ROL = {
-  admin: ["Prospectos"],
-  supervisor: ["Prospectos"],
-  vendedor: ["Prospectos"],
-  contador: ["Prospectos"],
-  invitado: ["Prospectos"],
-};
+/** ✅ CRM: cargamos la página del módulo CRM central */
+const ModCrm = safeLazy(
+  () => import("../../../crm/ui/pages/CRMPage.jsx"),
+  "CRM"
+);
 
+/** 📦 Módulos disponibles en el menú flotante */
 const MODULOS = [
-  { key: "Prospectos", label: "Prospectos", icon: Rocket, Component: ModProspectos },
+  {
+    key: "Prospectos",
+    label: "Prospectos",
+    icon: Rocket,
+    Component: ModProspectos,
+  },
+  {
+    key: "CRM",
+    label: "CRM",
+    icon: Layers,
+    Component: ModCrm,
+  },
+  // 🔜 Cuando tengas más páginas listas, las agregas aquí:
+  // { key: "Resultados", label: "Resultados", icon: BarChart2, Component: ModResultados },
+  // { key: "Agentes", label: "Agentes", icon: Users, Component: ModAgentes },
+  // { key: "Global", label: "Global", icon: Globe2, Component: ModGlobal },
+  // { key: "Listados", label: "Listados", icon: ListChecks, Component: ModListados },
+  // { key: "Ventas", label: "Ventas", icon: Briefcase, Component: ModVentas },
 ];
 
-export default function Menuprincipal({ rolUsuario = "invitado", user = null }) {
+export default function Menuprincipal({
+  rolUsuario = "invitado",
+  user = null,
+}) {
+  // 🔐 Calculamos un rol efectivo y lo normalizamos a minúsculas
+  const roleKey = useMemo(
+    () => String(rolUsuario || user?.rol || "invitado").toLowerCase(),
+    [rolUsuario, user]
+  );
+
+  // Filtramos los módulos visibles según el rol
   const modulosVisibles = useMemo(() => {
-    const permitidos = PERMISOS_POR_ROL[rolUsuario] ?? [];
+    const permitidos = PERMISOS_POR_ROL[roleKey] ?? [];
     return MODULOS.filter((m) => permitidos.includes(m.key));
-  }, [rolUsuario]);
+  }, [roleKey]);
 
   const [activeKey, setActiveKey] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -63,20 +102,32 @@ export default function Menuprincipal({ rolUsuario = "invitado", user = null }) 
   useEffect(() => {
     if (!activeKey && modulosVisibles.length > 0) {
       setActiveKey(modulosVisibles[0].key);
-    } else if (activeKey && !modulosVisibles.find(m => m.key === activeKey)) {
+    } else if (
+      activeKey &&
+      !modulosVisibles.find((m) => m.key === activeKey)
+    ) {
       setActiveKey(modulosVisibles[0]?.key ?? null);
     }
   }, [modulosVisibles, activeKey]);
 
-  const ActiveModule = modulosVisibles.find((m) => m.key === activeKey)?.Component;
+  const ActiveModule =
+    modulosVisibles.find((m) => m.key === activeKey)?.Component;
+
   const floatingItems = useMemo(
-    () => modulosVisibles.map(m => ({ key: m.key, label: m.label, icon: m.icon })),
+    () =>
+      modulosVisibles.map((m) => ({
+        key: m.key,
+        label: m.label,
+        icon: m.icon,
+      })),
     [modulosVisibles]
   );
 
   return (
     <div className="fixed inset-0 w-screen h-screen overflow-hidden bg-white">
-      <Suspense fallback={<div className="p-4 text-gray-500">Cargando módulo…</div>}>
+      <Suspense
+        fallback={<div className="p-4 text-gray-500">Cargando módulo…</div>}
+      >
         {ActiveModule ? (
           <div
             className="
@@ -84,7 +135,7 @@ export default function Menuprincipal({ rolUsuario = "invitado", user = null }) 
             "
           >
             <div className="w-full h-full overflow-hidden">
-              <ActiveModule user={user} rolUsuario={rolUsuario} />
+              <ActiveModule user={user} rolUsuario={roleKey} />
             </div>
 
             {menuOpen && (

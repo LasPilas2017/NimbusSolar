@@ -5,6 +5,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.39.6",
     "base64-arraybuffer": "^1.0.2",
+    "bcryptjs": "^3.0.3",
     "d3-format": "^3.1.0",
     "dotenv": "^17.2.3",
     "es-toolkit": "^1.40.0",
@@ -15,6 +16,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-icons": "^5.5.0",
+    "react-router-dom": "^7.9.5",
     "react-scripts": "^5.0.1",
     "recharts": "^2.10.3",
     "tailwind-scrollbar-hide": "^4.0.0",

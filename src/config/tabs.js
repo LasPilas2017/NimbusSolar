@@ -1,13 +1,17 @@
-import React from 'react';
-import { FiUsers, FiDollarSign, FiFolder, FiTool, FiRepeat, FiBox } from 'react-icons/fi';
+// src/config/tabs.js
+// -----------------------------------------------------------------------------
+// Define todas las pestañas disponibles en la aplicación. Cada rol verá un
+// subconjunto según ALLOWED_BY_ROLE en roles.js
+// -----------------------------------------------------------------------------
 
 export const ALL_TABS = [
-  { id: "VistaMovimientos", label: "Movimientos", icon: <FiRepeat size={24} /> },
-  { id: "papeleria",        label: "Papelería",   icon: <FiFolder size={24} /> },
-  { id: "personal",         label: "R.R.H.H.",    icon: <FiUsers size={24} /> },
-  { id: "servicios",        label: "Servicios",   icon: <FiTool size={24} /> },
-  { id: "inventario",       label: "Inventario",  icon: <FiBox size={24} /> },
-  { id: "ventas",           label: "Ventas",      icon: <FiDollarSign size={24} /> },
-  { id: "proyectos",        label: "Proyectos",   icon: <FiFolder size={24} /> },
-  { id: "Liquidez",         label: "Finanzas",    icon: <FiDollarSign size={24} /> },
+  { id: "VistaMovimientos", label: "Movimientos" },
+  { id: "ventas", label: "Ventas" },          // 👈 pestaña de ventas del ADMIN
+  { id: "inventario", label: "Inventario" },
+  { id: "papeleria", label: "Papelería" },
+  { id: "proyectos", label: "Proyectos" },
+  { id: "servicios", label: "Servicios" },
+  { id: "Liquidez", label: "Liquidez" },
+  { id: "personal", label: "Personal" },
+  { id: "gestionUsuarios", label: "Usuarios" },
 ];

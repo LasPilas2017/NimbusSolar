@@ -1,127 +1,92 @@
 import { useEffect, useMemo, useState } from "react";
-
-/** Claves de storage (temporal mientras no hay BD) */
-const META_KEY = (id) => `crm_row_meta:${id}`;
-const HIST_KEY = (id) => `crm_historial_contactos:${id}`;
+import { LocalProspectosRepository } from "../../../ventas/infra/http/LocalProspectosRepository";
+import { ListProspectosUseCase } from "../../../ventas/application/use-cases/ListProspectosUseCase";
+import { GetKpisUseCase } from "../../../ventas/application/use-cases/GetKpisUseCase";
+import { AddContactoUseCase } from "../../../ventas/application/use-cases/AddContactoUseCase";
+import { GetRowMetaUseCase } from "../../../ventas/application/use-cases/GetRowMetaUseCase";
+import { SaveRowMetaUseCase } from "../../../ventas/application/use-cases/SaveRowMetaUseCase";
 
 export function useCrm() {
-  // ---------- Datos demo ----------
-  const kpis = useMemo(() => ({
-    baseTotal: 320,
-    enProceso: 0,
-    finalizados: 3,
-    frio: 0, tibio: 0, caliente: 0,
-    etapasValores: [0, 0, 0, 0, 0, 0],
-    etapasPct:     [100, 100, 100, 100, 100, 100],
-    conversion: {
-      ventasCount: 3, ventasMonto: 12000,
-      perdidasCount: 0, perdidasMonto: 0,
-      conversionPct: 100, cicloVenta: 3.0,
-      perdidosPct: 0, embudoPct: 0, ventaPct: 100,
-    },
-  }), []);
+  const repo = useMemo(() => new LocalProspectosRepository(), []);
+  const listUC = useMemo(() => new ListProspectosUseCase(repo), [repo]);
+  const kpisUC = useMemo(() => new GetKpisUseCase(repo), [repo]);
+  const addUC  = useMemo(() => new AddContactoUseCase(repo), [repo]);
+  const getMetaUC  = useMemo(() => new GetRowMetaUseCase(repo), [repo]);
+  const saveMetaUC = useMemo(() => new SaveRowMetaUseCase(repo), [repo]);
 
-  const rows = useMemo(() =>
-    Array.from({ length: 12 }).map((_, i) => ({
-      id: i + 1,
-      prospecto: `Prospecto ${i + 1}`,
-      condicion: i % 2 ? "Nuevo" : "Recurrente",
-      agente: ["Ana", "Luis", "Karla"][i % 3],
-      canal: ["Facebook", "Llamada", "Email"][i % 3],
-      fecha1: "", fecha2: "", fecha3: "", fecha4: "", fecha5: "",
-      dias: "", avance: "", estatus: "Abierto", venta: i % 7 === 0,
-      notas: i % 3 === 0 ? "Pendiente de llamada de seguimiento." : "",
-    })), []
-  );
-
-  // ---------- Meta por fila (estatus / venta) ----------
-  const [rowMeta, setRowMeta] = useState({});
+  const [rows, setRows] = useState([]);
+  const [kpis, setKpis] = useState(null);
+  const [rowMeta, setRowMeta] = useState({});     // { [id]: {estatus,venta} }
   const [dirtyIds, setDirtyIds] = useState(new Set());
 
   useEffect(() => {
-    const next = {};
-    for (const r of rows) {
-      try {
-        const raw = localStorage.getItem(META_KEY(r.id));
-        const saved = raw ? JSON.parse(raw) : null;
-        next[r.id] = {
-          estatus: saved?.estatus ?? r.estatus ?? "Por Iniciar",
-          venta: saved?.venta ?? (r.venta ? "Sí" : "No"),
+    (async () => {
+      setRows(await listUC.execute());
+      setKpis(await kpisUC.execute());
+    })();
+  }, [listUC, kpisUC]);
+
+  // cargar meta por fila
+  useEffect(() => {
+    (async () => {
+      const next = {};
+      for (const r of rows) {
+        const saved = await getMetaUC.execute(r.id);
+        next[r.id] = saved ?? {
+          estatus: r.estatus ?? "Por Iniciar",
+          venta: r.venta ? "Sí" : "No",
         };
-      } catch {
-        next[r.id] = { estatus: "Por Iniciar", venta: "No" };
       }
-    }
-    setRowMeta(next);
-    setDirtyIds(new Set());
-  }, [rows]);
+      setRowMeta(next);
+      setDirtyIds(new Set());
+    })();
+  }, [rows, getMetaUC]);
 
-  const baselineFor = (row) => {
-    try {
-      const raw = localStorage.getItem(META_KEY(row.id));
-      const saved = raw ? JSON.parse(raw) : null;
-      return saved ?? { estatus: row.estatus ?? "Por Iniciar", venta: row.venta ? "Sí" : "No" };
-    } catch {
-      return { estatus: "Por Iniciar", venta: "No" };
-    }
-  };
-  const eqMeta = (a, b) => (a?.estatus ?? "") === (b?.estatus ?? "") && (a?.venta ?? "") === (b?.venta ?? "");
-
-  const updateRowMeta = (rowId, patch, rowObject) => {
+  const updateRowMeta = (id, patch, baselineRow) => {
     setRowMeta(prev => {
-      const next = { ...prev, [rowId]: { ...(prev[rowId] || {}), ...patch } };
-      const base = baselineFor(rowObject ?? rows.find(r => r.id === rowId) ?? { id: rowId });
-      setDirtyIds(prevIds => {
-        const s = new Set(prevIds);
-        if (eqMeta(next[rowId], base)) s.delete(rowId); else s.add(rowId);
-        return s;
+      const next = { ...prev, [id]: { ...(prev[id]||{}), ...patch } };
+      // marcar sucio si difiere del baseline guardado
+      const base = prev[id] ?? { estatus: baselineRow?.estatus ?? "Por Iniciar", venta: baselineRow?.venta ? "Sí" : "No" };
+      const isSame = (next[id].estatus === base.estatus) && (next[id].venta === base.venta);
+      setDirtyIds(s => {
+        const ns = new Set(s);
+        if (isSame) ns.delete(id); else ns.add(id);
+        return ns;
       });
       return next;
     });
   };
 
-  const bulkSaveMeta = () => {
+  const bulkSaveMeta = async () => {
     const ids = Array.from(dirtyIds);
-    for (const id of ids) {
-      try { localStorage.setItem(META_KEY(id), JSON.stringify(rowMeta[id])); } catch {}
-    }
+    for (const id of ids) await saveMetaUC.execute(id, rowMeta[id]);
     setDirtyIds(new Set());
   };
 
   const bulkRevertMeta = () => {
-    const ids = Array.from(dirtyIds);
-    const next = { ...rowMeta };
-    for (const id of ids) {
-      const row = rows.find(r => r.id === id);
-      next[id] = baselineFor(row);
-    }
-    setRowMeta(next);
-    setDirtyIds(new Set());
+    // recargamos desde repositorio (más simple)
+    (async () => {
+      const next = {};
+      for (const r of rows) {
+        const saved = await getMetaUC.execute(r.id);
+        next[r.id] = saved ?? {
+          estatus: r.estatus ?? "Por Iniciar",
+          venta: r.venta ? "Sí" : "No",
+        };
+      }
+      setRowMeta(next);
+      setDirtyIds(new Set());
+    })();
   };
 
-  // ---------- Historial por fila (localStorage) ----------
-  const readHistorial = (id) => {
-    try {
-      const raw = localStorage.getItem(HIST_KEY(id));
-      return raw ? JSON.parse(raw) : [];
-    } catch { return []; }
-  };
-
-  const addContacto = async (id, contacto) => {
-    const prev = readHistorial(id);
-    try {
-      localStorage.setItem(HIST_KEY(id), JSON.stringify([contacto, ...prev]));
-    } catch {}
-  };
+  // historial (form)
+  const readHistorial = async (id) => await repo.getHistorial(id);
+  const addContacto = async (id, contacto) => { await addUC.execute(id, contacto); };
 
   return {
     rows, kpis,
-    rowMeta,
-    updateRowMeta,
-    dirtyIds,
-    bulkSaveMeta,
-    bulkRevertMeta,
-    readHistorial,
-    addContacto,
+    rowMeta, updateRowMeta,
+    dirtyIds, bulkSaveMeta, bulkRevertMeta,
+    readHistorial, addContacto
   };
 }
