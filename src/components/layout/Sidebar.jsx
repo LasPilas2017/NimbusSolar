@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FiChevronsLeft, FiChevronsRight } from 'react-icons/fi';
 
 const COLORS = ["text-orange-500", "text-cyan-500", "text-emerald-500", "text-pink-500"];
-
+//quitar el efecto de blur al abrir y cerrar el sidebar
 export function Sidebar({ open, tabs, activeId, onSelect, onClose, onOpen, onLogout }) {
   return (
     <>
@@ -11,7 +11,7 @@ export function Sidebar({ open, tabs, activeId, onSelect, onClose, onOpen, onLog
         {open && (
           <motion.div
             key="blur-overlay"
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }} animate={{ opacity: 0 }} exit={{ opacity: 0 }}
             transition={{ duration: 0.6, ease: 'easeInOut' }}
             onClick={onClose}
             className="fixed inset-0 z-20 bg-black/20 backdrop-blur-md"
