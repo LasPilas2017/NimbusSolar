@@ -14,6 +14,12 @@
 // - Al hacer clic en el nombre del cliente se abre el historial completo con:
 //      <HistorialCotCliente />.
 //
+// REGLA IMPORTANTE DE NEGOCIO (VENTAS):
+//   - En esta pantalla **cada vendedor** solo ve SUS cotizaciones:
+//       v_cotizaciones_ultima_por_cliente.vendedor_id = user.id
+//     (Se permiten también filas sin vendedor_id, por compatibilidad con datos
+//      antiguos, pero la idea es que todas las nuevas lleven ese campo lleno).
+//
 // CONEXIONES A BD (vía casos de uso + repositorio):
 //   - Vista  : v_cotizaciones_ultima_por_cliente  (solo lectura)
 //   - Tabla  : cotizaciones_aprobacion            (insert de nuevas cotizaciones)
@@ -33,7 +39,8 @@ import { CotizacionesSupabaseRepository } from "../../infra/supabase/Cotizacione
 import { GetUltimasCotizacionesUseCase } from "../../application/use-cases/getUltimasCotizaciones.js";
 import { CreateCotizacionUseCase } from "../../application/use-cases/createCotizacion.js";
 
-export default function Cotizaciones() {
+// 🔹 Ahora recibe `user` para saber quién es el vendedor logueado
+export default function Cotizaciones({ user }) {
   const [dropdownAbierto, setDropdownAbierto] = useState(false);
   const [categoria, setCategoria] = useState("todas");
   const [busqueda, setBusqueda] = useState("");
@@ -119,10 +126,34 @@ export default function Cotizaciones() {
   const handleIngresarCotizacion = () => setAbrirForm(true);
   const handleCancelForm = () => setAbrirForm(false);
 
+
   // ================== GUARDAR NUEVA COTIZACIÓN (INSERT REAL) ==================
   const handleSuccessForm = async (nueva) => {
     try {
-      await createCotizacionUC.execute(nueva);
+      console.log("handleSuccessForm :: nueva =>", nueva);
+      console.log("handleSuccessForm :: user  =>", user);
+
+      // Datos del vendedor tomados del usuario logueado
+      const vendedorId =
+        nueva?.vendedor_id ?? (user?.id != null ? String(user.id) : null);
+
+      const vendedorNombre =
+        nueva?.vendedor_nombre ??
+        user?.nombreCompleto ??
+        user?.nombre ??
+        user?.usuario ??
+        null;
+
+      console.log("handleSuccessForm :: vendedorId      =>", vendedorId);
+      console.log("handleSuccessForm :: vendedorNombre  =>", vendedorNombre);
+
+      // Llamo al use case con TODO el payload listo
+      await createCotizacionUC.execute({
+        ...nueva,
+        vendedor_id: vendedorId,
+        vendedor_nombre: vendedorNombre,
+      });
+
       await cargarUltimas();
       setAbrirForm(false);
     } catch (e) {
@@ -138,28 +169,45 @@ export default function Cotizaciones() {
   };
 
   // ================== FILTROS EN MEMORIA ==================
-  const listadoFiltrado = useMemo(() => {
-    let data = [...rows];
+const listadoFiltrado = useMemo(() => {
+  let data = [...rows];
 
-    if (categoria !== "todas") {
-      data = data.filter((r) => (r.estado || "pendiente") === categoria);
-    }
+  console.log("DEBUG MisCotizaciones :: user.id =>", user?.id);
+  console.log("DEBUG MisCotizaciones :: rows =>", data);
 
-    if (clienteFiltro?.id) {
-      data = data.filter((r) => r.cliente_id === clienteFiltro.id);
-    }
+  if (user?.id != null) {
+    const myId = Number(user.id);
 
-    if (busqueda.trim()) {
-      const q = busqueda.toLowerCase();
-      data = data.filter(
-        (r) =>
-          (r.codigo || "").toLowerCase().includes(q) ||
-          (r.cliente_nombre || "").toLowerCase().includes(q) ||
-          (r.sistema_nombre || "").toLowerCase().includes(q)
-      );
-    }
-    return data;
-  }, [rows, categoria, busqueda, clienteFiltro]);
+    data = data.filter((r) => {
+      const vid = r?.vendedor_id != null ? Number(r.vendedor_id) : null;
+      return vid === myId;
+    });
+  }
+
+  if (categoria !== "todas") {
+    data = data.filter((r) => (r.estado || "pendiente") === categoria);
+  }
+
+  if (clienteFiltro?.id) {
+    data = data.filter((r) => r.cliente_id === clienteFiltro.id);
+  }
+
+  if (busqueda.trim()) {
+    const q = busqueda.toLowerCase();
+    data = data.filter(
+      (r) =>
+        (r.codigo || "").toLowerCase().includes(q) ||
+        (r.cliente_nombre || "").toLowerCase().includes(q) ||
+        (r.sistema_nombre || "").toLowerCase().includes(q)
+    );
+  }
+
+  console.log("DEBUG MisCotizaciones :: después de filtrar =>", data);
+  return data;
+}, [rows, categoria, busqueda, clienteFiltro, user]);
+
+
+
 
   // ================== RENDER ==================
   return (
@@ -180,7 +228,10 @@ export default function Cotizaciones() {
               {(infoCategoria[categoria] || infoCategoria.todas).desc}
               {clienteFiltro?.id && (
                 <span className="ml-2 inline-flex items-center gap-2 text-emerald-200">
-                  · Cliente: <strong className="text-white/90">{clienteFiltro.nombre}</strong>
+                  · Cliente:{" "}
+                  <strong className="text-white/90">
+                    {clienteFiltro.nombre}
+                  </strong>
                   <button
                     onClick={() => setClienteFiltro(null)}
                     className="text-[11px] px-2 py-0.5 rounded border border-white/10 bg-white/10 hover:bg-white/15"
@@ -215,7 +266,9 @@ export default function Cotizaciones() {
               >
                 Categorías
                 <svg
-                  className={`h-4 w-4 transition-transform ${dropdownAbierto ? "rotate-180" : ""}`}
+                  className={`h-4 w-4 transition-transform ${
+                    dropdownAbierto ? "rotate-180" : ""
+                  }`}
                   viewBox="0 0 20 20"
                   fill="currentColor"
                 >
@@ -226,13 +279,43 @@ export default function Cotizaciones() {
               {dropdownAbierto && (
                 <div className="absolute right-0 mt-2 w-56 rounded-xl border border-white/10 bg-[#0b1320]/95 backdrop-blur-md shadow-2xl z-20">
                   <div className="py-1 text-sm text-white/90">
-                    <button onClick={() => seleccionarCategoria("pendiente")} className="w-full text-left px-4 py-2 hover:bg-white/10">Pendientes</button>
-                    <button onClick={() => seleccionarCategoria("enviadas")} className="w-full text-left px-4 py-2 hover:bg-white/10">Enviadas</button>
-                    <button onClick={() => seleccionarCategoria("autorizadas")} className="w-full text-left px-4 py-2 hover:bg-white/10">Autorizadas</button>
-                    <button onClick={() => seleccionarCategoria("rechazadas")} className="w-full text-left px-4 py-2 hover:bg-white/10">Rechazadas</button>
-                    <button onClick={() => seleccionarCategoria("borrador")} className="w-full text-left px-4 py-2 hover:bg-white/10">Borradores</button>
+                    <button
+                      onClick={() => seleccionarCategoria("pendiente")}
+                      className="w-full text-left px-4 py-2 hover:bg-white/10"
+                    >
+                      Pendientes
+                    </button>
+                    <button
+                      onClick={() => seleccionarCategoria("enviadas")}
+                      className="w-full text-left px-4 py-2 hover:bg-white/10"
+                    >
+                      Enviadas
+                    </button>
+                    <button
+                      onClick={() => seleccionarCategoria("autorizadas")}
+                      className="w-full text-left px-4 py-2 hover:bg-white/10"
+                    >
+                      Autorizadas
+                    </button>
+                    <button
+                      onClick={() => seleccionarCategoria("rechazadas")}
+                      className="w-full text-left px-4 py-2 hover:bg-white/10"
+                    >
+                      Rechazadas
+                    </button>
+                    <button
+                      onClick={() => seleccionarCategoria("borrador")}
+                      className="w-full text-left px-4 py-2 hover:bg-white/10"
+                    >
+                      Borradores
+                    </button>
                     <div className="my-1 border-t border-white/10" />
-                    <button onClick={() => seleccionarCategoria("todas")} className="w-full text-left px-4 py-2 text-white/70 hover:bg-white/10">Ver todas</button>
+                    <button
+                      onClick={() => seleccionarCategoria("todas")}
+                      className="w-full text-left px-4 py-2 text-white/70 hover:bg-white/10"
+                    >
+                      Ver todas
+                    </button>
                   </div>
                 </div>
               )}
@@ -257,27 +340,45 @@ export default function Cotizaciones() {
         <div className="p-4 sm:p-6 h-[calc(100%-110px)] flex flex-col">
           <div className="no-scrollbar flex-1 overflow-auto rounded-2xl border border-white/10 bg-[#0f1a2b]/40">
             {cargando ? (
-              <div className="p-6 text-sm text-white/70">Cargando cotizaciones…</div>
+              <div className="p-6 text-sm text-white/70">
+                Cargando cotizaciones…
+              </div>
             ) : error ? (
-              <div className="p-6 text-sm text-red-300">Error: {String(error)}</div>
+              <div className="p-6 text-sm text-red-300">
+                Error: {String(error)}
+              </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
                   <thead className="sticky top-0 z-10 bg-[#0b1320]/85 backdrop-blur border-b border-white/10">
                     <tr className="text-left text-white/85">
-                      <th className="px-3 py-2 text-[13px] font-medium">Código</th>
-                      <th className="px-3 py-2 text-[13px] font-medium">Cliente</th>
-                      <th className="px-3 py-2 text-[13px] font-medium">Tipo de instalación</th>
-                      <th className="px-3 py-2 text-[13px] font-medium text-right">Monto (Q)</th>
-                      <th className="px-3 py-2 text-[13px] font-medium">Estado</th>
-                      <th className="px-3 py-2 text-[13px] font-medium">Fecha</th>
+                      <th className="px-3 py-2 text-[13px] font-medium">
+                        Código
+                      </th>
+                      <th className="px-3 py-2 text-[13px] font-medium">
+                        Cliente
+                      </th>
+                      <th className="px-3 py-2 text-[13px] font-medium">
+                        Tipo de instalación
+                      </th>
+                      <th className="px-3 py-2 text-[13px] font-medium text-right">
+                        Monto (Q)
+                      </th>
+                      <th className="px-3 py-2 text-[13px] font-medium">
+                        Estado
+                      </th>
+                      <th className="px-3 py-2 text-[13px] font-medium">
+                        Fecha
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {listadoFiltrado.map((c, idx) => (
                       <tr
                         key={c.id}
-                        className={`${idx % 2 === 0 ? "bg-white/0" : "bg-white/5"} hover:bg-cyan-400/10 transition-colors`}
+                        className={`${
+                          idx % 2 === 0 ? "bg-white/0" : "bg-white/5"
+                        } hover:bg-cyan-400/10 transition-colors`}
                       >
                         <td className="px-4 py-3 text-white">{c.codigo}</td>
 
@@ -285,27 +386,36 @@ export default function Cotizaciones() {
                         <td className="px-4 py-3">
                           <button
                             className="text-left text-white/90 underline decoration-dotted underline-offset-2 hover:text-emerald-200"
-                            onClick={() => abrirHistorial(c.cliente_id, c.cliente_nombre)}
+                            onClick={() =>
+                              abrirHistorial(c.cliente_id, c.cliente_nombre)
+                            }
                             title="Ver historial de cotizaciones"
                           >
                             {c.cliente_nombre}
                           </button>
                         </td>
 
-                        <td className="px-4 py-3 text-white/90">{c.sistema_nombre}</td>
+                        <td className="px-4 py-3 text-white/90">
+                          {c.sistema_nombre}
+                        </td>
                         <td className="px-4 py-3 text-right text-white/90">
-                          {Number(0).toLocaleString("es-GT", { minimumFractionDigits: 2 })}
+                          {Number(c.monto || 0).toLocaleString("es-GT", {
+                            minimumFractionDigits: 2,
+                          })}
                         </td>
                         <td className="px-4 py-3">
                           <span
                             className={`px-2 py-1 rounded-full text-[11px] font-medium border ${
                               c.estado === "pendiente"
                                 ? "bg-emerald-400/15 text-emerald-200 border-emerald-300/30"
-                                : c.estado === "enviadas" || c.estado === "enviada"
+                                : c.estado === "enviadas" ||
+                                  c.estado === "enviada"
                                 ? "bg-amber-400/15 text-amber-200 border-amber-300/30"
-                                : c.estado === "autorizadas" || c.estado === "autorizada"
+                                : c.estado === "autorizadas" ||
+                                  c.estado === "autorizada"
                                 ? "bg-sky-400/15 text-sky-200 border-sky-300/30"
-                                : c.estado === "rechazadas" || c.estado === "rechazada"
+                                : c.estado === "rechazadas" ||
+                                  c.estado === "rechazada"
                                 ? "bg-rose-400/15 text-rose-200 border-rose-300/30"
                                 : "bg-white/10 text-white/80 border-white/20"
                             }`}
@@ -314,7 +424,9 @@ export default function Cotizaciones() {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-white/90">
-                          {c.fecha ? new Date(c.fecha).toISOString().slice(0, 10) : "—"}
+                          {c.fecha
+                            ? new Date(c.fecha).toISOString().slice(0, 10)
+                            : "—"}
                         </td>
                       </tr>
                     ))}
@@ -333,7 +445,8 @@ export default function Cotizaciones() {
           </div>
 
           <div className="mt-3 text-[11px] text-white/50">
-            *Mostrando 1 (la última) por cliente. Haz clic en el nombre para ver el historial.
+            *Mostrando 1 (la última) por cliente. Haz clic en el nombre para
+            ver el historial.
           </div>
         </div>
 
@@ -352,6 +465,7 @@ export default function Cotizaciones() {
                 <div className="max-h-[90vh] overflow-y-auto no-scrollbar">
                   <FormMisCotizaciones
                     modo="nuevo"
+                    user={user}           
                     onCancel={handleCancelForm}
                     onSuccess={handleSuccessForm}
                   />

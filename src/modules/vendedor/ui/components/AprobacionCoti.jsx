@@ -44,6 +44,10 @@ export default function AprobacionCoti({
   modo = "crear", // "crear" | "editar"
   cotizacionId = null, // id real en cotizaciones_aprobacion (opcional, solo referencia)
   extraStats = null, // psh, derating, dcac, etc (opcional)
+
+  // 🔹 NUEVOS: datos del vendedor que vienen desde el padre
+  vendedorId = null,
+  vendedorNombre = "",
 }) {
   // ----------------- States principales -----------------
   const [cliente, setCliente] = useState(null);
@@ -60,16 +64,15 @@ export default function AprobacionCoti({
 
   // id de la cotización (si estamos en edición); aquí solo se guarda para referencia local
   const [aprobId, setAprobId] = useState(cotizacionId || null);
-  // Cliente efectivo a mostrar (si viene del padre, se usa primero)
- // Cliente efectivo a mostrar: mezcla lo que viene del padre + lo que trae Supabase
-const clienteView = useMemo(
-  () => ({
-    ...(clienteData || {}), // lo que venga del padre
-    ...(cliente || {}),     // lo que cargamos de la tabla clientes
-  }),
-  [clienteData, cliente]
-);
 
+  // Cliente efectivo a mostrar: mezcla lo que viene del padre + lo que trae Supabase
+  const clienteView = useMemo(
+    () => ({
+      ...(clienteData || {}), // lo que venga del padre
+      ...(cliente || {}), // lo que cargamos de la tabla clientes
+    }),
+    [clienteData, cliente]
+  );
 
   // Flags UI para impedir doble clic
   const [saving, setSaving] = useState(false);
@@ -97,6 +100,29 @@ const clienteView = useMemo(
     };
   }, []);
 
+  // ================== CÁLCULOS ==================
+  const consumoStats = useMemo(() => {
+    if (consumoStatsOverride) return consumoStatsOverride;
+    if (!consumos || consumos.length === 0) {
+      return { meses: 0, promedioMensual: 0, promedioDiario: 0 };
+    }
+    const kwh = consumos.map((c) => toNum(c.kwh));
+    const meses = kwh.length;
+    const sum = kwh.reduce((a, b) => a + b, 0);
+    const promedioMensual = sum / meses;
+    const promedioDiario = promedioMensual / 30;
+    return { meses, promedioMensual, promedioDiario };
+  }, [consumos, consumoStatsOverride]);
+
+  console.log("AprobacionCoti :: clienteId / clienteData =>", {
+    clienteId,
+    clienteData,
+  });
+  console.log("AprobacionCoti :: vendedorId / vendedorNombre =>", {
+    vendedorId,
+    vendedorNombre,
+  });
+
   // ================== HANDLERS (GUARDAR / ENVIAR) ==================
 
   // Construimos el payload común que se envía al padre
@@ -114,6 +140,10 @@ const clienteView = useMemo(
     },
     extraStats: extraStats || null,
     modo,
+
+    // 🔹 Estos viajan hacia el padre
+    vendedor_id: vendedorId ?? null,
+    vendedor_nombre: vendedorNombre || "",
   });
 
   async function handleGuardarBorrador() {
@@ -126,12 +156,11 @@ const clienteView = useMemo(
     try {
       const payload = {
         ...buildPayload(),
-        estadoOverride: "borrador", // 👈 el padre puede usar este flag para guardar como borrador
+        estadoOverride: "borrador", // el padre lo usa para guardar como BORRADOR
       };
 
       if (onSubmit) {
         const resultado = await onSubmit(payload);
-        // si el padre devuelve un id actualizado, lo guardamos
         if (resultado && resultado.id) {
           setAprobId(resultado.id);
         }
@@ -158,8 +187,7 @@ const clienteView = useMemo(
     try {
       const payload = {
         ...buildPayload(),
-        // opcional: podrías enviar también un estado sugerido
-        // estadoOverride: "pendiente",
+        // opcional: podrías incluir aquí estadoOverride: "pendiente"
       };
 
       if (onSubmit) {
@@ -182,81 +210,79 @@ const clienteView = useMemo(
   // ================== CARGAS DESDE SUPABASE ==================
 
   // Cliente
-useEffect(() => {
-  let cancel = false;
+  useEffect(() => {
+    let cancel = false;
 
-  // ¿El padre nos mandó un cliente "completo"?
-  const hasRichClienteData =
-    !!clienteData &&
-    (
-      clienteData.correo ||
-      clienteData.telefono ||
-      clienteData.celular ||
-      clienteData.departamento ||
-      clienteData.municipio ||
-      clienteData.pais ||
-      clienteData.direccion
-    );
+    // ¿El padre nos mandó un cliente "completo"?
+    const hasRichClienteData =
+      !!clienteData &&
+      (clienteData.correo ||
+        clienteData.telefono ||
+        clienteData.celular ||
+        clienteData.departamento ||
+        clienteData.municipio ||
+        clienteData.pais ||
+        clienteData.direccion);
 
-  (async () => {
-    try {
-      setLoadingCli(true);
-      setErrCli("");
+    (async () => {
+      try {
+        setLoadingCli(true);
+        setErrCli("");
 
-      // 1) Si viene completo desde el padre, úsalo y no llames a la BD
-      if (hasRichClienteData) {
-        if (!cancel) setCliente(clienteData);
-        return;
+        // 1) Si viene completo desde el padre, úsalo y no llames a la BD
+        if (hasRichClienteData) {
+          if (!cancel) setCliente(clienteData);
+          return;
+        }
+
+        // 2) Si NO viene completo, intentamos consultar por ID
+        const idToUse = clienteId || clienteData?.id;
+        if (!idToUse) {
+          if (!cancel) setCliente(null);
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from("clientes")
+          .select(
+            `
+            id,
+            created_at,
+            nombre_completo,
+            empresa,
+            correo,
+            telefono,
+            celular,
+            departamento,
+            municipio,
+            direccion,
+            pais,
+            hsp,
+            fecha_creacion
+          `
+          )
+          .eq("id", idToUse)
+          .maybeSingle();
+
+        if (error) throw error;
+        if (!cancel) setCliente(data || null);
+      } catch (e) {
+        if (!cancel) {
+          setErrCli("No se pudo cargar la información del cliente.");
+          console.error("clientes.get (modal):", e);
+          setCliente(null);
+        }
+      } finally {
+        if (!cancel) setLoadingCli(false);
       }
+    })();
 
-      // 2) Si NO viene completo, intentamos consultar por ID
-      const idToUse = clienteId || clienteData?.id;
-      if (!idToUse) {
-        if (!cancel) setCliente(null);
-        return;
-      }
+    return () => {
+      cancel = true;
+    };
+  }, [clienteId, clienteData]);
 
-      const { data, error } = await supabase
-  .from("clientes")
-  .select(`
-    id,
-    created_at,
-    nombre_completo,
-    empresa,
-    correo,
-    telefono,
-    celular,
-    departamento,
-    municipio,
-    direccion,
-    pais,
-    hsp,
-    fecha_creacion
-  `)
-  .eq("id", idToUse)
-  .maybeSingle();
-
-
-      if (error) throw error;
-      if (!cancel) setCliente(data || null);
-    } catch (e) {
-      if (!cancel) {
-        setErrCli("No se pudo cargar la información del cliente.");
-        console.error("clientes.get (modal):", e);
-        setCliente(null);
-      }
-    } finally {
-      if (!cancel) setLoadingCli(false);
-    }
-  })();
-
-  return () => {
-    cancel = true;
-  };
-}, [clienteId, clienteData]);
-
-
-  // Consumos (lee stats de tabla-resumen y SIEMPRE intenta leer meses desde la vista)
+  // Consumos
   useEffect(() => {
     let cancel = false;
     if (!clienteId) {
@@ -424,21 +450,6 @@ useEffect(() => {
     };
   }, [sistemaId]);
 
-  // ================== CÁLCULOS ==================
-  const consumoStats = useMemo(() => {
-    if (consumoStatsOverride) return consumoStatsOverride;
-    if (!consumos || consumos.length === 0) {
-      return { meses: 0, promedioMensual: 0, promedioDiario: 0 };
-    }
-    const kwh = consumos.map((c) => toNum(c.kwh));
-    const meses = kwh.length;
-    const sum = kwh.reduce((a, b) => a + b, 0);
-    const promedioMensual = sum / meses;
-    const promedioDiario = promedioMensual / 30;
-    return { meses, promedioMensual, promedioDiario };
-  }, [consumos, consumoStatsOverride]);
-console.log("AprobacionCoti clienteId:", clienteId, "clienteData:", clienteData);
-
   // ================== RENDER ==================
   return (
     <div className="fixed inset-0 z-[9999] overflow-hidden">
@@ -453,9 +464,23 @@ console.log("AprobacionCoti clienteId:", clienteId, "clienteData:", clienteData)
           <div className="h-[calc(100vh-12px)] sm:h-[calc(100vh-24px)] overflow-y-auto no-scrollbar rounded-2xl border border-white/10 bg-white/10 backdrop-blur-md shadow-[0_10px_40px_-10px_rgba(0,0,0,0.6)]">
             {/* Header */}
             <div className="sticky top-0 z-20 flex items-center justify-between px-4 sm:px-5 py-3 border-b border-white/10 bg-white/10 backdrop-blur-md">
-              <h3 className="text-white text-lg font-semibold">
-                Aprobación de Cotización
-              </h3>
+              {/* IZQUIERDA: título + vendedor */}
+              <div className="flex flex-col gap-1">
+                <h3 className="text-white text-lg font-semibold">
+                  Aprobación de Cotización
+                </h3>
+
+                <div className="flex items-baseline gap-2 text-xs sm:text-sm">
+                  <span className="uppercase tracking-[0.25em] text-emerald-200/80">
+                    VENDEDOR
+                  </span>
+                  <span className="text-emerald-100 font-semibold">
+                    {vendedorNombre || "—"}
+                  </span>
+                </div>
+              </div>
+
+              {/* DERECHA: botones */}
               <div className="flex gap-2">
                 <button
                   className="rounded-lg px-3 py-1.5 text-sm border border-sky-300/30 bg-sky-400/10 text-sky-100 hover:bg-sky-400/20 transition"
@@ -485,7 +510,7 @@ console.log("AprobacionCoti clienteId:", clienteId, "clienteData:", clienteData)
             {/* Contenido */}
             <div className="p-4 sm:p-5 space-y-4">
               {/* ======= Cliente ======= */}
-                            <Section title="Información del cliente">
+              <Section title="Información del cliente">
                 {loadingCli && !clienteData ? (
                   <p className="text-sm text-white/60">Cargando cliente…</p>
                 ) : errCli && !clienteData ? (
@@ -496,92 +521,97 @@ console.log("AprobacionCoti clienteId:", clienteId, "clienteData:", clienteData)
                   </p>
                 ) : (
                   <div className="grid sm:grid-cols-2 gap-x-6 gap-y-1 text-sm">
-  <KV
-    label="Nombre"
-    value={
-      str(clienteView.nombre_completo) ||
-      str(clienteView.nombre) ||       // acepta 'nombre'
-      str(clienteView.empresa) ||
-      "—"
-    }
-  />
+                    <KV
+                      label="Nombre"
+                      value={
+                        str(clienteView.nombre_completo) ||
+                        str(clienteView.nombre) ||
+                        str(clienteView.empresa) ||
+                        "—"
+                      }
+                    />
 
-  <KV
-    label="Correo"
-    value={
-      str(clienteView.correo) ||
-      str(clienteView.email) ||        // acepta 'email'
-      "—"
-    }
-  />
+                    {/* Mostrar el vendedor también aquí */}
+                    <KV
+                      label="Vendedor"
+                      value={vendedorNombre || "—"}
+                    />
 
-  <KV
-    label="Teléfono"
-    value={
-      str(clienteView.telefono) ||
-      str(clienteView.celular) ||
-      str(clienteView.telefono1) ||    // otro posible campo
-      "—"
-    }
-  />
+                    <KV
+                      label="Correo"
+                      value={
+                        str(clienteView.correo) ||
+                        str(clienteView.email) ||
+                        "—"
+                      }
+                    />
 
-  <KV
-    label="País"
-    value={
-      str(clienteView.pais) ||
-      str(clienteView.country) ||      // acepta 'country'
-      "—"
-    }
-  />
+                    <KV
+                      label="Teléfono"
+                      value={
+                        str(clienteView.telefono) ||
+                        str(clienteView.celular) ||
+                        str(clienteView.telefono1) ||
+                        "—"
+                      }
+                    />
 
-  <KV
-    label="Departamento"
-    value={
-      str(clienteView.departamento) ||
-      str(clienteView.region) ||       // por si se llama 'region'
-      "—"
-    }
-  />
+                    <KV
+                      label="País"
+                      value={
+                        str(clienteView.pais) ||
+                        str(clienteView.country) ||
+                        "—"
+                      }
+                    />
 
-  <KV
-    label="Municipio"
-    value={str(clienteView.municipio) || "—"}
-  />
+                    <KV
+                      label="Departamento"
+                      value={
+                        str(clienteView.departamento) ||
+                        str(clienteView.region) ||
+                        "—"
+                      }
+                    />
 
-  <KV
-    label="Dirección"
-    value={
-      str(clienteView.direccion) ||
-      str(clienteView.direccion1) ||   // otro posible nombre
-      str(clienteView.address) ||
-      "—"
-    }
-    full
-  />
+                    <KV
+                      label="Municipio"
+                      value={str(clienteView.municipio) || "—"}
+                    />
 
-  <KV
-    label="HSP"
-    value={
-      clienteView.hsp === null ||
-      clienteView.hsp === undefined
-        ? "—"
-        : String(clienteView.hsp)
-    }
-  />
+                    <KV
+                      label="Dirección"
+                      value={
+                        str(clienteView.direccion) ||
+                        str(clienteView.direccion1) ||
+                        str(clienteView.address) ||
+                        "—"
+                      }
+                      full
+                    />
 
-  <KV
-    label="Fecha creación"
-    value={
-      str(clienteView.fecha_creacion) ||
-      str(clienteView.created_at) ||
-      str(clienteView.fecha_registro) || // por si existe
-      "—"
-    }
-  />
-</div>
+                    <KV
+                      label="HSP"
+                      value={
+                        clienteView.hsp === null ||
+                        clienteView.hsp === undefined
+                          ? "—"
+                          : String(clienteView.hsp)
+                      }
+                    />
+
+                    <KV
+                      label="Fecha creación"
+                      value={
+                        str(clienteView.fecha_creacion) ||
+                        str(clienteView.created_at) ||
+                        str(clienteView.fecha_registro) ||
+                        "—"
+                      }
+                    />
+                  </div>
                 )}
               </Section>
-                  
 
               {/* ======= Consumos ======= */}
               <Section title="Histórico de consumos">
@@ -780,7 +810,7 @@ AprobacionCoti.propTypes = {
   ),
   kwDia: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   onClose: PropTypes.func,
-  onSubmit: PropTypes.func, // 👈 el padre guarda en BD
+  onSubmit: PropTypes.func, // el padre guarda en BD
   clienteData: PropTypes.shape({
     id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     created_at: PropTypes.string,
@@ -799,29 +829,70 @@ AprobacionCoti.propTypes = {
   modo: PropTypes.string, // "crear" | "editar"
   cotizacionId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   extraStats: PropTypes.object,
+
+  // Nuevos
+  vendedorId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  vendedorNombre: PropTypes.string,
 };
 
 /* ================== Utils ================== */
-function str(v) { return (v ?? "").toString().trim(); }
-function toNum(v) { const n = Number(String(v).replace(",", ".")); return Number.isFinite(n) ? n : 0; }
-function toInt(v) { const n = parseInt(v, 10); return Number.isFinite(n) ? n : 0; }
-function fmt(n) { const v = Number(n); return Number.isFinite(v) ? v.toFixed(2) : "0.00"; }
-function pickFirstNumber(arr) { for (const v of arr || []) { const n = toNum(v); if (Number.isFinite(n) && n > 0) return n; } return 0; }
+function str(v) {
+  return (v ?? "").toString().trim();
+}
+function toNum(v) {
+  const n = Number(String(v).replace(",", "."));
+  return Number.isFinite(n) ? n : 0;
+}
+function toInt(v) {
+  const n = parseInt(v, 10);
+  return Number.isFinite(n) ? n : 0;
+}
+function fmt(n) {
+  const v = Number(n);
+  return Number.isFinite(v) ? v.toFixed(2) : "0.00";
+}
+function pickFirstNumber(arr) {
+  for (const v of arr || []) {
+    const n = toNum(v);
+    if (Number.isFinite(n) && n > 0) return n;
+  }
+  return 0;
+}
 function monthYearFromDate(d) {
   try {
     if (!d) return { mF: null, yF: null };
     const dt = new Date(d);
     if (String(dt) === "Invalid Date") return { mF: null, yF: null };
     return { mF: dt.getMonth() + 1, yF: dt.getFullYear() };
-  } catch { return { mF: null, yF: null }; }
+  } catch {
+    return { mF: null, yF: null };
+  }
 }
 function mesCorto(m) {
-  const meses = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+  const meses = [
+    "Ene",
+    "Feb",
+    "Mar",
+    "Abr",
+    "May",
+    "Jun",
+    "Jul",
+    "Ago",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dic",
+  ];
   const i = Math.min(Math.max(1, toInt(m)), 12) - 1;
   return meses[i];
 }
 function tryParseJSON(txt, fallback) {
-  try { const p = JSON.parse(txt); return p; } catch { return fallback; }
+  try {
+    const p = JSON.parse(txt);
+    return p;
+  } catch {
+    return fallback;
+  }
 }
 function isPrimitive(x) {
   const t = typeof x;

@@ -13,7 +13,6 @@ import FormCotizacionCliente from "./FormCotizacionCliente";
 const TABLE_BASE = "cotizaciones_aprobacion";
 const TABLE_CONSUMOS = "cliente_consumos";
 
-
 /* ========== Sub-componentes UI compactos ========== */
 function InputCalcCompact({ value, suffix, placeholder }) {
   const hasSuffix = Boolean(suffix);
@@ -156,7 +155,19 @@ export default function FormMisCotizaciones({
   modo = "nuevo", // "nuevo" | "editar"
   cotizacionId = null, // uuid cuando modo="editar"
   prefill = null, // objeto con datos pre-cargados
+  user, // 👈 usuario logueado (vendedor)
 }) {
+  // ================== DATOS DEL VENDEDOR DESDE user ==================
+  // Se calculan una sola vez y se usan en todo el componente
+  const vendedorId =
+    user?.id != null ? String(user.id) : null;
+
+  const vendedorNombre =
+    user?.nombreCompleto ??
+    user?.nombre ??
+    user?.usuario ??
+    null;
+
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 15);
@@ -195,7 +206,8 @@ export default function FormMisCotizaciones({
   // ===== calculadora =====
   const [openCalc, setOpenCalc] = useState(false);
   const [savingProm, setSavingProm] = useState(false);
- const [savedMessage, setSavedMessage] = useState(false);
+  const [savedMessage, setSavedMessage] = useState(false);
+
   // ===== código de cotización (solo para modo editar) =====
   const [codigoCot, setCodigoCot] = useState("");
 
@@ -500,7 +512,6 @@ export default function FormMisCotizaciones({
       setOpenCalc(false);
       setSavedMessage(true);
       setTimeout(() => setSavedMessage(false), 3000); // vuelve a "Guardar" después de 3 segundos
-
     } catch (e) {
       console.error("Error guardando promedios:", e);
       alert("No se pudieron guardar los promedios. Revisa la consola.");
@@ -561,13 +572,19 @@ export default function FormMisCotizaciones({
     }
 
     // ===== MODO NUEVO: devolvemos datos al padre para que cree el registro =====
-    onSuccess?.({
+    console.log("Form submit -> onSuccess payload:", {
       clienteId: clienteSel.id,
       cliente: clienteSel.nombre,
       codigoCliente,
       sistemaId: sistemaSel,
       fecha: today,
       estado: estadoFijo,
+
+      // 👇 NUEVO: datos del vendedor usando las constantes calculadas arriba
+      vendedor_id: vendedorId,
+      vendedor_nombre: vendedorNombre,
+
+      // valores de la calculadora (kwDia, promedioKW, precioKWh)
       ...calc,
     });
   };
@@ -603,14 +620,24 @@ export default function FormMisCotizaciones({
             {tituloHeader}
           </h2>
 
-          {clienteSel && (
-            <div className="mt-1 text-sm text-white/80">
+          {/* Código + Vendedor en una sola línea (responsiva) */}
+          <p className="mt-1 text-sm text-white/80 flex flex-wrap gap-x-6 gap-y-1">
+            {/* Código de la cotización */}
+            <span>
               Código:{" "}
-              <span className="font-semibold text-emerald-300">
-                {codigoMostrar}
+              <span className="font-mono text-emerald-300">
+                {codigoMostrar || "—"}
               </span>
-            </div>
-          )}
+            </span>
+
+            {/* Vendedor (tomado de user) */}
+            <span>
+              Vendedor:{" "}
+              <span className="font-semibold text-cyan-200">
+                {vendedorNombre || "—"}
+              </span>
+            </span>
+          </p>
 
           {cargandoConsumo && (
             <div className="mt-1 text-xs text-white/60">Cargando consumo…</div>
@@ -630,7 +657,6 @@ export default function FormMisCotizaciones({
           >
             Cancelar
           </button>
-          
         </div>
       </div>
 
@@ -729,39 +755,37 @@ export default function FormMisCotizaciones({
         </div>
 
         {/* Resultados calculadora (sin botón Guardar) */}
-<div className="mt-2 flex flex-nowrap items-center gap-2 overflow-x-auto no-scrollbar">
-  <button
-    type="button"
-    onClick={() => setOpenCalc(true)}
-    disabled={!clienteSel}
-    className="h-9 flex-shrink-0 whitespace-nowrap rounded-lg px-3 text-sm font-medium text-white 
-              border border-white/10 bg-gradient-to-r from-cyan-400 to-blue-600 
-              hover:from-cyan-300 hover:to-blue-500 disabled:opacity-40 disabled:cursor-not-allowed"
-  >
-    Calcular promedios (kWh/mes)
-  </button>
+        <div className="mt-2 flex flex-nowrap items-center gap-2 overflow-x-auto no-scrollbar">
+          <button
+            type="button"
+            onClick={() => setOpenCalc(true)}
+            disabled={!clienteSel}
+            className="h-9 flex-shrink-0 whitespace-nowrap rounded-lg px-3 text-sm font-medium text-white
+               border border-white/10 bg-gradient-to-r from-cyan-400 to-blue-600
+               hover:from-cyan-300 hover:to-blue-500 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Calcular promedios (kWh/mes)
+          </button>
 
-  <InputCalcCompact
-    value={calc.kwDia}
-    placeholder="kW/d"
-    suffix="kWh/d"
-    className="!w-[90px]"
-  />
-  <InputCalcCompact
-    value={calc.promedioKW}
-    placeholder="kW/mes"
-    suffix="kWh/mes"
-    className="!w-[90px]"
-  />
-  <InputCalcCompact
-    value={calc.precioKWh}
-    placeholder="Q/kWh"
-    suffix="Q/kWh"
-    className="!w-[90px]"
-  />
-</div>
-
-
+          <InputCalcCompact
+            value={calc.kwDia}
+            placeholder="kW/d"
+            suffix="kWh/d"
+            className="!w-[90px]"
+          />
+          <InputCalcCompact
+            value={calc.promedioKW}
+            placeholder="kW/mes"
+            suffix="kWh/mes"
+            className="!w-[90px]"
+          />
+          <InputCalcCompact
+            value={calc.precioKWh}
+            placeholder="Q/kWh"
+            suffix="Q/kWh"
+            className="!w-[90px]"
+          />
+        </div>
 
         {/* Guía de paneles + FormCotizacionCliente */}
         {clienteSel && Number(String(calc.kwDia).replace(",", ".")) > 0 ? (
@@ -785,6 +809,7 @@ export default function FormMisCotizaciones({
             // 👇 CLAVE: decirle que estamos en modo edición y cuál cotización es
             modo={modo === "editar" ? "editar" : "crear"}
             cotizacionId={modo === "editar" ? cotizacionId : null}
+            user={user}
           />
         ) : (
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
@@ -819,6 +844,7 @@ FormMisCotizaciones.propTypes = {
   modo: PropTypes.oneOf(["nuevo", "editar"]),
   cotizacionId: PropTypes.string,
   prefill: PropTypes.object,
+  user: PropTypes.object,
 };
 
 InputCalcCompact.propTypes = {

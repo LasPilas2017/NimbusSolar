@@ -1,16 +1,6 @@
 // src/modules/vendedor/ui/layout/VendedorLayout.jsx
 // -----------------------------------------------------------------------------
-// SISTEMA DEL VENDEDOR - LAYOUT PRINCIPAL
-// -----------------------------------------------------------------------------
-// Este archivo es la versión "ordenada" de tu App.js del sistema del vendedor.
-// Aquí queda SOLO la parte de layout / navegación (UI).
-// Las pantallas reales (RESULTADOS, PROSPECTOS, etc.) viven en
-// src/modules/vendedor/ui/pages/...
-//
-// IMPORTANTE:
-// - El CRM se reutiliza desde src/modules/crm/ui/pages/CRMPage.jsx (es único
-//   para todo el sistema), pero aquí le podemos pasar props como `theme="vendedor"`
-//   para que se adapte al diseño del vendedor si lo deseas.
+// SISTEMA DEL VENDEDOR - LAYOUT PRINCIPAL (Nimbus Solar)
 // -----------------------------------------------------------------------------
 
 import React, { useState } from "react";
@@ -27,57 +17,49 @@ import {
   FiFileText,
   FiShoppingCart,
   FiChevronLeft,
+  FiCheckCircle,
 } from "react-icons/fi";
+import PropTypes from "prop-types";
 
-// 🔹 Páginas del sistema del vendedor
+import supabase from "../../../../supabase.js";
+
+// 🔹 Páginas internas
 import RESULTADOS from "../pages/RESULTADOS.jsx";
 import PROSPECTOS from "../pages/PROSPECTOS.jsx";
 import MisClientes from "../pages/MisClientes.jsx";
 import Cotizaciones from "../pages/Cotizaciones.jsx";
 import OC from "../pages/OC.jsx";
 import Ventas from "../pages/Ventas.jsx";
-
-
-// 🔹 CRM compartido (un solo CRM para todo el sistema)
+import Autorizaciones from "../pages/Autorizaciones.jsx";
 import CRMPage from "../../../crm/ui/pages/CRMPage.jsx";
 
 // -----------------------------------------------------------------------------
-// PERMISOS POR ROL DENTRO DEL SISTEMA DEL VENDEDOR
+// PERMISOS POR ROL
 // -----------------------------------------------------------------------------
-// Ajusta estos nombres de rol a los que usas en tu BD / auth:
-//   - "supervisor_ventas"
-//   - "vendedor"
-//   - (admin lo puedes tratar como supervisor o darle todo)
-// -----------------------------------------------------------------------------
-
 const PERMISOS_VENDEDOR_POR_ROL = {
   supervisor_ventas: {
-    // pestañas del sidebar
     tabs: [
       "MIS RESUMEN",
       "MIS VENDEDORES",
       "MIS CLIENTES",
       "COTIZACIONES",
+      "AUTORIZACIONES",
       "ÓRDENES DE COMPRA",
       "VENTAS",
     ],
-    // vistas del botón flotante
     floatViews: ["resultados", "prospectos", "crm"],
   },
-
   vendedor: {
-    // ejemplo: el vendedor NO ve “MIS VENDEDORES”
     tabs: ["MIS RESUMEN", "MIS CLIENTES", "COTIZACIONES", "VENTAS"],
     floatViews: ["resultados", "prospectos", "crm"],
   },
-
-  // Por si entra un admin directamente aquí, le damos todo
   admin: {
     tabs: [
       "MIS RESUMEN",
       "MIS VENDEDORES",
       "MIS CLIENTES",
       "COTIZACIONES",
+      "AUTORIZACIONES",
       "ÓRDENES DE COMPRA",
       "VENTAS",
     ],
@@ -85,17 +67,24 @@ const PERMISOS_VENDEDOR_POR_ROL = {
   },
 };
 
-const getPermisosForRol = (rolUsuario) => {
-  const key = String(rolUsuario || "").toLowerCase();
-  return (
-    PERMISOS_VENDEDOR_POR_ROL[key] || PERMISOS_VENDEDOR_POR_ROL.vendedor
-  );
+// Mapea roles externos a los internos de este layout
+const normalizaRol = (rol) => {
+  const k = String(rol || "").toLowerCase();
+  if (k === "ventas") return "vendedor"; // 👈 importante para permisos
+  return k;
 };
 
-// ⬇️ Layout principal del sistema del vendedor
-export default function VendedorLayout({ user, rolUsuario }) {
+const getPermisosForRol = (rolUsuario) => {
+  const key = normalizaRol(rolUsuario);
+  return PERMISOS_VENDEDOR_POR_ROL[key] || PERMISOS_VENDEDOR_POR_ROL.vendedor;
+};
+
+// -----------------------------------------------------------------------------
+// COMPONENTE PRINCIPAL
+// -----------------------------------------------------------------------------
+export default function VendedorLayout({ user, rolUsuario, onLogout }) {
   const [tab, setTab] = useState("MIS RESUMEN");
-  const [abierto, setAbierto] = useState(false); // menú flotante
+  const [abierto, setAbierto] = useState(false);
   const [vista, setVista] = useState(null);
   const [mostrarSidebar, setMostrarSidebar] = useState(true);
 
@@ -106,16 +95,15 @@ export default function VendedorLayout({ user, rolUsuario }) {
     { label: "MIS VENDEDORES", icon: <FiUsers /> },
     { label: "MIS CLIENTES", icon: <FiUserCheck /> },
     { label: "COTIZACIONES", icon: <FiCheckSquare /> },
+    { label: "AUTORIZACIONES", icon: <FiCheckCircle /> },
     { label: "ÓRDENES DE COMPRA", icon: <FiFileText /> },
     { label: "VENTAS", icon: <FiShoppingCart /> },
   ];
 
-  // pestañas visibles según el rol
   const menuVisible = menuLateral.filter((item) =>
     permisos.tabs.includes(item.label)
   );
 
-  // configuración del menú flotante (vistas)
   const botonesFlotantes = [
     { id: "resultados", label: "Resultados", icon: <FiBarChart2 /> },
     { id: "prospectos", label: "Prospectos", icon: <FiUserPlus /> },
@@ -130,23 +118,55 @@ export default function VendedorLayout({ user, rolUsuario }) {
     tab === "MIS RESUMEN" || tab === "MIS VENDEDORES";
 
   // ---------------------------------------------------------------------------
-  // Elegimos qué pantalla mostrar según la pestaña y la "vista" del botón flotante
+  // LOGOUT: prioriza onLogout del padre (App.jsx). Si no viene, fallback local.
+  // ---------------------------------------------------------------------------
+  const handleLogout = async () => {
+    // 1) Si el padre nos dio onLogout, úsalo (así resetea App y vuelve a <Login/>)
+    if (typeof onLogout === "function") {
+      await onLogout();
+      return;
+    }
+
+    // 2) Fallback: cerramos sesión aquí y redirigimos al /login
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.error("Error cerrando sesión (fallback):", e);
+    }
+
+    try {
+      const keys = [
+        "usuario",
+        "usuario.sistema",
+        "token",
+        "session",
+        "rolUsuario",
+      ];
+      keys.forEach((k) => localStorage.removeItem(k));
+      sessionStorage.clear();
+    } catch (e) {
+      console.warn("Error limpiando storage:", e);
+    }
+
+    const base = window?.location?.origin || "";
+    window.location.replace(`${base}/login`);
+  };
+
+  // ---------------------------------------------------------------------------
+  // Contenido principal según pestaña
   // ---------------------------------------------------------------------------
   const renderContenido = () => {
-    // pestañas del sidebar
     if (tab === "MIS CLIENTES") return <MisClientes />;
-    if (tab === "COTIZACIONES") return <Cotizaciones />;
+    if (tab === "COTIZACIONES") return <Cotizaciones user={user} />;
+    if (tab === "AUTORIZACIONES")
+      return <Autorizaciones user={user} rolUsuario={rolUsuario} />;
     if (tab === "ÓRDENES DE COMPRA") return <OC />;
     if (tab === "VENTAS") return <Ventas />;
 
-    // vistas del botón flotante
     if (mostrarBotonFlotante) {
       if (vista === "resultados") return <RESULTADOS />;
       if (vista === "prospectos") return <PROSPECTOS />;
-
-      if (vista === "crm") {
-        // 🔹 Usamos el CRM general, indicando que viene desde el sistema del vendedor.
-        // Si CRMPage no usa el prop `theme`, no pasa nada, se ignora.
+      if (vista === "crm")
         return (
           <CRMPage
             theme="vendedor"
@@ -155,7 +175,6 @@ export default function VendedorLayout({ user, rolUsuario }) {
             rolUsuario={rolUsuario}
           />
         );
-      }
 
       return (
         <div className="text-center text-white/70">
@@ -165,7 +184,6 @@ export default function VendedorLayout({ user, rolUsuario }) {
       );
     }
 
-    // estado por defecto cuando no aplica botón flotante
     return (
       <div className="text-center text-white/70">
         <h1 className="text-2xl font-semibold mb-3">{tab}</h1>
@@ -174,6 +192,9 @@ export default function VendedorLayout({ user, rolUsuario }) {
     );
   };
 
+  // ---------------------------------------------------------------------------
+  // RENDER
+  // ---------------------------------------------------------------------------
   return (
     <div className="h-screen w-screen relative bg-gradient-to-b from-[#0b1320] to-[#0b1320]/95">
       <div className="pointer-events-none absolute inset-x-0 -top-24 h-48 blur-3xl opacity-40 bg-gradient-to-r from-cyan-400/30 via-blue-500/30 to-emerald-400/30" />
@@ -195,7 +216,7 @@ export default function VendedorLayout({ user, rolUsuario }) {
               </h2>
               {user && (
                 <p className="text-xs text-white/70 mt-1">
-                  {user.nombre || user.email} &middot; {rolUsuario}
+                  {user.nombre || user.email} &middot; {normalizaRol(rolUsuario)}
                 </p>
               )}
             </div>
@@ -241,9 +262,10 @@ export default function VendedorLayout({ user, rolUsuario }) {
             })}
           </nav>
 
-          {/* Botón Salir (luego lo conectamos a logout real si quieres) */}
+          {/* Botón Salir */}
           <div className="p-4 border-t border-white/10">
             <button
+              onClick={handleLogout}
               className="w-full flex items-center justify-center gap-2 py-2.5 rounded-2xl
                          text-white font-semibold transition-all
                          border border-white/10
@@ -264,7 +286,6 @@ export default function VendedorLayout({ user, rolUsuario }) {
           <div className="absolute inset-0 rounded-3xl pointer-events-none shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]" />
           <div className="h-full p-0">{renderContenido()}</div>
 
-          {/* Botón mostrar sidebar */}
           {!mostrarSidebar && (
             <button
               onClick={() => setMostrarSidebar(true)}
@@ -297,7 +318,6 @@ export default function VendedorLayout({ user, rolUsuario }) {
               </div>
             )}
 
-            {/* Botón flotante principal */}
             <button
               onClick={() => setAbierto(!abierto)}
               title={abierto ? "Cerrar menú" : "Abrir menú"}
@@ -315,3 +335,9 @@ export default function VendedorLayout({ user, rolUsuario }) {
     </div>
   );
 }
+
+VendedorLayout.propTypes = {
+  user: PropTypes.object,
+  rolUsuario: PropTypes.string,
+  onLogout: PropTypes.func, // 👈 nuevo (opcional, pero recomendado)
+};

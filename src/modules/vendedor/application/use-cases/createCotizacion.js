@@ -1,32 +1,83 @@
 // src/modules/vendedor/application/use-cases/createCotizacion.js
-// Caso de uso: crear una nueva cotización en la tabla cotizaciones_aprobacion
-// a partir de los datos que envía <FormMisCotizaciones />.
+// -----------------------------------------------------------------------------
+// Caso de uso "CreateCotizacionUseCase" del SISTEMA DEL VENDEDOR.
+//
+// Recibe desde <Cotizaciones /> un objeto simple (nueva) con:
+//   clienteId, cliente, codigoCliente, sistemaId, fecha, estado,
+//   vendedor_id, vendedor_nombre, kwDia, promedioKW, precioKWh.
+//
+// Mapea eso al formato de la tabla public.cotizaciones_aprobacion y llama
+// al repositorio (CotizacionesSupabaseRepository.createCotizacion).
+// -----------------------------------------------------------------------------
 
 export class CreateCotizacionUseCase {
   constructor(cotizacionesRepository) {
     this.cotizacionesRepository = cotizacionesRepository;
   }
 
-  async execute(nueva) {
-    // conversión segura de números
-    const parseOrNull = (val) => {
-      if (val === undefined || val === null || val === "") return null;
-      const n = Number(String(val).replace(",", "."));
+  async execute(input) {
+    console.log("[UseCase] INPUT recibido en CreateCotizacionUseCase:", input);
+
+    if (!input || !input.clienteId) {
+      throw new Error("CreateCotizacionUseCase: clienteId es requerido.");
+    }
+
+    // Conversión segura de números (acepta comas o puntos)
+    const parseNum = (v) => {
+      if (v === null || v === undefined || v === "") return null;
+      const n = Number(String(v).replace(",", "."));
       return Number.isFinite(n) ? n : null;
     };
 
     const payload = {
-      // campos según tu tabla cotizaciones_aprobacion
-      cliente_id: nueva.clienteId,
-      sistema_id: nueva.sistemaId || null,
-      kwh_dia: parseOrNull(nueva.kwDia),
-      kwh_mes: parseOrNull(nueva.promedioKW),
-      q_kwh: parseOrNull(nueva.precioKWh),
-      estado: (nueva.estado || "pendiente").toLowerCase(),
-      // si tienes default en BD lo podrías omitir:
-      created_at: new Date().toISOString(),
+      // Relaciones
+      cliente_id: input.clienteId,
+      sistema_id: input.sistemaId || null,
+
+      // Datos básicos
+      codigo: input.codigoCliente || null,
+      estado: input.estado || "solicitadas",
+      fecha: input.fecha || null,
+
+      // Consumos / cálculos
+      kw_dia: parseNum(input.kwDia),
+      kwh_mes: parseNum(input.promedioKW),
+      q_kwh: parseNum(input.precioKWh),
+
+      // Vendedor responsable (NO se tocan, solo se pasan tal como vienen)
+      vendedor_id:
+        input.vendedor_id != null ? String(input.vendedor_id) : null,
+      vendedor_nombre:
+        input.vendedor_nombre ??
+        input.vendedorNombre ??
+        input.vendedor ??
+        null,
+
+      // Auxiliares
+      items: [],
+      monto: 0,
+      consumos: {},
+      stats: {},
+      consumo_stat: {},
     };
 
-    await this.cotizacionesRepository.crearCotizacion(payload);
+    console.log("[UseCase] Payload que se manda al repo:", payload);
+
+    const repo = this.cotizacionesRepository;
+    if (!repo) {
+      throw new Error("CreateCotizacionUseCase: repositorio no definido.");
+    }
+
+    if (typeof repo.createCotizacion === "function") {
+      return await repo.createCotizacion(payload);
+    }
+
+    if (typeof repo.create === "function") {
+      return await repo.create(payload);
+    }
+
+    throw new Error(
+      "CreateCotizacionUseCase: el repositorio no tiene createCotizacion() ni create()."
+    );
   }
 }

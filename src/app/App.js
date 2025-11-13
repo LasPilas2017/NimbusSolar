@@ -11,9 +11,9 @@
 //
 // Si no hay sesión activa, muestra la pantalla <Login /> o <PrimerIngreso />.
 // Si hay usuario autenticado:
-//   - Si su **rol** es "ventas" → muestra el sistema del vendedor (VendedorLayout, azul).
+//   - Si su **rol/sistema** corresponde al VENDEDOR → muestra VendedorLayout (azul).
 //   - En otro caso → muestra el sistema de Administración (AppLayout + AppRouter).
-// ----------------------------------------------------------------------------- 
+// -----------------------------------------------------------------------------
 
 import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
@@ -224,23 +224,29 @@ export default function App() {
   // DECISIÓN: ¿SISTEMA DEL VENDEDOR o SISTEMA ADMINISTRATIVO?
   // =========================================================
 
+  // Normalizamos rol y sistema asignado del usuario autenticado
   const role = String(usuario.rol || "").toLowerCase();
+  const sistema = String(
+    usuario.sistema || usuario.sistema_asignado || ""
+  ).toLowerCase();
 
-  // Solo hay dos sistemas:
-  //  - rol "ventas" -> sistema del VENDEDOR (azul)
-  //  - cualquier otro rol -> sistema de ADMINISTRACIÓN (blanco)
-  const isRolVendedor = role === "ventas";
+  // Entra al sistema AZUL si:
+  // - es vendedor (ventas)
+  // - es supervisor de ventas
+  // - o su sistema asignado es "vendedor"
+  const usaSistemaVendedor =
+    role === "ventas" || role === "supervisor_ventas" || sistema === "vendedor";
 
-  // 👉 Si su rol es "ventas" → Sistema AZUL en pantalla completa (sin AppLayout)
-  if (isRolVendedor) {
+  // 👉 Sistema del VENDEDOR (AZUL)
+  if (usaSistemaVendedor) {
     return (
       <div className="relative min-h-screen h-screen bg-[#020617] overflow-hidden flex flex-col">
-        <VendedorLayout user={usuario} rolUsuario={role} />
+        <VendedorLayout user={usuario} rolUsuario={role} onLogout={handleLogout} />
       </div>
     );
   }
 
-  // 👉 En cualquier otro caso → Sistema de ADMINISTRACIÓN (blanco) con pestañas
+  // 👉 Sistema de ADMINISTRACIÓN (BLANCO) con pestañas
   return (
     <div className="relative min-h-screen h-screen bg-gray-50 overflow-hidden flex flex-col">
       {/* Overlay de cierre */}

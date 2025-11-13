@@ -12,9 +12,9 @@ const TABLE_BASE = "cotizaciones_aprobacion";
 
 export default function HistorialCotCliente({
   clienteId,
-  clienteNombre,
+  clienteNombre = "",
   onClose,
-  onRefreshMain,
+  onRefreshMain = undefined, // 👈 valor por defecto en lugar de defaultProps
 }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,12 +25,8 @@ export default function HistorialCotCliente({
   const [editPrefill, setEditPrefill] = useState(null);
   const [editLoading, setEditLoading] = useState(false);
 
-  // Última cotización
+  // Última cotización (solo para marcar visualmente la fila más reciente)
   const ultima = useMemo(() => (rows?.length ? rows[0] : null), [rows]);
-  const puedeEditarUltima = useMemo(
-    () => (ultima?.estado || "").toLowerCase() === "rechazada",
-    [ultima]
-  );
 
   // Cargar historial completo del cliente
   useEffect(() => {
@@ -110,13 +106,13 @@ export default function HistorialCotCliente({
             cliente_id: data.cliente_id || null,
             sistema_id: data.sistema_id || null,
             kw_dia: data.kw_dia ?? "",
-            // datos de detalle para usar más adelante si hace falta
+            // detalle
             items: Array.isArray(data.items) ? data.items : [],
             consumos: Array.isArray(data.consumos) ? data.consumos : [],
             consumo_stats: data.consumo_stats || {},
             monto: data.monto ?? 0,
             fecha: data.fecha || null,
-            // Para que el form muestre el nombre del cliente sin necesidad de join
+            // nombre del cliente sin join
             cliente: data.cliente_id
               ? { id: data.cliente_id, nombre: clienteNombre }
               : null,
@@ -164,6 +160,29 @@ export default function HistorialCotCliente({
       setRows(mapped);
     } catch (e) {
       console.error("Historial refresh:", e);
+    }
+  };
+
+  // Helper visual para el badge de estado
+  const estadoBadgeClass = (estado) => {
+    switch (estado) {
+      case "pendiente":
+        return "bg-emerald-400/15 text-emerald-200 border-emerald-300/30";
+      case "enviadas":
+      case "enviada":
+        return "bg-amber-400/15 text-amber-200 border-amber-300/30";
+      case "autorizadas":
+      case "autorizada":
+      case "aprobada":
+      case "aprobadas":
+        return "bg-sky-400/15 text-sky-200 border-sky-300/30";
+      case "rechazadas":
+      case "rechazada":
+        return "bg-rose-400/15 text-rose-200 border-rose-300/30";
+      case "borrador":
+        return "bg-white/10 text-white/80 border-white/20";
+      default:
+        return "bg-white/10 text-white/80 border-white/20";
     }
   };
 
@@ -227,7 +246,14 @@ export default function HistorialCotCliente({
                   <tbody>
                     {rows.map((r, idx) => {
                       const esUltima = ultima && r.id === ultima.id;
-                      const puedeEditar = esUltima && puedeEditarUltima;
+
+                      // ✅ Regla de edición:
+                      // Se puede editar si el estado es 'borrador' o 'rechazada'
+                      // No se puede editar si está 'pendiente' (ni si está aprobada).
+                      const canEdit =
+                        r.estado === "borrador" ||
+                        r.estado === "rechazada" ||
+                        r.estado === "rechazadas";
 
                       return (
                         <tr
@@ -242,17 +268,9 @@ export default function HistorialCotCliente({
                           </td>
                           <td className="px-4 py-3">
                             <span
-                              className={`px-2 py-1 rounded-full text-[11px] font-medium border ${
-                                r.estado === "pendiente"
-                                  ? "bg-emerald-400/15 text-emerald-200 border-emerald-300/30"
-                                  : r.estado === "enviadas" || r.estado === "enviada"
-                                  ? "bg-amber-400/15 text-amber-200 border-amber-300/30"
-                                  : r.estado === "autorizadas" || r.estado === "autorizada"
-                                  ? "bg-sky-400/15 text-sky-200 border-sky-300/30"
-                                  : r.estado === "rechazadas" || r.estado === "rechazada"
-                                  ? "bg-rose-400/15 text-rose-200 border-rose-300/30"
-                                  : "bg-white/10 text-white/80 border-white/20"
-                              }`}
+                              className={`px-2 py-1 rounded-full text-[11px] font-medium border ${estadoBadgeClass(
+                                r.estado
+                              )}`}
                             >
                               {r.estado}
                             </span>
@@ -262,16 +280,34 @@ export default function HistorialCotCliente({
                               ? new Date(r.fecha).toISOString().slice(0, 10)
                               : "—"}
                           </td>
-                          <td className="px-4 py-3">
-                            {puedeEditar ? (
+                          <td className="px-4 py-3 text-right">
+                            {canEdit ? (
                               <button
                                 onClick={() => abrirEdicion(r.id)}
                                 className="text-[11px] px-3 py-1 rounded border border-white/10 text-white/90
                                            bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400"
+                                title={
+                                  r.estado === "borrador"
+                                    ? "Editar cotización"
+                                    : "Modificar y reenviar"
+                                }
                               >
-                                Modificar y reenviar
+                                {r.estado === "borrador"
+                                  ? "Editar"
+                                  : "Modificar y reenviar"}
                               </button>
-                            ) : null}
+                            ) : (
+                              <span
+                                className="text-[11px] px-3 py-1 rounded border border-white/10 text-white/50 bg-white/5 cursor-not-allowed"
+                                title={
+                                  r.estado === "pendiente"
+                                    ? "No editable mientras esté pendiente"
+                                    : "No editable"
+                                }
+                              >
+                                No editable
+                              </span>
+                            )}
                           </td>
                         </tr>
                       );
@@ -330,8 +366,4 @@ HistorialCotCliente.propTypes = {
   clienteNombre: PropTypes.string.isRequired,
   onClose: PropTypes.func.isRequired,
   onRefreshMain: PropTypes.func, // opcional
-};
-
-HistorialCotCliente.defaultProps = {
-  onRefreshMain: undefined,
 };

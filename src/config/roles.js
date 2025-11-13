@@ -1,8 +1,9 @@
 // src/config/roles.js
-// Define qué pestañas puede ver cada rol del sistema.
+// Define qué pestañas puede ver cada rol del sistema ADMIN (tema blanco).
+// Códigos de rol canónicos en minúsculas.
 
 export const ALLOWED_BY_ROLE = {
-  // 🔹 ADMIN: ve todo el sistema de administración
+  // ADMIN ve todo en el sistema administrativo
   admin: [
     "VistaMovimientos",
     "papeleria",
@@ -15,12 +16,17 @@ export const ALLOWED_BY_ROLE = {
     "gestionUsuarios",
   ],
 
-  // 🔹 ROL "ventas": sistema de administración con pestaña Ventas
+  // Rol "ventas" dentro del sistema ADMIN (si lo usas así)
   ventas: ["ventas", "inventario", "proyectos", "personal"],
 
-  // 🔹 Estos roles usan SOLO el SISTEMA DEL VENDEDOR (azul)
-  //     → no necesitan pestañas del admin
-  vendedor: [],
-  supervisor_ventas: [],
-  bodega: [],
+  // Estos roles operan principalmente en el sistema del VENDEDOR (azul)
+  vendedor: [],            // layout azul; no requieren pestañas del admin
+  supervisor_ventas: [],   // layout azul; ver Autorizaciones, etc.
+
+  // Bodega (si quieres darle acceso a inventario del admin)
+  bodega: ["inventario"],
+
+  // Roles de contabilidad: generalmente Liquidez / finanzas
+  contador: ["Liquidez"],
+  auxiliar_contabilidad: ["Liquidez"],
 };

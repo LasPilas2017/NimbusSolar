@@ -1,38 +1,42 @@
 // src/config/menuConfig.js
+// Nota: usamos códigos de rol en minúsculas: admin, ventas, supervisor_ventas
 export const menuItems = [
   {
     label: "Resultados",
     path: "/resultados",
-    allowedRoles: ["VENDEDOR", "SUPERVISOR", "ADMIN"],
+    allowedRoles: ["ventas", "supervisor_ventas", "admin"],
   },
   {
     label: "Prospectos",
     path: "/prospectos",
-    allowedRoles: ["VENDEDOR", "SUPERVISOR", "ADMIN"],
+    allowedRoles: ["ventas", "supervisor_ventas", "admin"],
   },
   {
     label: "CRM",
     path: "/crm",
-    allowedRoles: ["VENDEDOR", "SUPERVISOR", "ADMIN"],
+    allowedRoles: ["ventas", "supervisor_ventas", "admin"],
   },
   {
     label: "Agentes",
     path: "/agentes",
-    allowedRoles: ["SUPERVISOR", "ADMIN"],
+    allowedRoles: ["supervisor_ventas", "admin"],
   },
   {
     label: "Global",
     path: "/global",
-    allowedRoles: ["SUPERVISOR", "ADMIN"],
+    allowedRoles: ["supervisor_ventas", "admin"],
   },
   {
     label: "Listados",
     path: "/listados",
-    allowedRoles: ["SUPERVISOR", "ADMIN"],
+    allowedRoles: ["supervisor_ventas", "admin"],
   },
   {
     label: "Ventas",
     path: "/ventas",
-    allowedRoles: ["SUPERVISOR", "ADMIN"],
+    allowedRoles: ["supervisor_ventas", "admin"],
   },
 ];
+
+// Sugerencia (donde compares roles):
+// const canSee = item.allowedRoles.includes(String(user.rol).toLowerCase());

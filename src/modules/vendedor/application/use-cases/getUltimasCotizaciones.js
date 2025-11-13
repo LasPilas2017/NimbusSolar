@@ -1,27 +1,38 @@
 // src/modules/vendedor/application/use-cases/getUltimasCotizaciones.js
-// Caso de uso: obtener la ÚLTIMA cotización por cliente desde la vista
-// v_cotizaciones_ultima_por_cliente y normalizarla para la UI.
+// -----------------------------------------------------------------------------
+// Use case: obtener las últimas cotizaciones por cliente para el vendedor.
+// Toma todos los campos que necesitamos en la UI, incluyendo vendedor_id
+// y vendedor_nombre para poder filtrar por usuario logueado.
+// -----------------------------------------------------------------------------
 
 export class GetUltimasCotizacionesUseCase {
-  constructor(cotizacionesRepository) {
-    this.cotizacionesRepository = cotizacionesRepository;
+  /**
+   * @param {import('../../infra/supabase/CotizacionesSupabaseRepository').CotizacionesSupabaseRepository} repo
+   */
+  constructor(repo) {
+    this.repo = repo;
   }
 
   async execute() {
-    const data = await this.cotizacionesRepository.getUltimasPorCliente();
+    const rows = await this.repo.getUltimas();
 
-    return (data || []).map((r) => ({
+    console.log("DEBUG getUltimasCotiza :: rows raw =>", rows);
+
+    // 🔥 IMPORTANTE: conservar vendedor_id y vendedor_nombre
+    return rows.map((r) => ({
       id: r.id,
       codigo: r.codigo,
       cliente_id: r.cliente_id,
-      cliente_nombre: r.cliente_nombre || "—",
-      sistema_nombre: r.sistema_nombre || "—",
-      monto: 0, // por ahora tu vista no trae monto, lo dejamos en 0
-      estado: (r.estado || "pendiente").toLowerCase(),
-      fecha:
-        r.fecha || r.created_at
-          ? new Date(r.fecha || r.created_at).toISOString()
-          : null,
+      cliente_nombre: r.cliente_nombre,
+      sistema_id: r.sistema_id,
+      sistema_nombre: r.sistema_nombre,
+      monto: r.monto,
+      estado: r.estado,
+      fecha: r.fecha,
+
+      // 👇 estos eran los que faltaban
+      vendedor_id: r.vendedor_id,
+      vendedor_nombre: r.vendedor_nombre,
     }));
   }
 }

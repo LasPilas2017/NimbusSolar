@@ -29,6 +29,31 @@ import { BloquearUsuarioUseCase } from "../../../usuarios/application/BloquearUs
 import { DesbloquearUsuarioUseCase } from "../../../usuarios/application/DesbloquearUsuarioUseCase";
 import { ReiniciarPasswordUseCase } from "../../../usuarios/application/ReiniciarPasswordUseCase";
 
+// 🔹 Catálogos (label para mostrar, value para guardar)
+const ROL_OPTIONS = [
+  { label: "Administrador",            value: "admin" },
+  { label: "Vendedor",                 value: "ventas" },
+  { label: "Supervisor de Ventas",     value: "supervisor_ventas" },
+  { label: "Encargado de Bodega",      value: "bodega" },
+  { label: "Contador",                 value: "contador" },
+  { label: "Auxiliar de Contabilidad", value: "auxiliar_contabilidad" },
+];
+
+const SISTEMA_OPTIONS = [
+  { label: "ADMIN",  value: "admin" },
+  { label: "VENTAS", value: "vendedor" }, // ← así lo espera el sistema azul
+];
+
+// Helpers para mostrar labels en tabla
+const labelRol = (v) =>
+  ROL_OPTIONS.find(o => o.value === String(v || "").toLowerCase())?.label || v;
+
+const labelSistema = (v) =>
+  SISTEMA_OPTIONS.find(o => o.value === String(v || "").toLowerCase())?.label || v;
+
+// Normalizar códigos a minúsculas y sin espacios
+const toCode = (v) => String(v || "").trim().toLowerCase();
+
 export default function GestionUsuarios() {
   // ---------------------------------------------------------------------------
   // ESTADOS DE LA VISTA
@@ -40,10 +65,9 @@ export default function GestionUsuarios() {
 
   // Campos del formulario de creación de usuario
   const [nombreCompleto, setNombreCompleto] = useState("");
-  const [rol, setRol] = useState("ventas");
-  const [sistemaAsignado, setSistemaAsignado] = useState("VENTAS");
-  // 🔹 Nuevo campo: teléfono del usuario
-  const [telefono, setTelefono] = useState("");
+  const [rol, setRol] = useState("ventas");           // default: vendedor
+  const [sistemaAsignado, setSistemaAsignado] = useState("vendedor"); // default: sistema azul
+  const [telefono, setTelefono] = useState("");       // nuevo campo
 
   // ---------------------------------------------------------------------------
   // CASOS DE USO Y REPOSITORIO (MEMOIZADOS)
@@ -63,7 +87,7 @@ export default function GestionUsuarios() {
     setError("");
     try {
       const lista = await obtenerUC.execute();
-      setUsuarios(lista);
+      setUsuarios(Array.isArray(lista) ? lista : []);
     } catch (e) {
       console.error(e);
       setError(e.message || "Error al cargar usuarios");
@@ -87,20 +111,21 @@ export default function GestionUsuarios() {
     setCargando(true);
 
     try {
-      // 🔹 Incluimos el teléfono en el caso de uso
-      const nuevo = await crearUC.execute({
-        nombreCompleto,
-        rol,
-        sistemaAsignado,
-        telefono,
-      });
+      // Normalizamos los códigos que se guardan en BD
+      const payload = {
+        nombreCompleto: (nombreCompleto || "").trim(),
+        rol: toCode(rol),                          // admin | ventas | supervisor_ventas | bodega | contador | auxiliar_contabilidad
+        sistemaAsignado: toCode(sistemaAsignado),  // admin | vendedor
+        telefono: (telefono || "").trim(),
+      };
 
-      // Mensaje para el admin con alias y código de activación
+      const nuevo = await crearUC.execute(payload);
+
       setMensaje(
         `Usuario creado. Alias: ${nuevo.alias} | Código de activación: ${nuevo.codigoActivacion}`
       );
 
-      // 🔹 Intentamos enviar el código por SMS a través del backend (Supabase Functions)
+      // Intento de enviar SMS (no rompe el flujo si falla)
       try {
         await enviarCodigoPorSMS({
           telefono: nuevo.telefono,
@@ -108,13 +133,14 @@ export default function GestionUsuarios() {
           codigo: nuevo.codigoActivacion,
         });
       } catch (smsError) {
-        // Si falla el SMS, solo lo registramos en consola para no romper el flujo del admin
         console.error("Error enviando SMS:", smsError);
       }
 
-      // Limpiamos campos del formulario
+      // Limpiar formulario + recargar
       setNombreCompleto("");
       setTelefono("");
+      setRol("ventas");
+      setSistemaAsignado("vendedor");
       await cargarUsuarios();
     } catch (e) {
       console.error(e);
@@ -190,7 +216,7 @@ export default function GestionUsuarios() {
           />
         </div>
 
-        {/* 🔹 Teléfono */}
+        {/* Teléfono */}
         <div>
           <label className="block text-sm font-medium mb-1">Teléfono</label>
           <input
@@ -210,11 +236,11 @@ export default function GestionUsuarios() {
             value={rol}
             onChange={(e) => setRol(e.target.value)}
           >
-            <option value="admin">Admin</option>
-            <option value="ventas">Ventas</option>
-            <option value="bodega">Bodega</option>
-            <option value="contabilidad">Contabilidad</option>
-            <option value="tecnico">Técnico</option>
+            {ROL_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -226,9 +252,11 @@ export default function GestionUsuarios() {
             value={sistemaAsignado}
             onChange={(e) => setSistemaAsignado(e.target.value)}
           >
-            <option value="ADMIN">ADMIN</option>
-            <option value="VENTAS">VENTAS</option>
-            {/* Futuro: BODEGA, CONTABILIDAD, etc. */}
+            {SISTEMA_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -263,8 +291,8 @@ export default function GestionUsuarios() {
               <tr key={u.id} className="border-t">
                 <td className="px-3 py-2">{u.nombreCompleto}</td>
                 <td className="px-3 py-2 font-mono text-xs">{u.alias}</td>
-                <td className="px-3 py-2">{u.rol}</td>
-                <td className="px-3 py-2">{u.sistemaAsignado}</td>
+                <td className="px-3 py-2">{labelRol(u.rol)}</td>
+                <td className="px-3 py-2">{labelSistema(u.sistemaAsignado || u.sistema)}</td>
                 <td className="px-3 py-2">
                   <span
                     className={
@@ -322,9 +350,6 @@ export default function GestionUsuarios() {
 // -----------------------------------------------------------------------------
 // HELPER PARA ENVIAR CÓDIGO POR SMS
 // -----------------------------------------------------------------------------
-// Esta función ahora muestra el texto completo devuelto por la función Edge
-// si ocurre un error, en lugar de lanzar siempre el mismo mensaje genérico.
-// -----------------------------------------------------------------------------
 async function enviarCodigoPorSMS({ telefono, alias, codigo }) {
   const resp = await fetch(
     "https://koaozymugtdawdlvhixt.functions.supabase.co/enviar-codigo-sms",
@@ -339,12 +364,9 @@ async function enviarCodigoPorSMS({ telefono, alias, codigo }) {
     }
   );
 
-  // 👇 AQUI está la clave
   if (!resp.ok) {
     const text = await resp.text();
     console.error("Respuesta de la función enviar-codigo-sms:", text);
     throw new Error(text || "No se pudo enviar el SMS");
   }
 }
-
-

@@ -39,6 +39,7 @@ import AprobacionCoti from "./AprobacionCoti.jsx";
  *  - onAprobationModeChange?: (bool)=>void
  *  - modo?: "crear" | "editar"
  *  - cotizacionId?: string (cuando se está editando una ya guardada)
+ *  - user?: objeto del usuario logueado (vendedor)
  */
 export default function FormCotizacionCliente({
   kwDia: kwDiaProp = 0,
@@ -49,6 +50,9 @@ export default function FormCotizacionCliente({
   onAprobationModeChange,
   modo = "crear",
   cotizacionId = null,
+
+  // 👇 IMPORTANTE: el usuario logueado
+  user,
 }) {
   // ========= PARÁMETROS =========
   const [psh, setPsh] = useState(5.0);
@@ -536,9 +540,19 @@ export default function FormCotizacionCliente({
         promedioDiario: kwDiaNum,
       };
 
+      // 🔹 Datos de consumos (si el modal los mandó)
       const consumos = payload.consumos ?? null;
       const consumoStats =
         payload.consumo_stats ?? payload.consumoStats ?? null;
+
+      // 🔹 Datos del vendedor que nos manda AprobacionCoti
+      //    (en el payload van como vendedor_id y vendedor_nombre)
+      const vendedorIdNum =
+        payload.vendedor_id != null ? Number(payload.vendedor_id) : null;
+      const vendedorNombre =
+        payload.vendedor_nombre && String(payload.vendedor_nombre).trim()
+          ? String(payload.vendedor_nombre).trim()
+          : null;
 
       let resultRow = null;
 
@@ -557,6 +571,10 @@ export default function FormCotizacionCliente({
             estado: estadoDb,
             updated_at: isoNow,
             fecha: today,
+
+            // 🔥 NUEVOS CAMPOS
+            vendedor_id: vendedorIdNum,
+            vendedor_nombre: vendedorNombre,
           })
           .eq("id", cotizacionId)
           .select("id")
@@ -581,6 +599,10 @@ export default function FormCotizacionCliente({
               created_at: isoNow,
               updated_at: isoNow,
               fecha: today,
+
+              // 🔥 NUEVOS CAMPOS
+              vendedor_id: vendedorIdNum,
+              vendedor_nombre: vendedorNombre,
             },
           ])
           .select("id")
@@ -602,7 +624,6 @@ export default function FormCotizacionCliente({
       onAprobationModeChange?.(false);
 
       // 🔹 Redirige a la página de listado de cotizaciones
-      //    Ajusta la ruta si en tu Router usas otra (por ejemplo "/cotizaciones")
       window.location.href = "/vendedor/cotizaciones";
 
       // 🔹 Devolvemos el id
@@ -615,8 +636,11 @@ export default function FormCotizacionCliente({
     }
   };
 
+
   // ---------------------- RENDER ----------------------
   if (showAprob) {
+    console.log("FormCotizacionCliente :: user ->", user);
+
     return createPortal(
       <AprobacionCoti
         clienteId={effectiveClienteId}
@@ -626,6 +650,11 @@ export default function FormCotizacionCliente({
         onClose={handleCloseAprob}
         onSubmit={handleSubmitAprob}
         clienteData={clienteInfo}
+        // 🔹 Aquí mandamos los datos del vendedor
+        vendedorId={user?.id ?? null}
+        vendedorNombre={
+          user?.usuario || user?.nombreCompleto || user?.nombre || ""
+        }
         // claves para que AprobacionCoti sepa si actualiza o inserta
         modo={modo}
         cotizacionId={cotizacionId || undefined}
@@ -751,8 +780,7 @@ export default function FormCotizacionCliente({
                         </span>
                       </div>
                       <div className="text:white/80">
-                        Objetivo AC ≈{" "}
-                        <b>{fmt(acObjetivoKW)} kW</b>{" "}
+                        Objetivo AC ≈ <b>{fmt(acObjetivoKW)} kW</b>{" "}
                         <span className="text-white/60">
                           (DC/AC={dcacNum})
                         </span>

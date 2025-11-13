@@ -3,13 +3,29 @@
 // QUÉ HACE ESTE ARCHIVO
 // -----------------------------------------------------------------------------
 // Formulario "Ingresar Cliente" para el sistema del vendedor.
+// 
+// CAPA: UI (React)
 //
-// - CAPA: UI (React)
-// - BASES DE DATOS INVOLUCRADAS (a través de casos de uso):
-//   1) Supabase - TABLA "hsp_resumen"
-//      * Para listar departamentos y obtener HSP (Horas Solar Pico).
-//   2) Supabase - TABLA "clientes"
-//      * Para guardar el nuevo cliente.
+// BASES DE DATOS / TABLAS INVOLUCRADAS (vía casos de uso y repositorios):
+// 1) Supabase → TABLA: public.hsp_resumen
+//    - Columnas mínimas usadas: departamento (text), fecha (date/timestamp), hsp (numeric)
+//    - Se usa para listar departamentos disponibles y para calcular el HSP del cliente
+//      con base en su departamento y la fecha de creación.
+//
+// 2) Supabase → TABLA: public.clientes
+//    - Columnas típicas: id (uuid), nombre_completo, empresa, correo, telefono, celular,
+//      pais, departamento, municipio, direccion, hsp, created_at, ...
+//    - **Metadatos del vendedor (recomendados para filtros por usuario):**
+//        * created_by (uuid)           → auth.uid del vendedor que lo crea
+//        * vendedor_id (uuid)          → igual a created_by (o a quien se asigne)
+//        * vendedor_nombre (text)      → nombre para mostrar del vendedor
+//    - Con estos 3 campos podrás:
+//        * Filtrar: cada vendedor ve solo sus clientes (created_by = auth.uid).
+//        * Permitir que el supervisor de ventas vea todos (omitiendo ese filtro en su rol).
+//
+// NOTA: Este componente usa casos de uso y repositorios ya creados:
+//  - Repos: HspResumenSupabaseRepository, ClientesSupabaseRepository
+//  - Use-cases: getDepartamentosConHsp, getHspParaCliente, createCliente
 // -----------------------------------------------------------------------------
 
 import React, { useEffect, useState } from "react";
@@ -157,6 +173,10 @@ export default function FormMisClientes({
 
   // ---------------------------------------------------------------------------
   // Guardar en BD usando caso de uso createCliente
+  // *Ahora adjuntamos metadatos del vendedor:
+  //    - created_by (uuid del auth.user)
+  //    - vendedor_id (uuid del auth.user)
+  //    - vendedor_nombre (texto para mostrar)
   // ---------------------------------------------------------------------------
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -164,7 +184,32 @@ export default function FormMisClientes({
 
     setEnviando(true);
     try {
-      const data = await createCliente(form);
+      // Tomamos el usuario actual desde Supabase Auth
+      const {
+        data: { user: authUser },
+      } = await supabase.auth.getUser();
+
+      const vendedorId = authUser?.id || null;
+
+      // Si tienes un user store con nombre, úsalo; si no, tomamos alias/email como fallback
+      // (Si manejas el usuario enriquecido en contexto, puedes pasarlo por props y usarlo aquí)
+      const vendedorNombre =
+        (authUser?.user_metadata &&
+          (authUser.user_metadata.nombreCompleto ||
+            authUser.user_metadata.nombre ||
+            authUser.user_metadata.alias)) ||
+        authUser?.email ||
+        "—";
+
+      // Payload con los datos del formulario + metadatos de vendedor
+      const payload = {
+        ...form,
+        created_by: vendedorId,
+        vendedor_id: vendedorId,
+        vendedor_nombre: vendedorNombre,
+      };
+
+      const data = await createCliente(payload);
 
       // Limpiar campos principales (dejamos fecha igual)
       setForm((prev) => ({
