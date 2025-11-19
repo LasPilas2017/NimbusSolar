@@ -1,0 +1,267 @@
+📌 Rutas / Tablas / Vistas que usa el sistema para conectarse a la base de datos
+
+A continuación te dejo una lista clara y agrupada por módulos, para que siempre recuerdes qué estás usando en Supabase.
+
+1️⃣ Autenticación (Supabase Auth)
+
+Tu frontend usa:
+
+const { data: authData } = await supabase.auth.getUser();
+const user = authData.user;
+
+
+Por lo tanto dependemos de:
+
+🔹 supabase.auth.users
+
+Campos importantes:
+
+id (UUID del usuario)
+
+email
+
+user_metadata (nombre, rol, sistema_asignado, home_tab, etc.)
+
+2️⃣ Cotizaciones (principales)
+🟦 Tabla: cotizaciones_aprobacion
+
+Es la tabla core de todo el sistema.
+
+Campos que usamos:
+
+id
+
+cliente_id
+
+sistema_id
+
+items (jsonb)
+
+consumos (jsonb)
+
+consumo_stats (jsonb)
+
+estado
+
+vendedor_uid
+
+vendedor_nombre
+
+codigo
+
+monto
+
+fecha
+
+comentario_rechazo
+
+supervisor_id
+
+supervisor_nombre
+
+fecha_autorizacion
+
+created_by
+
+🟩 Vista: v_cotizaciones_autorizacion
+
+Usada por:
+
+Autorizaciones.jsx
+
+AprobacionCoti.jsx (supervisor)
+
+MisCotizaciones.jsx (vendedor filtrado)
+
+La vista devuelve:
+
+✔ datos del cliente
+✔ datos de consumo
+✔ datos del sistema propuesto
+✔ items
+✔ vendedor
+✔ código
+✔ estado
+✔ monto
+✔ fecha
+
+3️⃣ Catálogo de productos
+
+El vendedor carga ítems desde la vista consolidada:
+
+🟧 Vista: v_catalogo_items
+
+Une paneles + componentes_sistema.
+
+Campos:
+
+tipo_item
+
+item_id
+
+nombre
+
+precio
+
+moneda
+
+categoria
+
+sistema_id
+
+potencia_kw
+
+potencia_watts
+
+detalle
+
+Usada por:
+✔ FormCotizacionCliente.jsx
+✔ CalculadoraProm.jsx
+✔ EditarCotizacion.jsx
+
+4️⃣ Paneles y componentes
+🟦 Tabla: paneles
+
+Campos:
+
+id
+
+marca
+
+potencia_watts
+
+tipo
+
+precio
+
+moneda
+
+Usada en:
+✔ Autorizaciones.jsx para recuperar precio real por refid
+✔ Vista v_catalogo_items
+
+🟨 Tabla: componentes_sistema
+
+Campos:
+
+id
+
+sistema_id
+
+nombre_componente
+
+categoria
+
+precio
+
+moneda
+
+potencia_kw
+
+detalles
+
+Usada en:
+✔ Autorizaciones.jsx
+✔ Vista v_catalogo_items
+
+🟩 Tabla: sistemas_solares
+
+Campos:
+
+id
+
+nombre
+
+descripcion
+
+tipo
+
+otros detalles
+
+Usada en:
+✔ Autorizaciones.jsx
+✔ Vista v_cotizaciones_autorizacion
+✔ FormCotizacionCliente.jsx
+
+5️⃣ Clientes & consumos
+🟦 Tabla: clientes
+
+Campos:
+
+id
+
+nombre_completo
+
+correo
+
+telefono
+
+pais
+
+departamento
+
+municipio
+
+direccion
+
+hsp
+
+Usada en:
+✔ FormularioCliente.jsx
+✔ Vista v_cotizaciones_autorizacion
+
+🟧 Tabla: cliente_consumos
+
+Registra los consumos históricos por cliente.
+
+Usada en:
+✔ Promedios en el vendedor
+✔ Vista y cálculo en v_cotizaciones_autorizacion
+
+6️⃣ Rutas lógicas del frontend (empresa Nimbus Solar)
+
+Todas las operaciones a Supabase se hacen vía:
+
+supabase.from("nombre_tabla")
+supabase.from("nombre_vista")
+
+
+Y específicamente usamos rutas como:
+
+🔹 Obtener cotizaciones para supervisor
+supabase
+  .from("v_cotizaciones_autorizacion")
+  .select("*")
+  .in("estado", ["pendiente", "enviada"])
+
+🔹 Actualizar estado
+supabase
+  .from("cotizaciones_aprobacion")
+  .update(payload)
+  .eq("id", editRow.id)
+
+🔹 Cargar catálogo
+supabase
+  .from("v_catalogo_items")
+  .select("*")
+  .order("categoria")
+
+🔹 Cargar precios de paneles
+supabase.from("paneles").select("id, precio")
+
+🔹 Cargar precios de componentes
+supabase.from("componentes_sistema").select("id, precio")
+
+7️⃣ Nuevas estructuras creadas para este módulo
+
+Estas vistas fueron creadas recientemente:
+
+🧩 v_cotizaciones_autorizacion
+
+Usada para el supervisor.
+
+🧩 v_catalogo_items
+
+Usada para traer paneles y componentes desde un mismo catálogo.
+

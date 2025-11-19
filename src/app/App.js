@@ -37,6 +37,73 @@ import PrimerIngreso from "../modules/usuarios/ui/pages/PrimerIngreso.jsx";
 // SISTEMA DEL VENDEDOR (layout azul, independiente del admin)
 import VendedorLayout from "../modules/vendedor/ui/layout/VendedorLayout.jsx";
 
+// main.jsx o index.jsx
+import generarCotizacionPDF from "../utils/pdf/generarCotizacionPDF";
+
+// ⚠️ SOLO PARA PRUEBAS DE PDF
+window.testPDF = () => {
+  const cotizacionDummy = {
+    codigo: "CTZ-TEST-001",
+    fecha: new Date().toISOString(),
+
+    // ===== DATOS CLIENTE =====
+    cliente_nombre: "Cliente de Prueba",
+    cliente_correo: "cliente@prueba.com",
+    cliente_telefono: "5555-5555",
+    cliente_direccion: "Zona 10, Ciudad de Guatemala",
+    cliente_departamento: "Guatemala",
+    cliente_municipio: "Guatemala",
+
+    // ===== CONSUMO =====
+    consumo_kwh_dia: 18.5,
+    consumo_kwh_mes: 555,
+
+    // ===== SISTEMA =====
+    nombre_sistema: "Sistema Solar 5 kW",
+    tipo_sistema: "Residencial Interconectado",
+    descripcion_sistema:
+      "Sistema compuesto por paneles LONGI 550W e inversor Growatt 5 kW, diseñado para cubrir el 80-90% del consumo mensual del cliente.",
+
+    // ===== ÍTEMS =====
+    items: [
+      {
+        tipo: "panel",
+        articulo: "Panel LONGI 550W",
+        detalle: "Módulo monocristalino de alto rendimiento",
+        cantidad: 10,
+        precio: 1800,
+      },
+      {
+        tipo: "inversor",
+        articulo: "Inversor Growatt 5 kW",
+        detalle: "Inversor conectado a red, monofásico",
+        cantidad: 1,
+        precio: 8500,
+      },
+      {
+        tipo: "estructura",
+        articulo: "Estructura coplanar",
+        detalle: "Estructura para lámina troquelada",
+        cantidad: 10,
+        precio: 250,
+      },
+    ],
+
+    // ===== RESUMEN (puedes jugar con estos valores) =====
+    subtotal_items: 10 * 1800 + 1 * 8500 + 10 * 250, // solo para que se vea real
+    porc_ganancia: 35,
+    ganancia_q: 5000,
+    porc_iva: 12,
+    iva_q: 2200,
+    porc_tarjeta: 19.29,
+    tarjeta_q: 1500,
+    monto: 32000, // total final aprox
+  };
+
+  generarCotizacionPDF(cotizacionDummy);
+};
+
+
 export default function App() {
   // ===== Global UI state
   const [usuario, setUsuario] = useState(null);

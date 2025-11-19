@@ -39,7 +39,7 @@ import CRMPage from "../../../crm/ui/pages/CRMPage.jsx";
 const PERMISOS_VENDEDOR_POR_ROL = {
   supervisor_ventas: {
     tabs: [
-      "MIS RESUMEN",
+      "MI RESUMEN",
       "MIS VENDEDORES",
       "MIS CLIENTES",
       "COTIZACIONES",
@@ -50,12 +50,12 @@ const PERMISOS_VENDEDOR_POR_ROL = {
     floatViews: ["resultados", "prospectos", "crm"],
   },
   vendedor: {
-    tabs: ["MIS RESUMEN", "MIS CLIENTES", "COTIZACIONES", "VENTAS"],
+    tabs: ["MI RESUMEN", "MIS CLIENTES", "COTIZACIONES", "VENTAS"],
     floatViews: ["resultados", "prospectos", "crm"],
   },
   admin: {
     tabs: [
-      "MIS RESUMEN",
+      "MI RESUMEN",
       "MIS VENDEDORES",
       "MIS CLIENTES",
       "COTIZACIONES",
@@ -83,15 +83,15 @@ const getPermisosForRol = (rolUsuario) => {
 // COMPONENTE PRINCIPAL
 // -----------------------------------------------------------------------------
 export default function VendedorLayout({ user, rolUsuario, onLogout }) {
-  const [tab, setTab] = useState("MIS RESUMEN");
+  const [tab, setTab] = useState("MI RESUMEN");
   const [abierto, setAbierto] = useState(false);
-  const [vista, setVista] = useState(null);
+  const [vista, setVista] = useState("resultados");
   const [mostrarSidebar, setMostrarSidebar] = useState(true);
 
   const permisos = getPermisosForRol(rolUsuario);
 
   const menuLateral = [
-    { label: "MIS RESUMEN", icon: <FiHome /> },
+    { label: "MI RESUMEN", icon: <FiHome /> },
     { label: "MIS VENDEDORES", icon: <FiUsers /> },
     { label: "MIS CLIENTES", icon: <FiUserCheck /> },
     { label: "COTIZACIONES", icon: <FiCheckSquare /> },
@@ -115,7 +115,7 @@ export default function VendedorLayout({ user, rolUsuario, onLogout }) {
   );
 
   const mostrarBotonFlotante =
-    tab === "MIS RESUMEN" || tab === "MIS VENDEDORES";
+    tab === "MI RESUMEN" || tab === "MIS VENDEDORES";
 
   // ---------------------------------------------------------------------------
   // LOGOUT: prioriza onLogout del padre (App.jsx). Si no viene, fallback local.
@@ -239,7 +239,11 @@ export default function VendedorLayout({ user, rolUsuario, onLogout }) {
                   onClick={() => {
                     setTab(item.label);
                     setAbierto(false);
-                    setVista(null);
+                    if (item.label === "MI RESUMEN") {
+                      setVista("resultados");
+                    } else {
+                      setVista(null);
+                    }
                   }}
                   className={[
                     "w-full flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-all border border-transparent",
