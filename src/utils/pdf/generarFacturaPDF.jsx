@@ -22,6 +22,18 @@ const FACTURA_EMISOR = {
 const safeText = (value, fallback = "-") =>
   value === undefined || value === null || value === "" ? fallback : value;
 
+const sanitizeNombreReceptor = (value) => {
+  if (typeof value !== "string") {
+    return value;
+  }
+
+  const cleaned = value
+    .replace(/\s*[-–—]?\s*fecha\s+y\s+hora\s+de\s+certificaci[oó]n.*$/i, "")
+    .trim();
+
+  return cleaned || value;
+};
+
 export const FacturaPDFLayout = forwardRef(
   (
     {
@@ -32,6 +44,7 @@ export const FacturaPDFLayout = forwardRef(
       fecha = new Date().toISOString().slice(0, 10),
       resumen = {},
       comentarioIncluye = "",
+      datosFel = {},
     },
     ref
   ) => {
@@ -81,15 +94,15 @@ export const FacturaPDFLayout = forwardRef(
       }
     }
 
-  const lineItems = items.length
-    ? items
-    : [
-        {
-          descripcion: "Sin items registrados",
-          cantidad: 1,
-          precio: subtotalCalculado,
-        },
-      ];
+    const lineItems = items.length
+      ? items
+      : [
+          {
+            descripcion: "Sin items registrados",
+            cantidad: 1,
+            precio: subtotalCalculado,
+          },
+        ];
 
     const formatCurrency = (value) =>
       `Q ${Number(value || 0).toFixed(2)}`;
@@ -99,6 +112,24 @@ export const FacturaPDFLayout = forwardRef(
         ? fecha
         : new Date(fecha || Date.now()).toISOString().slice(0, 10);
 
+    const datosFelRaw = [
+      { label: "No. Autorizacion", value: datosFel?.numero_autorizacion },
+      { label: "Serie", value: datosFel?.serie },
+      { label: "No. DTE", value: datosFel?.numero_dte },
+      { label: "Fecha emision", value: datosFel?.fecha_emision },
+      { label: "Nit receptor", value: datosFel?.nit_receptor },
+      {
+        label: "Nombre receptor",
+        value: sanitizeNombreReceptor(datosFel?.nombre_receptor),
+      },
+    ];
+
+    const datosFactura = datosFelRaw.filter(
+      ({ value }) => Boolean(String(value ?? "").trim())
+    );
+
+    const hasDatosFactura = datosFactura.length > 0;
+
     return (
       <div
         ref={ref}
@@ -106,9 +137,8 @@ export const FacturaPDFLayout = forwardRef(
           width: "816px",
           height: "1056px",
           borderRadius: "5px",
-          background:
-          "linear-gradient(135deg, #ffffff 0%, #fff3ec 35%, #ffe1d2 65%, #ffd0bd 100%)",
-          boxShadow: "0 25px 60px rgba(0,0,0,0.35)",
+          background: "#FFFFFF",
+          boxShadow: "0 25px 60px rgba(10,26,58,0.35)",
           overflow: "visible",
           position: "relative",
         }}
@@ -151,7 +181,8 @@ export const FacturaPDFLayout = forwardRef(
               left: 0,
               width: "68%",
               height: "115px",
-              backgroundColor: "#5c2a4a",
+              background:
+                "linear-gradient(90deg, #001F4D 0%, #003366 45%, #0074D9 100%)",
               borderTopLeftRadius: "0px",
               borderTopRightRadius: "50px",
               borderBottomLeftRadius: "0px",
@@ -164,11 +195,11 @@ export const FacturaPDFLayout = forwardRef(
             style={{
               position: "absolute",
               top: "30px",
-              left: "375px",
+              left: "440px",
               width: "105px",
               height: "105px",
               borderRadius: "50%",
-              border: "8px solid #FF9E73",
+              border: "8px solid #FFD700",
               zIndex: 2,
             }}
           />
@@ -206,7 +237,7 @@ export const FacturaPDFLayout = forwardRef(
                 marginTop: "6px",
                 fontSize: "18px",
                 fontWeight: "400",
-                color: "#FF9E73",
+                color: "#F9A602",
                 letterSpacing: "0.06em",
                 fontFamily: "Segoe UI, Roboto, sans-serif",
               }}
@@ -228,19 +259,19 @@ export const FacturaPDFLayout = forwardRef(
               style={{
                 fontSize: "15px",
                 fontWeight: 700,
-                color: "#3d1f2f",
+                color: "#FF8C00",
               }}
             >
-                FACTURA: {numeroFactura || "SIN-CODIGO"}
+                No. Fact: {numeroFactura || "SIN-CODIGO"}
             </div>
             <div
               style={{
                 fontSize: "13px",
                 marginTop: "3px",
-                color: "#744a55",
+                color: "#003366",
               }}
             >
-              {fechaTexto}
+              Fecha: {fechaTexto}
             </div>
           </div>
         </div>
@@ -249,10 +280,11 @@ export const FacturaPDFLayout = forwardRef(
           style={{
             position: "absolute",
             bottom: "0px",
-            left: 270,
+            left: 262,
             width: "68%",
             height: "115px",
-            backgroundColor: "#5c2a4a",
+            background:
+              "linear-gradient(90deg, #001F4D 0%, #003366 45%, #0074D9 100%)",
             borderTopLeftRadius: "50px",
             borderTopRightRadius: "0px",
             borderBottomLeftRadius: "50px",
@@ -271,7 +303,7 @@ export const FacturaPDFLayout = forwardRef(
             width: "100px",
             height: "100px",
             borderRadius: "50%",
-            border: "8px solid #FF9E73",
+            border: "8px solid #FFD700",
             zIndex: 3,
           }}
         />
@@ -280,10 +312,10 @@ export const FacturaPDFLayout = forwardRef(
           style={{
             position: "absolute",
             bottom: "10px",
-            left: "775px",
+            left: "767px",
             width: "50px",
             height: "100px",
-            backgroundColor: "#ffd9c4",
+            backgroundColor: "#FF8C00",
             borderTopLeftRadius: "100px",
             borderBottomLeftRadius: "100px",
             borderTopRightRadius: "0px",
@@ -299,7 +331,7 @@ export const FacturaPDFLayout = forwardRef(
             right: "80px",
             width: "260px",
             textAlign: "center",
-            color: "#5c2a4a",
+            color: "#003366",
             fontSize: "11px",
             lineHeight: 1.4,
             zIndex: 4,
@@ -311,122 +343,122 @@ export const FacturaPDFLayout = forwardRef(
         </div>
 
         <div
-          style={{
-            padding: "40px",
-            color: "#3d1f2f",
-            fontSize: "14px",
-            zIndex: 10,
-            position: "relative",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            gap: "30px",
-            minHeight: "720px",
-          }}
-        >
-          <div
-            style={{
-              borderRadius: "14px",
-              border: "1px solid rgba(92,42,74,0.15)",
-              background:
-                "linear-gradient(120deg, rgba(92,42,74,0.08), rgba(255,222,204,0.4))",
-              padding: "18px 22px",
-              lineHeight: 1.35,
-              display: "flex",
-              flexDirection: "column",
-              gap: "4px",
-            }}
-          >
-            <div style={{ fontWeight: 800, letterSpacing: "0.04em" }}>
-              {FACTURA_EMISOR.responsable}
-            </div>
-            <div style={{ fontWeight: 700, color: "#744a55" }}>
-              {FACTURA_EMISOR.nit}
-            </div>
-            <div style={{ fontWeight: 700 }}>{FACTURA_EMISOR.empresa}</div>
-            <div style={{ fontSize: "12px" }}>{FACTURA_EMISOR.direccion}</div>
-          </div>
+  style={{
+    padding: "40px",
+    color: "#001F4D",
+    fontSize: "14px",
+    zIndex: 10,
+    position: "relative",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "flex-start",
+    gap: "30px",
+    minHeight: "720px",
+  }}
+>
+
 
           <div
             style={{
               display: "flex",
-              justifyContent: "flex-start",
-            }}
-          >
-            <div style={{ flex: 1 }}>
-              <div
-                style={{
-                  fontSize: "14px",
-                  fontWeight: 700,
-                  color: "#5c2a4a",
-                  marginBottom: "8px",
-                }}
-              >
-                Informacion del cliente
-              </div>
-
-              <div
-                style={{
-                  fontSize: "12px",
-                  color: "#3b1d2f",
-                  display: "grid",
-                  rowGap: "4px",
-                }}
-              >
-                <div style={{ display: "flex", gap: "6px" }}>
-                  <div style={{ fontWeight: 700, minWidth: "80px" }}>Nombre:</div>
-                  <div>{safeText(cliente.nombre, "Sin nombre")}</div>
-                </div>
-
-                <div style={{ display: "flex", gap: "6px" }}>
-                  <div style={{ fontWeight: 700, minWidth: "80px" }}>Correo:</div>
-                  <div>{safeText(cliente.correo)}</div>
-                </div>
-
-                <div style={{ display: "flex", gap: "6px" }}>
-                  <div style={{ fontWeight: 700, minWidth: "80px" }}>Pais:</div>
-                  <div>{safeText(cliente.pais)}</div>
-                </div>
-
-                <div style={{ display: "flex", gap: "6px" }}>
-                  <div style={{ fontWeight: 700, minWidth: "80px" }}>Municipio:</div>
-                  <div>{safeText(cliente.municipio)}</div>
-                </div>
-
-                <div style={{ display: "flex", gap: "6px" }}>
-                  <div style={{ fontWeight: 700, minWidth: "80px" }}>Direccion:</div>
-                  <div>{safeText(cliente.direccion)}</div>
-                </div>
-
-                <div style={{ display: "flex", gap: "6px" }}>
-                  <div style={{ fontWeight: 700, minWidth: "80px" }}>HSP:</div>
-                  <div>{safeText(cliente.hsp)}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div
-            style={{
-              borderRadius: "8px",
-              overflow: "hidden",
-              border: "1px solid rgba(0,0,0,0.85)",
-              backgroundColor: "transparent",
+              flexDirection: "row",
+              gap: "6px",
+              alignItems: "stretch",
+              width: "100%",
             }}
           >
             <div
               style={{
+                flex: "1 1 50%",
+                borderRadius: "0px",
+                border: "none",
+                background: "transparent",
+                padding: "10px 0px",
+                lineHeight: 1.35,
+                display: "flex",
+                flexDirection: "column",
+                gap: "4px",
+                alignItems: "center",
+                textAlign: "center",
+                justifyContent: "center",
+              }}
+            >
+              <div style={{ fontWeight: 800, letterSpacing: "0.04em" }}>
+                {FACTURA_EMISOR.responsable}
+              </div>
+              <div style={{ fontWeight: 700, color: "#003366" }}>
+                {FACTURA_EMISOR.nit}
+              </div>
+              <div style={{ fontWeight: 700 }}>{FACTURA_EMISOR.empresa}</div>
+              <div style={{ fontSize: "12px", maxWidth: "90%" }}>
+                {FACTURA_EMISOR.direccion}
+              </div>
+            </div>
+
+            {hasDatosFactura ? (
+              <div
+                style={{
+                  flex: "1 1 50%",
+                  borderRadius: "0px",
+                  border: "none",
+                  background: "transparent",
+                  padding: "10px 0px",
+                  lineHeight: 1.3,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "6px",
+                  alignItems: "center",
+                  textAlign: "center",
+                }}
+              >
+                <div
+                  style={{
+                    fontWeight: 800,
+                    letterSpacing: "0.04em",
+                    fontSize: "14px",
+                    color: "#0074D9",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Datos de factura
+                </div>
+                {datosFactura.map(({ label, value }) => (
+                  <div
+                    key={label}
+                    style={{ fontSize: "12px", color: "#001F4D" }}
+                  >
+                    <strong>{label}:</strong> {safeText(value)}
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
+
+          <div
+              style={{
+                borderRadius: "8px",
+                border: "1px solid rgba(0,31,77,0.65)",
+                backgroundColor: "transparent",
+                maxHeight: "220px",  // ⬅️ altura fija
+                overflowY: "auto",   // ⬅️ scroll vertical
+                overflowX: "hidden",
+              }}
+            >
+            <div
+              style={{
                 display: "grid",
                 gridTemplateColumns: "5fr 1fr",
-                backgroundColor: "transparent",
-                color: "#2f1a1f",
+                background:
+                  "linear-gradient(90deg, #0074D9 0%, #4DB6FF 100%)",
+                color: "#FFFFFF",
                 fontSize: "12px",
                 fontWeight: 700,
                 textTransform: "uppercase",
-                borderBottom: "1px solid rgba(0,0,0,0.85)",
+                borderBottom: "1px solid rgba(0,31,77,0.65)",
               }}
             >
-              <div style={{ padding: "10px 14px" }}>Descripcion</div>
-              <div style={{ padding: "10px 14px", textAlign: "center" }}>
+              <div style={{ padding: "6px 12px" }}>Descripcion</div>
+              <div style={{ padding: "6px 12px", textAlign: "center" }}>
                 Cantidad
               </div>
             </div>
@@ -440,14 +472,14 @@ export const FacturaPDFLayout = forwardRef(
                   gridTemplateColumns: "5fr 1fr",
                   fontSize: "12px",
                   backgroundColor: "transparent",
-                  color: "#2f1a1f",
-                  borderTop: "1px solid rgba(0,0,0,0.85)",
+                  color: "#001F4D",
+                  borderTop: "1px solid rgba(0,31,77,0.65)",
                 }}
               >
-                <div style={{ padding: "8px 14px" }}>
+                <div style={{ padding: "6px 12px" }}>
                   {safeText(it.descripcion, "Sin descripcion")}
                 </div>
-                <div style={{ padding: "8px 14px", textAlign: "center" }}>
+                <div style={{ padding: "6px 12px", textAlign: "center" }}>
                   {Number(it.cantidad || 0)}
                 </div>
               </div>
@@ -462,13 +494,13 @@ export const FacturaPDFLayout = forwardRef(
           >
             <div
               style={{
-                minWidth: "220px",
+                minWidth: "200px",
                 textAlign: "right",
                 fontSize: "14px",
                 fontWeight: 700,
-                borderTop: "1px solid rgba(0,0,0,0.85)",
-                paddingTop: "10px",
-                color: "#2f1a1f",
+                borderTop: "1px solid rgba(0,31,77,0.65)",
+                paddingTop: "6px",
+                color: "#001F4D",
               }}
             >
               <div
@@ -483,54 +515,21 @@ export const FacturaPDFLayout = forwardRef(
           </div>
         </div>
 
-        {comentarioIncluye ? (
+          {/* Bloque combinado: tipo de sistema + qué incluye la compra */}
           <div
-            style={{
-              marginTop: "16px",
-              borderRadius: "10px",
-                border: "1px solid rgba(92,42,74,0.15)",
-                backgroundColor: "rgba(92,42,74,0.08)",
-              padding: "12px 16px",
-              color: "#3b1d2f",
-              fontSize: "12px",
-            }}
-          >
-            <div
-              style={{
-                fontWeight: 700,
-                marginBottom: "4px",
-                color: "#5c2a4a",
-              }}
-            >
-              Qué incluye la compra
-            </div>
-            <div style={{ lineHeight: 1.4 }}>{comentarioIncluye}</div>
-          </div>
-        ) : null}
-
-          <div
-            style={{
-              marginTop: "auto",
-              width: "58%",
-              borderRadius: "14px",
-              padding: "16px 20px",
-              backgroundColor: "rgba(92,42,74,0.08)",
-              border: "1px solid rgba(92,42,74,0.15)",
-              color: "#3b1d2f",
-              alignSelf: "flex-start",
-            }}
-          >
-            <div
-              style={{
-                fontSize: "14px",
-                fontWeight: 700,
-                color: "#5c2a4a",
-                marginBottom: "6px",
-              }}
-            >
-              Tipo de instalación
-            </div>
-
+                style={{
+                  marginTop: "auto",            // 👈 CLAVE: lo empuja al fondo del contenedor
+                  marginBottom: "0px",
+                  width: "100%",
+                  borderRadius: "12px",
+                  padding: "16px 20px",
+                  backgroundColor: "rgba(77,182,255,0.16)",
+                  border: "1px solid rgba(0,116,217,0.2)",
+                  color: "#001F4D",
+                  fontSize: "12px",
+                }}
+              >
+            {/* Tipo de sistema y descripción */}
             <div style={{ marginBottom: "8px" }}>
               <div
                 style={{
@@ -539,11 +538,12 @@ export const FacturaPDFLayout = forwardRef(
                   marginBottom: "2px",
                 }}
               >
-                Nombre del sistema
+                Tipo de sistema
               </div>
               <div style={{ fontSize: "12px" }}>
                 {safeText(
-                  tipoInstalacion.nombreSistema || tipoInstalacion.tipoSistema,
+                  tipoInstalacion.tipoSistema ||
+                    tipoInstalacion.nombreSistema,
                   "Sistema solar"
                 )}
               </div>
@@ -557,7 +557,7 @@ export const FacturaPDFLayout = forwardRef(
                   marginBottom: "2px",
                 }}
               >
-                Descripcion
+                Descripción
               </div>
               <div style={{ fontSize: "12px", lineHeight: 1.3 }}>
                 {safeText(
@@ -566,7 +566,31 @@ export const FacturaPDFLayout = forwardRef(
                 )}
               </div>
             </div>
+
+            {/* Qué incluye la compra, dentro del mismo cuadro */}
+            {comentarioIncluye ? (
+              <div
+                style={{
+                  marginTop: "10px",
+                  paddingTop: "10px",
+                  borderTop: "1px solid rgba(0,116,217,0.25)",
+                }}
+              >
+                <div
+                  style={{
+                    fontWeight: 700,
+                    marginBottom: "4px",
+                    color: "#0074D9",
+                    letterSpacing: "0.02em",
+                  }}
+                >
+                  Qué incluye la compra
+                </div>
+                <div style={{ lineHeight: 1.3 }}>{comentarioIncluye}</div>
+              </div>
+            ) : null}
           </div>
+
         </div>
       </div>
     );
@@ -591,6 +615,7 @@ export default async function generarFacturaPDF(params = {}) {
     fecha = new Date().toISOString().slice(0, 10),
     resumen = {},
     comentarioIncluye = "",
+    datosFel = {},
   } = params;
 
   if (typeof document === "undefined") {
@@ -673,5 +698,4 @@ export default async function generarFacturaPDF(params = {}) {
     document.body.removeChild(mountNode);
   }
 }
-
 

@@ -1,0 +1,12 @@
+const fs = require('fs');
+const path = 'src/utils/pdf/generarFacturaPDF.jsx';
+let text = fs.readFileSync(path, 'utf8');
+const startMarker = "          <div\r\n            style={{\r\n              borderRadius: \"14px\",";
+const start = text.indexOf(startMarker);
+if (start === -1) throw new Error('start not found');
+const endMarker = "          <div\r\n            style={{\r\n              borderRadius: \"8px\"";
+const end = text.indexOf(endMarker, start);
+if (end === -1) throw new Error('end not found');
+const newBlock = "          <div\r\n            style={{\r\n              display: \"flex\",\r\n              flexDirection: \"column\",\r\n              alignItems: \"center\",\r\n              gap: \"4px\",\r\n              padding: \"6px 0\",\r\n              textAlign: \"center\",\r\n            }}\r\n          >\r\n            <div\r\n              style={{\r\n                fontWeight: 800,\r\n                letterSpacing: \"0.04em\",\r\n                fontSize: \"14px\",\r\n                color: \"#5c2a4a\",\r\n                textTransform: \"uppercase\",\r\n              }}\r\n            >\r\n              DATOS DE FACTURA\r\n            </div>\r\n            {[\r\n              [\"No. Autorizacion\", datosFel.numero_autorizacion],\r\n              [\"Serie\", datosFel.serie],\r\n              [\"No. DTE\", datosFel.numero_dte],\r\n              [\"Fecha emision\", datosFel.fecha_emision],\r\n              [\"Nombre receptor\", datosFel.nombre_receptor],\r\n              [\"NIT receptor\", datosFel.nit_receptor],\r\n            ].map(([label, value]) => (\r\n              <div key={label} style={{ fontSize: \"12px\", color: \"#3b1d2f\" }}>\r\n                <strong>{label}:</strong> {safeText(value)}\r\n              </div>\r\n            ))}\r\n          </div>\r\n";
+text = text.slice(0, start) + newBlock + text.slice(end);
+fs.writeFileSync(path, text, 'utf8');

@@ -31,11 +31,119 @@ const money = (value) =>
     currency: "GTQ",
   }).format(Number(value || 0));
 
+const parseItems = (value) => {
+  if (Array.isArray(value)) return value;
+  if (!value) return [];
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (_error) {
+      return [];
+    }
+  }
+  return [];
+};
+
+const getItemQuantity = (item) => {
+  if (!item || typeof item !== "object") return 0;
+  const candidates = [
+    item.qty,
+    item.cantidad,
+    item.cant,
+    item.quantity,
+    item.count,
+  ];
+  const found = candidates.find(
+    (value) => value !== undefined && value !== null && value !== ""
+  );
+  return Number(found || 0);
+};
+
+const getItemTitle = (item) =>
+  (item?.titulo ||
+    item?.nombre ||
+    item?.detalle ||
+    item?.descripcion ||
+    "Articulo sin nombre");
+
+const getItemDetail = (item) =>
+  item?.detalle || item?.descripcion || item?.comentario || "";
+
+const getItemUnitPrice = (item) =>
+  Number(
+    item?.precio ??
+      item?.precio_unitario ??
+      item?.monto_unitario ??
+      item?.unitario ??
+      0
+  );
+
+const buildPreviewItems = (row) => {
+  const rawItems = Array.isArray(row?.items) ? row.items : [];
+  if (rawItems.length === 0) {
+    return [
+      {
+        descripcion: `Factura ${row?.codigo || "Cotizacion"}`,
+        cantidad: 1,
+        precio: Number(row?.monto || 0),
+      },
+    ];
+  }
+
+  return rawItems.map((item, index) => {
+    const cantidad = getItemQuantity(item) || 1;
+    const precio = getItemUnitPrice(item) || 0;
+    const title = getItemTitle(item);
+    const detail = getItemDetail(item);
+    const descripcion = detail ? `${title} - ${detail}` : title;
+    return {
+      descripcion,
+      cantidad,
+      precio,
+      key: item?.key || item?.refid || `preview-item-${index}`,
+    };
+  });
+};
+
+const computeResumen = (items, fallbackMonto = 0) => {
+  const subtotal = items.reduce(
+    (acc, item) => acc + Number(item.cantidad || 0) * Number(item.precio || 0),
+    0
+  );
+  const base = subtotal || Number(fallbackMonto || 0);
+  return {
+    subtotal: base,
+    ganancia: 0,
+    tarjeta: 0,
+    iva: 0,
+    total: base,
+  };
+};
+
+const formatDateDisplay = (value) => {
+  if (!value) return "-";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return parsed.toLocaleDateString("es-GT", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+};
+
+const formatKwhValue = (value) => {
+  if (value === undefined || value === null || value === "") return null;
+  const numeric = Number(value);
+  if (Number.isNaN(numeric)) return null;
+  return `${numeric.toFixed(2)} kWh`;
+};
+
 const FacturaPreviewCard = ({ selectedRow, factura }) => {
   if (!selectedRow) {
     return (
       <div className="text-sm text-white/60">
-        Selecciona una cotizaci�n para ver la vista previa de la factura.
+        Selecciona una cotizaci?n para ver la vista previa de la factura.
       </div>
     );
   }
@@ -71,28 +179,26 @@ const FacturaPreviewCard = ({ selectedRow, factura }) => {
 
   const previewCliente = {
     nombre: selectedRow.cliente_nombre,
-    correo: nombre_receptor || "",
-    pais: "Guatemala",
-    municipio: "",
-    direccion: "",
-    hsp: nit_receptor || "",
+    correo: nombre_receptor || selectedRow.cliente_correo || "",
+    pais: selectedRow.cliente_pais || "Guatemala",
+    municipio: selectedRow.cliente_municipio || "",
+    direccion: selectedRow.cliente_direccion || "",
+    hsp: selectedRow.hsp || nit_receptor || "",
   };
 
-  const previewItems = [
-    {
-      descripcion: `Factura ${selectedRow.codigo}`,
-      cantidad: 1,
-      precio: selectedRow.monto || 0,
-    },
-  ];
-
-  const previewResumen = {
-    subtotal: selectedRow.monto || 0,
-    ganancia: 0,
-    tarjeta: 0,
-    iva: 0,
-    total: selectedRow.monto || 0,
+  const previewTipoInstalacion = {
+    nombreSistema: selectedRow.nombre_sistema || "",
+    tipoSistema: selectedRow.tipo_sistema || "",
+    descripcion: selectedRow.descripcion_sistema || "",
   };
+
+  const previewItems = buildPreviewItems(selectedRow);
+  const previewResumen = computeResumen(previewItems, selectedRow.monto);
+  const comentarioIncluye =
+    selectedRow.comentario_cotizacion ||
+    selectedRow.comentario_incluye ||
+    selectedRow.comentario_incluy ||
+    "Detalle de compra según cotización.";
 
   return (
     <div className="rounded-2xl border border-white/15 bg-black/30 p-3">
@@ -107,17 +213,25 @@ const FacturaPreviewCard = ({ selectedRow, factura }) => {
         >
           <FacturaPDFLayout
             cliente={previewCliente}
-            tipoInstalacion={{}}
+            tipoInstalacion={previewTipoInstalacion}
             items={previewItems}
             numeroFactura={numero_dte || selectedRow.codigo}
             fecha={isoDate}
             resumen={previewResumen}
-            comentarioIncluye="Vista previa generada desde la carga FEL."
+            comentarioIncluye={comentarioIncluye}
+            datosFel={{
+              numero_autorizacion,
+              serie,
+              numero_dte,
+              fecha_emision,
+              nombre_receptor,
+              nit_receptor,
+            }}
           />
         </div>
       </div>
       <p className="text-[11px] text-white/60 mt-2">
-        Vista previa reducida del dise�o final de la factura. Los datos definitivos se basan en la informaci�n
+        Vista previa reducida del diseño final de la factura. Los datos definitivos se basan en la información
         cargada del FEL.
       </p>
     </div>
@@ -244,14 +358,14 @@ const parseFelDataFromText = (text) => {
   if (!text) return null;
   const sanitized = sanitizeFelText(text);
   const numeroAutorizacionMatch = sanitized.match(
-    /NUMERO\s+DE\s+AUTORIZACION[:：]?\s*([A-Z0-9-]+)/
+    /NUMERO\s+DE\s+AUTORIZACION[::]?\s*([A-Z0-9-]+)/
   );
-  const serieMatch = sanitized.match(/SERIE[:：]?\s*([A-Z0-9-]+)/);
+  const serieMatch = sanitized.match(/SERIE[::]?\s*([A-Z0-9-]+)/);
   const numeroDTEMatch = sanitized.match(
-    /NUMERO\s+DE\s+DTE[:：]?\s*([A-Z0-9-]+)/
+    /NUMERO\s+DE\s+DTE[::]?\s*([A-Z0-9-]+)/
   );
   const fechaEmisionMatch = sanitized.match(
-    /FECHA(?:\s+Y\s+HORA)?\s+DE\s+EMISION[:：]?\s*([A-Z0-9\s:\/-]+)/
+    /FECHA(?:\s+Y\s+HORA)?\s+DE\s+EMISION[::]?\s*([A-Z0-9\s:\/-]+)/
   );
   const nitReceptorMatch = sanitized.match(
     /NIT\s+(?:DEL\s+)?RECEPTOR[::]?\s*([A-Z0-9-]+)/
@@ -347,8 +461,23 @@ export default function OrdenesCompra() {
           `
           aprob_id,
           codigo,
+          fecha,
           vendedor_nombre,
           cliente_nombre,
+          cliente_correo,
+          cliente_telefono,
+          cliente_pais,
+          cliente_departamento,
+          cliente_municipio,
+          cliente_direccion,
+          hsp,
+          consumo_kwh_dia,
+          consumo_kwh_mes,
+          comentario_incluy,
+          nombre_sistema,
+          tipo_sistema,
+          descripcion_sistema,
+          items,
           monto_calculado,
           estado
         `
@@ -365,10 +494,20 @@ export default function OrdenesCompra() {
       );
 
       setRows(
-        filtradas.map((row) => ({
-          ...row,
-          monto: Number(row.monto_calculado || 0),
-        }))
+        filtradas.map((row) => {
+          const comentarioCotizacion =
+            row.comentario_incluye ??
+            row.comentario_incluy ??
+            row.comentario ??
+            "";
+
+          return {
+            ...row,
+            monto: Number(row.monto_calculado || 0),
+            items: parseItems(row.items),
+            comentario_cotizacion: comentarioCotizacion,
+          };
+        })
       );
     } catch (error) {
       setErr(
@@ -634,30 +773,10 @@ export default function OrdenesCompra() {
         </div>
 
         <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-          <div className="lg:w-1/2 border-b lg:border-b-0 lg:border-r border-white/10 overflow-auto scrollbar-hide relative">
-            {mostrarVistaPrevia && hasFacturaPreviewData && (
-              <div className="absolute inset-0 z-10 bg-[#070f1e]/95 backdrop-blur-sm flex flex-col p-4">
-                <div className="flex items-center justify-between text-white/70 text-xs uppercase tracking-[0.3em] mb-3">
-                  <span>Vista previa de la factura</span>
-                  <button
-                    type="button"
-                    onClick={() => setMostrarVistaPrevia(false)}
-                    className="text-white/70 hover:text-white text-sm"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-                <div className="flex-1 rounded-2xl bg-white/5 border border-white/15 p-4 overflow-auto flex items-start justify-center">
-                  <FacturaPreviewCard
-                    selectedRow={selectedRow}
-                    factura={facturaForm}
-                  />
-                </div>
-              </div>
-            )}
+          <div className="lg:w-1/2 border-b lg:border-b-0 lg:border-r border-white/10 overflow-auto scrollbar-hide">
             {loading ? (
               <div className="flex items-center justify-center h-full text-white/70 gap-2 text-sm">
-                <Loader2 className="animate-spin" /> Cargando �rdenes de compra...
+                <Loader2 className="animate-spin" /> Cargando ?rdenes de compra...
               </div>
             ) : err ? (
               <div className="m-4 border border-rose-400/30 bg-rose-500/10 text-rose-100 rounded-2xl px-4 py-3 text-sm">
@@ -665,13 +784,13 @@ export default function OrdenesCompra() {
               </div>
             ) : filteredRows.length === 0 ? (
               <div className="m-4 border border-white/15 rounded-2xl bg-[#020617]/40 p-4 text-white/70 text-sm text-center">
-                No hay �rdenes de compra para mostrar.
+                No hay ?rdenes de compra para mostrar.
               </div>
             ) : (
               <table className="min-w-full text-sm text-white/80">
                 <thead>
                   <tr className="text-left text-white/70 border-b border-white/10">
-                    <th className="px-3 py-2">No. Cotizaci�n</th>
+                    <th className="px-3 py-2">No. Cotizaci?n</th>
                     <th className="px-3 py-2">Vendedor</th>
                     <th className="px-3 py-2">Cliente</th>
                     <th className="px-3 py-2 text-right">Monto total</th>
@@ -681,21 +800,168 @@ export default function OrdenesCompra() {
                   {filteredRows.map((row) => {
                     const selected =
                       selectedRow && selectedRow.aprob_id === row.aprob_id;
+                    const itemList = Array.isArray(row.items)
+                      ? row.items
+                      : [];
+                    const ubicacion = [
+                      row.cliente_municipio,
+                      row.cliente_departamento,
+                      row.cliente_pais,
+                    ]
+                      .filter(Boolean)
+                      .join(", ");
+                    const consumoMensual = formatKwhValue(row.consumo_kwh_mes);
+                    const consumoDiario = formatKwhValue(row.consumo_kwh_dia);
                     return (
-                      <tr
-                        key={row.aprob_id}
-                        onClick={() => handleSelectRow(row)}
-                        className={`cursor-pointer hover:bg-white/10 ${
-                          selected ? "bg-white/10" : ""
-                        }`}
-                      >
-                        <td className="px-3 py-2">{row.codigo}</td>
-                        <td className="px-3 py-2">{row.vendedor_nombre}</td>
-                        <td className="px-3 py-2">{row.cliente_nombre}</td>
-                        <td className="px-3 py-2 text-right font-semibold">
-                          {money(row.monto)}
-                        </td>
-                      </tr>
+                      <React.Fragment key={row.aprob_id}>
+                        <tr
+                          onClick={() => handleSelectRow(row)}
+                          className={`cursor-pointer hover:bg-white/10 ${
+                            selected ? "bg-white/10" : ""
+                          }`}
+                        >
+                          <td className="px-3 py-2">
+                            <div className="flex flex-col">
+                              <span>{row.codigo}</span>
+                              <span className="text-[11px] text-white/50">
+                                {formatDateDisplay(row.fecha)}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-3 py-2">{row.vendedor_nombre}</td>
+                          <td className="px-3 py-2">{row.cliente_nombre}</td>
+                          <td className="px-3 py-2 text-right font-semibold">
+                            {money(row.monto)}
+                          </td>
+                        </tr>
+                        {selected ? (
+                          <tr className="bg-transparent">
+                            <td colSpan={4} className="px-3 pb-4">
+                              <div className="mt-1 space-y-4 rounded-2xl border border-white/10 bg-[#010c1b]/70 p-4 text-white/80">
+                                <div className="grid gap-4 md:grid-cols-2">
+                                  <div className="space-y-1">
+                                    <p className="text-[11px] uppercase tracking-wide text-white/50">
+                                      Cliente
+                                    </p>
+                                    <p className="text-base font-semibold text-white">
+                                      {row.cliente_nombre || "Sin nombre"}
+                                    </p>
+                                    <p className="text-xs text-white/60">
+                                      {row.cliente_correo || "Sin correo"}
+                                    </p>
+                                    <p className="text-xs text-white/60">
+                                      {row.cliente_telefono || "Sin teléfono"}
+                                    </p>
+                                    <p className="text-xs text-white/60">
+                                      {ubicacion || "Ubicacion desconocida"}
+                                    </p>
+                                    {row.cliente_direccion ? (
+                                      <p className="text-xs text-white/50">
+                                        {row.cliente_direccion}
+                                      </p>
+                                    ) : null}
+                                  </div>
+                                  <div className="space-y-1">
+                                    <p className="text-[11px] uppercase tracking-wide text-white/50">
+                                      Sistema propuesto
+                                    </p>
+                                    <p className="text-base font-semibold text-white">
+                                      {row.nombre_sistema || "Sin sistema"}
+                                    </p>
+                                    <p className="text-xs text-white/60">
+                                      {row.tipo_sistema || "Tipo no definido"}
+                                    </p>
+                                    {row.descripcion_sistema ? (
+                                      <p className="text-xs text-white/50">
+                                        {row.descripcion_sistema}
+                                      </p>
+                                    ) : null}
+                                    <div className="mt-3 space-y-1">
+                                      <p className="text-[11px] uppercase tracking-wide text-white/50">
+                                        Consumos e irradiacion
+                                      </p>
+                                      <p className="text-xs text-white/70">
+                                        Mensual: {consumoMensual || "Sin dato"}
+                                      </p>
+                                      <p className="text-xs text-white/70">
+                                        Diario: {consumoDiario || "Sin dato"}
+                                      </p>
+                                      <p className="text-xs text-white/70">
+                                        HSP cliente: {row.hsp || "—"}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {row.comentario_cotizacion ? (
+                                  <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white/70">
+                                    <p className="text-xs uppercase tracking-wide text-white/50">
+                                      Que incluye la cotizacion
+                                    </p>
+                                    <p className="mt-1">{row.comentario_cotizacion}</p>
+                                  </div>
+                                ) : null}
+
+                                <div>
+                                  <div className="flex items-center justify-between">
+                                      <p className="text-xs uppercase tracking-wide text-white/50">
+                                      Articulos autorizados ({itemList.length})
+                                    </p>
+                                  </div>
+                                  <div className="mt-2 divide-y divide-white/5 rounded-xl border border-white/10 bg-[#020617]/60">
+                                    {itemList.length === 0 ? (
+                                      <p className="px-4 py-3 text-xs text-white/60">
+                                        Esta cotizacion no tiene articulos registrados.
+                                      </p>
+                                    ) : (
+                                      itemList.map((item, index) => {
+                                        const qty = getItemQuantity(item);
+                                        const title = getItemTitle(item);
+                                        const detail = getItemDetail(item);
+                                        const unitPrice = getItemUnitPrice(item);
+                                        const totalItem =
+                                          unitPrice > 0 && qty > 0
+                                            ? unitPrice * qty
+                                            : null;
+
+                                        return (
+                                          <div
+                                            key={
+                                              item?.key ||
+                                              item?.refid ||
+                                              `${row.aprob_id}-${index}`
+                                            }
+                                            className="flex flex-col gap-1 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+                                          >
+                                            <div>
+                                              <p className="font-semibold text-white">
+                                                {qty > 0 ? `${qty} x ${title}` : title}
+                                              </p>
+                                              {detail ? (
+                                                <p className="text-xs text-white/60">
+                                                  {detail}
+                                                </p>
+                                              ) : null}
+                                            </div>
+                                            {unitPrice > 0 ? (
+                                              <div className="text-xs text-white/70 text-right">
+                                                <p>Unitario: {money(unitPrice)}</p>
+                                                {totalItem ? (
+                                                  <p>Total: {money(totalItem)}</p>
+                                                ) : null}
+                                              </div>
+                                            ) : null}
+                                          </div>
+                                        );
+                                      })
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        ) : null}
+                      </React.Fragment>
                     );
                   })}
                 </tbody>
@@ -896,6 +1162,8 @@ export default function OrdenesCompra() {
     </div>
   );
 }
+
+
 
 
 
