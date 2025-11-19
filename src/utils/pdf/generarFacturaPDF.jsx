@@ -1,6 +1,6 @@
-// src/utils/pdf/generarCotizacionPDF.jsx
+﻿// src/utils/pdf/generarFacturaPDF.jsx
 // -----------------------------------------------------------------------------
-// Utilidad para renderizar la plantilla de cotizacion y exportarla como PDF.
+// Utilidad para renderizar la plantilla de Factura y exportarla como PDF.
 // Se crea un nodo oculto en el DOM, se monta un layout de React y se captura
 // con html2canvas para conservar el diseno existente.
 // -----------------------------------------------------------------------------
@@ -11,16 +11,24 @@ import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 import logoPDF from "../../assets/images/logopdf.jpg";
 
+const FACTURA_EMISOR = {
+  responsable: "ROBERTO VALENTÍN, CARRILLO GARCÍA",
+  nit: "Nit Emisor: 84825626",
+  empresa: "NIMBUS SOLAR",
+  direccion:
+    "6 AVENIDA B 21-02 CONDOMINIO PRADOS DE NIMAJUYÚ 2, Zona 21, GUATEMALA, GUATEMALA",
+};
+
 const safeText = (value, fallback = "-") =>
   value === undefined || value === null || value === "" ? fallback : value;
 
-const CotizacionPDFLayout = forwardRef(
+export const FacturaPDFLayout = forwardRef(
   (
     {
       cliente = {},
       tipoInstalacion = {},
       items = [],
-      numeroCotizacion = "CTZ-SIN-CODIGO",
+      numeroFactura = "FAC-SIN-CODIGO",
       fecha = new Date().toISOString().slice(0, 10),
       resumen = {},
       comentarioIncluye = "",
@@ -99,7 +107,7 @@ const CotizacionPDFLayout = forwardRef(
           height: "1056px",
           borderRadius: "5px",
           background:
-            "linear-gradient(135deg, #ffffff 0%, #e4ecff 40%, #dbe8ff 70%, #cbd9f4 100%)",
+          "linear-gradient(135deg, #ffffff 0%, #fff3ec 35%, #ffe1d2 65%, #ffd0bd 100%)",
           boxShadow: "0 25px 60px rgba(0,0,0,0.35)",
           overflow: "visible",
           position: "relative",
@@ -143,7 +151,7 @@ const CotizacionPDFLayout = forwardRef(
               left: 0,
               width: "68%",
               height: "115px",
-              backgroundColor: "#151C3A",
+              backgroundColor: "#5c2a4a",
               borderTopLeftRadius: "0px",
               borderTopRightRadius: "50px",
               borderBottomLeftRadius: "0px",
@@ -160,7 +168,7 @@ const CotizacionPDFLayout = forwardRef(
               width: "105px",
               height: "105px",
               borderRadius: "50%",
-              border: "8px solid #F7A938",
+              border: "8px solid #FF9E73",
               zIndex: 2,
             }}
           />
@@ -198,7 +206,7 @@ const CotizacionPDFLayout = forwardRef(
                 marginTop: "6px",
                 fontSize: "18px",
                 fontWeight: "400",
-                color: "#F7A938",
+                color: "#FF9E73",
                 letterSpacing: "0.06em",
                 fontFamily: "Segoe UI, Roboto, sans-serif",
               }}
@@ -220,16 +228,16 @@ const CotizacionPDFLayout = forwardRef(
               style={{
                 fontSize: "15px",
                 fontWeight: 700,
-                color: "#1a2440",
+                color: "#3d1f2f",
               }}
             >
-              COTIZACION: {numeroCotizacion || "SIN-CODIGO"}
+                FACTURA: {numeroFactura || "SIN-CODIGO"}
             </div>
             <div
               style={{
                 fontSize: "13px",
                 marginTop: "3px",
-                color: "#6E758A",
+                color: "#744a55",
               }}
             >
               {fechaTexto}
@@ -244,7 +252,7 @@ const CotizacionPDFLayout = forwardRef(
             left: 270,
             width: "68%",
             height: "115px",
-            backgroundColor: "#151C3A",
+            backgroundColor: "#5c2a4a",
             borderTopLeftRadius: "50px",
             borderTopRightRadius: "0px",
             borderBottomLeftRadius: "50px",
@@ -263,7 +271,7 @@ const CotizacionPDFLayout = forwardRef(
             width: "100px",
             height: "100px",
             borderRadius: "50%",
-            border: "8px solid #F7A938",
+            border: "8px solid #FF9E73",
             zIndex: 3,
           }}
         />
@@ -275,7 +283,7 @@ const CotizacionPDFLayout = forwardRef(
             left: "775px",
             width: "50px",
             height: "100px",
-            backgroundColor: "#F7A938",
+            backgroundColor: "#ffd9c4",
             borderTopLeftRadius: "100px",
             borderBottomLeftRadius: "100px",
             borderTopRightRadius: "0px",
@@ -291,7 +299,7 @@ const CotizacionPDFLayout = forwardRef(
             right: "80px",
             width: "260px",
             textAlign: "center",
-            color: "#ffffff",
+            color: "#5c2a4a",
             fontSize: "11px",
             lineHeight: 1.4,
             zIndex: 4,
@@ -305,7 +313,7 @@ const CotizacionPDFLayout = forwardRef(
         <div
           style={{
             padding: "40px",
-            color: "#1E2433",
+            color: "#3d1f2f",
             fontSize: "14px",
             zIndex: 10,
             position: "relative",
@@ -318,6 +326,29 @@ const CotizacionPDFLayout = forwardRef(
         >
           <div
             style={{
+              borderRadius: "14px",
+              border: "1px solid rgba(92,42,74,0.15)",
+              background:
+                "linear-gradient(120deg, rgba(92,42,74,0.08), rgba(255,222,204,0.4))",
+              padding: "18px 22px",
+              lineHeight: 1.35,
+              display: "flex",
+              flexDirection: "column",
+              gap: "4px",
+            }}
+          >
+            <div style={{ fontWeight: 800, letterSpacing: "0.04em" }}>
+              {FACTURA_EMISOR.responsable}
+            </div>
+            <div style={{ fontWeight: 700, color: "#744a55" }}>
+              {FACTURA_EMISOR.nit}
+            </div>
+            <div style={{ fontWeight: 700 }}>{FACTURA_EMISOR.empresa}</div>
+            <div style={{ fontSize: "12px" }}>{FACTURA_EMISOR.direccion}</div>
+          </div>
+
+          <div
+            style={{
               display: "flex",
               justifyContent: "flex-start",
             }}
@@ -327,7 +358,7 @@ const CotizacionPDFLayout = forwardRef(
                 style={{
                   fontSize: "14px",
                   fontWeight: 700,
-                  color: "#151C3A",
+                  color: "#5c2a4a",
                   marginBottom: "8px",
                 }}
               >
@@ -337,7 +368,7 @@ const CotizacionPDFLayout = forwardRef(
               <div
                 style={{
                   fontSize: "12px",
-                  color: "#111827",
+                  color: "#3b1d2f",
                   display: "grid",
                   rowGap: "4px",
                 }}
@@ -387,7 +418,7 @@ const CotizacionPDFLayout = forwardRef(
                 display: "grid",
                 gridTemplateColumns: "5fr 1fr",
                 backgroundColor: "transparent",
-                color: "#000000",
+                color: "#2f1a1f",
                 fontSize: "12px",
                 fontWeight: 700,
                 textTransform: "uppercase",
@@ -409,7 +440,7 @@ const CotizacionPDFLayout = forwardRef(
                   gridTemplateColumns: "5fr 1fr",
                   fontSize: "12px",
                   backgroundColor: "transparent",
-                  color: "#000000",
+                  color: "#2f1a1f",
                   borderTop: "1px solid rgba(0,0,0,0.85)",
                 }}
               >
@@ -437,7 +468,7 @@ const CotizacionPDFLayout = forwardRef(
                 fontWeight: 700,
                 borderTop: "1px solid rgba(0,0,0,0.85)",
                 paddingTop: "10px",
-                color: "#000000",
+                color: "#2f1a1f",
               }}
             >
               <div
@@ -457,10 +488,10 @@ const CotizacionPDFLayout = forwardRef(
             style={{
               marginTop: "16px",
               borderRadius: "10px",
-              border: "1px solid rgba(21,28,58,0.12)",
-              backgroundColor: "rgba(21,28,58,0.05)",
+                border: "1px solid rgba(92,42,74,0.15)",
+                backgroundColor: "rgba(92,42,74,0.08)",
               padding: "12px 16px",
-              color: "#111827",
+              color: "#3b1d2f",
               fontSize: "12px",
             }}
           >
@@ -468,7 +499,7 @@ const CotizacionPDFLayout = forwardRef(
               style={{
                 fontWeight: 700,
                 marginBottom: "4px",
-                color: "#151C3A",
+                color: "#5c2a4a",
               }}
             >
               Qué incluye la compra
@@ -483,9 +514,9 @@ const CotizacionPDFLayout = forwardRef(
               width: "58%",
               borderRadius: "14px",
               padding: "16px 20px",
-              backgroundColor: "rgba(21,28,58,0.05)",
-              border: "1px solid rgba(21,28,58,0.12)",
-              color: "#111827",
+              backgroundColor: "rgba(92,42,74,0.08)",
+              border: "1px solid rgba(92,42,74,0.15)",
+              color: "#3b1d2f",
               alignSelf: "flex-start",
             }}
           >
@@ -493,11 +524,11 @@ const CotizacionPDFLayout = forwardRef(
               style={{
                 fontSize: "14px",
                 fontWeight: 700,
-                color: "#151C3A",
+                color: "#5c2a4a",
                 marginBottom: "6px",
               }}
             >
-              Tipo de instalacion
+              Tipo de instalación
             </div>
 
             <div style={{ marginBottom: "8px" }}>
@@ -531,7 +562,7 @@ const CotizacionPDFLayout = forwardRef(
               <div style={{ fontSize: "12px", lineHeight: 1.3 }}>
                 {safeText(
                   tipoInstalacion.descripcion,
-                  "Sistema propuesto segun la cotizacion."
+                  "Sistema propuesto según la factura."
                 )}
               </div>
             </div>
@@ -551,12 +582,12 @@ const waitForNextFrame = () =>
     }
   });
 
-export default async function generarCotizacionPDF(params = {}) {
+export default async function generarFacturaPDF(params = {}) {
   const {
     cliente = {},
     tipoInstalacion = {},
     items = [],
-    numeroCotizacion = "Cotizacion_NimbusSolar",
+    numeroFactura = "Factura_NimbusSolar",
     fecha = new Date().toISOString().slice(0, 10),
     resumen = {},
     comentarioIncluye = "",
@@ -582,7 +613,7 @@ export default async function generarCotizacionPDF(params = {}) {
       }, 2000);
 
       root.render(
-      <CotizacionPDFLayout
+      <FacturaPDFLayout
         ref={(node) => {
           if (node) {
             clearTimeout(timeoutId);
@@ -592,7 +623,7 @@ export default async function generarCotizacionPDF(params = {}) {
         cliente={cliente}
         tipoInstalacion={tipoInstalacion}
         items={items}
-        numeroCotizacion={numeroCotizacion}
+        numeroFactura={numeroFactura}
         fecha={fecha}
         resumen={resumen}
         comentarioIncluye={comentarioIncluye}
@@ -631,7 +662,7 @@ export default async function generarCotizacionPDF(params = {}) {
 
     pdf.addImage(imgData, "PNG", x, y, imgPrintWidth, imgPrintHeight);
 
-    const fileName = `${(numeroCotizacion || "Cotizacion_NimbusSolar")
+    const fileName = `${(numeroFactura || "Factura_NimbusSolar")
       .replace(/\s+/g, "_")
       .trim()}.pdf`;
     pdf.save(fileName);
@@ -642,3 +673,5 @@ export default async function generarCotizacionPDF(params = {}) {
     document.body.removeChild(mountNode);
   }
 }
+
+

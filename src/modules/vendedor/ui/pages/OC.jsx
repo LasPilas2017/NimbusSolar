@@ -4,6 +4,7 @@ import { jsPDF } from "jspdf";
 import { GlobalWorkerOptions, getDocument } from "pdfjs-dist/legacy/build/pdf";
 import pdfjsWorker from "pdfjs-dist/legacy/build/pdf.worker.entry";
 import supabase from "../../../../supabase";
+import { FacturaPDFLayout } from "../../../../utils/pdf/generarFacturaPDF";
 
 GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
@@ -14,19 +15,114 @@ const PDF_QUALITY = 0.6;
 const PDF_MAX_CANVAS_WIDTH = 900; // px en canvas antes de dibujar
 const PDF_SIZE_THRESHOLD = 2 * 1024 * 1024; // comprimir > 2MB
 
-const initialFacturaState = {
+const createInitialFacturaState = () => ({
   numero_autorizacion: "",
   serie: "",
   numero_dte: "",
   fecha_emision: new Date().toISOString().slice(0, 10),
   pdf_url: "",
-};
+  nit_receptor: "",
+  nombre_receptor: "",
+});
 
 const money = (value) =>
   new Intl.NumberFormat("es-GT", {
     style: "currency",
     currency: "GTQ",
   }).format(Number(value || 0));
+
+const FacturaPreviewCard = ({ selectedRow, factura }) => {
+  if (!selectedRow) {
+    return (
+      <div className="text-sm text-white/60">
+        Selecciona una cotizaci�n para ver la vista previa de la factura.
+      </div>
+    );
+  }
+
+  const hasExtractedData = [
+    factura?.numero_autorizacion,
+    factura?.serie,
+    factura?.numero_dte,
+    factura?.fecha_emision,
+    factura?.nit_receptor,
+    factura?.nombre_receptor,
+  ].some((value) => Boolean((value || "").trim()));
+
+  if (!hasExtractedData) {
+    return (
+      <div className="text-sm text-white/60">
+        Carga un PDF FEL para previsualizar la factura con el estilo oficial.
+      </div>
+    );
+  }
+
+  const {
+    numero_autorizacion,
+    serie,
+    numero_dte,
+    fecha_emision,
+    nit_receptor,
+    nombre_receptor,
+  } = factura;
+
+    const isoDate =
+    fecha_emision || new Date().toISOString().slice(0, 10);
+
+  const previewCliente = {
+    nombre: selectedRow.cliente_nombre,
+    correo: nombre_receptor || "",
+    pais: "Guatemala",
+    municipio: "",
+    direccion: "",
+    hsp: nit_receptor || "",
+  };
+
+  const previewItems = [
+    {
+      descripcion: `Factura ${selectedRow.codigo}`,
+      cantidad: 1,
+      precio: selectedRow.monto || 0,
+    },
+  ];
+
+  const previewResumen = {
+    subtotal: selectedRow.monto || 0,
+    ganancia: 0,
+    tarjeta: 0,
+    iva: 0,
+    total: selectedRow.monto || 0,
+  };
+
+  return (
+    <div className="rounded-2xl border border-white/15 bg-black/30 p-3">
+      <div className="overflow-hidden rounded-xl bg-white/90 flex justify-center">
+        <div
+          style={{
+            width: "826px",
+            height: "750px",
+            transform: "scale(0.7)",
+            transformOrigin: "top center",
+          }}
+        >
+          <FacturaPDFLayout
+            cliente={previewCliente}
+            tipoInstalacion={{}}
+            items={previewItems}
+            numeroFactura={numero_dte || selectedRow.codigo}
+            fecha={isoDate}
+            resumen={previewResumen}
+            comentarioIncluye="Vista previa generada desde la carga FEL."
+          />
+        </div>
+      </div>
+      <p className="text-[11px] text-white/60 mt-2">
+        Vista previa reducida del dise�o final de la factura. Los datos definitivos se basan en la informaci�n
+        cargada del FEL.
+      </p>
+    </div>
+  );
+};
 
 const compressPdfFile = async (file) => {
   if (!file) return null;
@@ -92,13 +188,37 @@ const optimizePdfFile = async (file) => {
 const normalizeFelDate = (dateString) => {
   if (!dateString) return "";
   const trimmed = dateString.trim();
-  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
-  const match = trimmed.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})$/);
-  if (match) {
-    const [, day, month, year] = match;
+  const datePart = trimmed.split(/\s+/)[0];
+  if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) return datePart;
+
+  const numericMatch = datePart.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})$/);
+  if (numericMatch) {
+    const [, day, month, year] = numericMatch;
     return `${year}-${month}-${day}`;
   }
-  return trimmed;
+
+  const monthNames = {
+    ENE: "01",
+    FEB: "02",
+    MAR: "03",
+    ABR: "04",
+    MAY: "05",
+    JUN: "06",
+    JUL: "07",
+    AGO: "08",
+    SEP: "09",
+    OCT: "10",
+    NOV: "11",
+    DIC: "12",
+  };
+  const wordMatch = datePart.match(/^(\d{2})[\/\-]([A-Z]{3})[\/\-](\d{4})$/i);
+  if (wordMatch) {
+    const [, day, wordMonth, year] = wordMatch;
+    const month = monthNames[wordMonth.toUpperCase()] || "01";
+    return `${year}-${month}-${day}`;
+  }
+
+  return datePart;
 };
 
 const sanitizeFelText = (value = "") =>
@@ -115,6 +235,11 @@ const extractUuid = (text) => {
   return match ? match[0].toUpperCase() : "";
 };
 
+const isUuid = (value = "") =>
+  /^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$/i.test(
+    value.trim()
+  );
+
 const parseFelDataFromText = (text) => {
   if (!text) return null;
   const sanitized = sanitizeFelText(text);
@@ -122,30 +247,43 @@ const parseFelDataFromText = (text) => {
     /NUMERO\s+DE\s+AUTORIZACION[:：]?\s*([A-Z0-9-]+)/
   );
   const serieMatch = sanitized.match(/SERIE[:：]?\s*([A-Z0-9-]+)/);
-  const numeroDteMatch = sanitized.match(
+  const numeroDTEMatch = sanitized.match(
     /NUMERO\s+DE\s+DTE[:：]?\s*([A-Z0-9-]+)/
   );
   const fechaEmisionMatch = sanitized.match(
-    /FECHA\s+DE\s+EMISION[:：]?\s*([\d\/\-]+)/
+    /FECHA(?:\s+Y\s+HORA)?\s+DE\s+EMISION[:：]?\s*([A-Z0-9\s:\/-]+)/
+  );
+  const nitReceptorMatch = sanitized.match(
+    /NIT\s+(?:DEL\s+)?RECEPTOR[::]?\s*([A-Z0-9-]+)/
+  );
+  const nombreReceptorMatch = sanitized.match(
+    /NOMBRE\s+(?:DEL\s+)?RECEPTOR[::]?\s*([A-Z0-9\s,&.\-]{3,80})/
   );
 
-  if (
+    if (
     !numeroAutorizacionMatch &&
     !serieMatch &&
-    !numeroDteMatch &&
-    !fechaEmisionMatch
+    !numeroDTEMatch &&
+    !fechaEmisionMatch &&
+    !nitReceptorMatch &&
+    !nombreReceptorMatch
   ) {
     return null;
   }
 
   const uuidFallback = extractUuid(text);
+  const candidateNumero = (numeroAutorizacionMatch?.[1] || "").trim();
+  const numeroAutorizacion = isUuid(candidateNumero)
+    ? candidateNumero
+    : uuidFallback || candidateNumero;
 
   return {
-    numero_autorizacion:
-      (numeroAutorizacionMatch?.[1] || "").trim() || uuidFallback || "",
+    numero_autorizacion: numeroAutorizacion || "",
     serie: (serieMatch?.[1] || "").trim(),
-    numero_dte: (numeroDteMatch?.[1] || "").trim(),
-    fecha_emision: normalizeFelDate(fechaEmisionMatch?.[1]),
+    numero_dte: (numeroDTEMatch?.[1] || "").trim(),
+    fecha_emision: normalizeFelDate(fechaEmisionMatch?.[1] || ""),
+    nit_receptor: (nitReceptorMatch?.[1] || "").trim(),
+    nombre_receptor: (nombreReceptorMatch?.[1] || "").trim(),
   };
 };
 
@@ -175,11 +313,25 @@ export default function OrdenesCompra() {
 
   const [selectedRow, setSelectedRow] = useState(null);
   const [facturaId, setFacturaId] = useState(null);
-  const [facturaForm, setFacturaForm] = useState(initialFacturaState);
+  const [facturaForm, setFacturaForm] = useState(createInitialFacturaState);
   const [archivo, setArchivo] = useState(null);
   const [saving, setSaving] = useState(false);
   const [cargandoFactura, setCargandoFactura] = useState(false);
   const [extrayendoPdf, setExtrayendoPdf] = useState(false);
+  const [mostrarVistaPrevia, setMostrarVistaPrevia] = useState(false);
+
+  const hasFacturaPreviewData = useMemo(() => {
+    if (!selectedRow) return false;
+    const campos = [
+      "numero_autorizacion",
+      "serie",
+      "numero_dte",
+      "fecha_emision",
+      "nit_receptor",
+      "nombre_receptor",
+    ];
+    return campos.some((campo) => (facturaForm[campo] || "").trim());
+  }, [selectedRow, facturaForm]);
 
   useEffect(() => {
     loadRows();
@@ -240,8 +392,9 @@ export default function OrdenesCompra() {
 
   const handleSelectRow = async (row) => {
     setSelectedRow(row);
+    setMostrarVistaPrevia(false);
     setArchivo(null);
-    setFacturaForm(initialFacturaState);
+    setFacturaForm(createInitialFacturaState());
     setFacturaId(null);
     if (!row) return;
 
@@ -274,12 +427,13 @@ export default function OrdenesCompra() {
             data.fecha_emision ||
             new Date().toISOString().slice(0, 10),
           pdf_url: data.pdf_url || "",
+          nit_receptor: data.nit_receptor || "",
+          nombre_receptor: data.nombre_receptor || "",
         });
       }
     } catch (error) {
       if (error?.code !== "PGRST116") {
-        console.error(error);
-        alert("No se pudo cargar la información de la factura.");
+        console.error("No se pudo cargar la información de la factura.", error);
       }
     } finally {
       setCargandoFactura(false);
@@ -346,6 +500,12 @@ export default function OrdenesCompra() {
       }
       if (data.fecha_emision) {
         handleChange("fecha_emision", data.fecha_emision);
+      }
+      if (data.nit_receptor) {
+        handleChange("nit_receptor", data.nit_receptor);
+      }
+      if (data.nombre_receptor) {
+        handleChange("nombre_receptor", data.nombre_receptor);
       }
 
       const optimizedFile = await optimizePdfFile(file);
@@ -474,10 +634,30 @@ export default function OrdenesCompra() {
         </div>
 
         <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-          <div className="lg:w-1/2 border-b lg:border-b-0 lg:border-r border-white/10 overflow-auto scrollbar-hide">
+          <div className="lg:w-1/2 border-b lg:border-b-0 lg:border-r border-white/10 overflow-auto scrollbar-hide relative">
+            {mostrarVistaPrevia && hasFacturaPreviewData && (
+              <div className="absolute inset-0 z-10 bg-[#070f1e]/95 backdrop-blur-sm flex flex-col p-4">
+                <div className="flex items-center justify-between text-white/70 text-xs uppercase tracking-[0.3em] mb-3">
+                  <span>Vista previa de la factura</span>
+                  <button
+                    type="button"
+                    onClick={() => setMostrarVistaPrevia(false)}
+                    className="text-white/70 hover:text-white text-sm"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="flex-1 rounded-2xl bg-white/5 border border-white/15 p-4 overflow-auto flex items-start justify-center">
+                  <FacturaPreviewCard
+                    selectedRow={selectedRow}
+                    factura={facturaForm}
+                  />
+                </div>
+              </div>
+            )}
             {loading ? (
               <div className="flex items-center justify-center h-full text-white/70 gap-2 text-sm">
-                <Loader2 className="animate-spin" /> Cargando órdenes de compra...
+                <Loader2 className="animate-spin" /> Cargando �rdenes de compra...
               </div>
             ) : err ? (
               <div className="m-4 border border-rose-400/30 bg-rose-500/10 text-rose-100 rounded-2xl px-4 py-3 text-sm">
@@ -485,13 +665,13 @@ export default function OrdenesCompra() {
               </div>
             ) : filteredRows.length === 0 ? (
               <div className="m-4 border border-white/15 rounded-2xl bg-[#020617]/40 p-4 text-white/70 text-sm text-center">
-                No hay órdenes de compra para mostrar.
+                No hay �rdenes de compra para mostrar.
               </div>
             ) : (
               <table className="min-w-full text-sm text-white/80">
                 <thead>
                   <tr className="text-left text-white/70 border-b border-white/10">
-                    <th className="px-3 py-2">No. Cotización</th>
+                    <th className="px-3 py-2">No. Cotizaci�n</th>
                     <th className="px-3 py-2">Vendedor</th>
                     <th className="px-3 py-2">Cliente</th>
                     <th className="px-3 py-2 text-right">Monto total</th>
@@ -522,6 +702,8 @@ export default function OrdenesCompra() {
               </table>
             )}
           </div>
+
+
 
           <div className="lg:w-1/2 p-5 sm:p-6 overflow-auto scrollbar-hide">
             {!selectedRow ? (
@@ -558,7 +740,7 @@ export default function OrdenesCompra() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <label className="text-xs text-white/60">
-                          Nº autorización
+                          N° autorización
                         </label>
                         <input
                           type="text"
@@ -582,7 +764,7 @@ export default function OrdenesCompra() {
                       </div>
                       <div className="space-y-1">
                         <label className="text-xs text-white/60">
-                          Nº DTE
+                          N° DTE
                         </label>
                         <input
                           type="text"
@@ -604,6 +786,33 @@ export default function OrdenesCompra() {
                             handleChange("fecha_emision", e.target.value)
                           }
                           className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-amber-300/60"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-xs text-white/60">
+                          NIT receptor
+                        </label>
+                        <input
+                          type="text"
+                          value={facturaForm.nit_receptor}
+                          placeholder="Se completa al leer el PDF FEL"
+                          readOnly
+                          className="w-full rounded-lg bg-white/5 border border-white/15 px-3 py-2 text-sm text-white/70"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs text-white/60">
+                          Nombre receptor
+                        </label>
+                        <input
+                          type="text"
+                          value={facturaForm.nombre_receptor}
+                          placeholder="Se completa al leer el PDF FEL"
+                          readOnly
+                          className="w-full rounded-lg bg-white/5 border border-white/15 px-3 py-2 text-sm text-white/70"
                         />
                       </div>
                     </div>
@@ -648,6 +857,25 @@ export default function OrdenesCompra() {
                       </div>
                     </div>
 
+                    <div className="space-y-2">
+                      <button
+                        type="button"
+                        onClick={() => setMostrarVistaPrevia((prev) => !prev)}
+                        disabled={!hasFacturaPreviewData}
+                        className="px-4 py-2 rounded-lg border border-white/20 text-sm text-white/80 hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        {mostrarVistaPrevia ? "Ocultar vista previa" : "Ver vista previa"}
+                      </button>
+                      {mostrarVistaPrevia && hasFacturaPreviewData && (
+                        <div className="mt-2">
+                          <FacturaPreviewCard
+                            selectedRow={selectedRow}
+                            factura={facturaForm}
+                          />
+                        </div>
+                      )}
+                    </div>
+
                     <div className="flex justify-end">
                       <button
                         onClick={handleSave}
@@ -668,6 +896,34 @@ export default function OrdenesCompra() {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
