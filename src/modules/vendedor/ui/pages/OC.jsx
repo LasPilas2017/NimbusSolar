@@ -812,16 +812,25 @@ export default function OrdenesCompra() {
       return;
     }
 
-    const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
-    if (sessionError || !session || !session.user) {
-      console.error("No hay sesi�n activa para guardar factura", sessionError);
-      alert("Debe iniciar sesi�n para guardar la factura");
+    let guardadoPorId = null;
+    try {
+      const claves = ["usuario", "usuario.sistema", "nimbus_usuario"];
+      for (const k of claves) {
+        const raw = localStorage.getItem(k);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          guardadoPorId = parsed?.vendedor_id ?? parsed?.id ?? null;
+          break;
+        }
+      }
+    } catch (e) {
+      console.warn("No se pudo leer el usuario desde localStorage", e);
+    }
+    if (!guardadoPorId) {
+      console.error("No se encontr� usuario actual para guardar la factura");
+      alert("No se encontr� usuario actual para guardar la factura");
       return;
     }
-    const guardadoPorId = session.user?.user_metadata?.vendedor_id || null;
     console.log("Guardando factura con guardado_por_id =", guardadoPorId);
 
     setSaving(true);
@@ -911,16 +920,25 @@ export default function OrdenesCompra() {
       return;
     }
 
-    const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
-    if (sessionError || !session || !session.user) {
-      console.error("No hay sesi�n activa para guardar factura", sessionError);
-      alert("Debe iniciar sesi�n para guardar la factura");
+    let guardadoPorId = null;
+    try {
+      const claves = ["usuario", "usuario.sistema", "nimbus_usuario"];
+      for (const k of claves) {
+        const raw = localStorage.getItem(k);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          guardadoPorId = parsed?.vendedor_id ?? parsed?.id ?? null;
+          break;
+        }
+      }
+    } catch (e) {
+      console.warn("No se pudo leer el usuario desde localStorage", e);
+    }
+    if (!guardadoPorId) {
+      console.error("No se encontr� usuario actual para guardar la factura");
+      alert("No se encontr� usuario actual para guardar la factura");
       return;
     }
-    const guardadoPorId = session.user?.user_metadata?.vendedor_id || null;
     console.log("Guardando factura con guardado_por_id =", guardadoPorId);
 
     setSaving(true);
