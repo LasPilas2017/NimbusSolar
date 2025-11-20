@@ -1,5 +1,5 @@
 ﻿import React, { useEffect, useMemo, useState } from "react";
-import { Loader2, Upload, FileText, Download, X } from "lucide-react";
+import { Loader2, Upload, FileText, Download, X, Check } from "lucide-react";
 import { jsPDF } from "jspdf";
 import { createRoot } from "react-dom/client";
 import html2canvas from "html2canvas";
@@ -550,6 +550,17 @@ const extractFelDataLocally = async (file) => {
   return parseFelDataFromText(combinedText);
 };
 
+const getUsuarioActual = () => {
+  try {
+    const raw = localStorage.getItem("sesionUsuario");
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (e) {
+    console.warn("No se pudo leer sesionUsuario de localStorage", e);
+    return null;
+  }
+};
+
 export default function OrdenesCompra() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -626,6 +637,22 @@ export default function OrdenesCompra() {
             .toLowerCase() === ESTADO_OBJETIVO
       );
 
+      // Identificar facturas existentes para marcar "facturado"
+      const aprobIds = filtradas.map((row) => row.aprob_id);
+      let facturasPorAprobId = {};
+      if (aprobIds.length > 0) {
+        const { data: facturasData, error: facturasError } = await supabase
+          .from("facturas_cotizacion")
+          .select("cotizacion_aprobacion_id")
+          .in("cotizacion_aprobacion_id", aprobIds);
+        if (!facturasError && Array.isArray(facturasData)) {
+          facturasPorAprobId = facturasData.reduce((acc, curr) => {
+            acc[curr.cotizacion_aprobacion_id] = true;
+            return acc;
+          }, {});
+        }
+      }
+
       setRows(
         filtradas.map((row) => {
           const comentarioCotizacion =
@@ -639,6 +666,7 @@ export default function OrdenesCompra() {
             monto: Number(row.monto_calculado || 0),
             items: parseItems(row.items),
             comentario_cotizacion: comentarioCotizacion,
+            facturado: Boolean(facturasPorAprobId[row.aprob_id]),
           };
         })
       );
@@ -812,24 +840,11 @@ export default function OrdenesCompra() {
       return;
     }
 
-    let guardadoPorId = null;
-    try {
-      const claves = ["usuario", "usuario.sistema", "nimbus_usuario"];
-      for (const k of claves) {
-        const raw = localStorage.getItem(k);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          guardadoPorId = parsed?.vendedor_id ?? parsed?.id ?? null;
-          break;
-        }
-      }
-    } catch (e) {
-      console.warn("No se pudo leer el usuario desde localStorage", e);
-    }
+    const usuario = getUsuarioActual();
+    const guardadoPorId =
+      usuario?.vendedor_id ?? usuario?.id ?? selectedRow?.supervisor_id ?? null;
     if (!guardadoPorId) {
-      console.error("No se encontr� usuario actual para guardar la factura");
-      alert("No se encontr� usuario actual para guardar la factura");
-      return;
+      console.warn("No se encontr? usuario actual; guardado_por_id ser? null");
     }
     console.log("Guardando factura con guardado_por_id =", guardadoPorId);
 
@@ -920,24 +935,11 @@ export default function OrdenesCompra() {
       return;
     }
 
-    let guardadoPorId = null;
-    try {
-      const claves = ["usuario", "usuario.sistema", "nimbus_usuario"];
-      for (const k of claves) {
-        const raw = localStorage.getItem(k);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          guardadoPorId = parsed?.vendedor_id ?? parsed?.id ?? null;
-          break;
-        }
-      }
-    } catch (e) {
-      console.warn("No se pudo leer el usuario desde localStorage", e);
-    }
+    const usuario = getUsuarioActual();
+    const guardadoPorId =
+      usuario?.vendedor_id ?? usuario?.id ?? selectedRow?.supervisor_id ?? null;
     if (!guardadoPorId) {
-      console.error("No se encontr� usuario actual para guardar la factura");
-      alert("No se encontr� usuario actual para guardar la factura");
-      return;
+      console.warn("No se encontr? usuario actual; guardado_por_id ser? null");
     }
     console.log("Guardando factura con guardado_por_id =", guardadoPorId);
 
@@ -1096,6 +1098,7 @@ export default function OrdenesCompra() {
                     <th className="px-3 py-2">No. Cotizaci?n</th>
                     <th className="px-3 py-2">Vendedor</th>
                     <th className="px-3 py-2">Cliente</th>
+                    <th className="px-3 py-2 text-center">Facturado</th>
                     <th className="px-3 py-2 text-right">Monto total</th>
                   </tr>
                 </thead>
@@ -1118,7 +1121,10 @@ export default function OrdenesCompra() {
                     return (
                       <React.Fragment key={row.aprob_id}>
                         <tr
-                          onClick={() => handleSelectRow(row)}
+                          onClick={() => {
+                            const same = selectedRow?.aprob_id === row.aprob_id;
+                            handleSelectRow(same ? null : row);
+                          }}
                           className={`cursor-pointer hover:bg-white/10 ${
                             selected ? "bg-white/10" : ""
                           }`}
@@ -1133,13 +1139,22 @@ export default function OrdenesCompra() {
                           </td>
                           <td className="px-3 py-2">{row.vendedor_nombre}</td>
                           <td className="px-3 py-2">{row.cliente_nombre}</td>
+                          <td className="px-3 py-2 text-center">
+                            {row.facturado ? (
+                              <span className="inline-flex items-center justify-center rounded-full bg-emerald-600/20 text-emerald-300 px-2 py-1 text-xs font-semibold">
+                                <Check className="w-4 h-4" />
+                              </span>
+                            ) : (
+                              <span className="text-white/50">--</span>
+                            )}
+                          </td>
                           <td className="px-3 py-2 text-right font-semibold">
                             {money(row.monto)}
                           </td>
                         </tr>
                         {selected ? (
                           <tr className="bg-transparent">
-                            <td colSpan={4} className="px-3 pb-4">
+                            <td colSpan={5} className="px-3 pb-4">
                               <div className="mt-1 space-y-4 rounded-2xl border border-white/10 bg-[#010c1b]/70 p-4 text-white/80">
                                 <div className="grid gap-4 md:grid-cols-2">
                                   <div className="space-y-1">
@@ -1507,6 +1522,9 @@ export default function OrdenesCompra() {
     </>
   );
 }
+
+
+
 
 
 

@@ -84,7 +84,11 @@ const CotizacionPDFLayout = forwardRef(
       ];
 
     const formatCurrency = (value) =>
-      `Q ${Number(value || 0).toFixed(2)}`;
+      new Intl.NumberFormat("es-GT", {
+        style: "currency",
+        currency: "GTQ",
+        minimumFractionDigits: 2,
+      }).format(Number(value || 0));
 
     const fechaTexto =
       typeof fecha === "string"
@@ -319,10 +323,12 @@ const CotizacionPDFLayout = forwardRef(
           <div
             style={{
               display: "flex",
-              justifyContent: "flex-start",
+              justifyContent: "space-between",
+              gap: "16px",
+              alignItems: "stretch",
             }}
           >
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: "1 1 55%" }}>
               <div
                 style={{
                   fontSize: "14px",
@@ -371,6 +377,40 @@ const CotizacionPDFLayout = forwardRef(
                   <div style={{ fontWeight: 700, minWidth: "80px" }}>HSP:</div>
                   <div>{safeText(cliente.hsp)}</div>
                 </div>
+              </div>
+            </div>
+
+            <div
+              style={{
+                flex: "1 1 45%",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                alignItems: "center",
+                gap: "6px",
+                textAlign: "center",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "13px",
+                  fontWeight: 700,
+                  color: "#003366",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.02em",
+                }}
+              >
+                Capacidad para generar mensualmente
+              </div>
+              <div
+                style={{
+                  fontSize: "26px",
+                  fontWeight: 900,
+                  color: "#001F4D",
+                  lineHeight: 1.05,
+                }}
+              >
+                {safeText(cliente.capacidad_generacion, "--")} kWh
               </div>
             </div>
           </div>
@@ -440,6 +480,16 @@ const CotizacionPDFLayout = forwardRef(
                 color: "#000000",
               }}
             >
+              <div
+                style={{
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  color: "#111827",
+                  marginBottom: "4px",
+                }}
+              >
+                IVA incluido
+              </div>
               <div
                 style={{
                   display: "flex",

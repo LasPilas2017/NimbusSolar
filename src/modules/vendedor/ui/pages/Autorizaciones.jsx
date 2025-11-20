@@ -402,6 +402,7 @@ export default function Autorizaciones({ user }) {
   const [editRow, setEditRow] = useState(null);
   const [saving, setSaving] = useState(false);
   const [comentario, setComentario] = useState(""); // solo si se rechaza
+  const [generacionPrevista, setGeneracionPrevista] = useState("");
 
   // ---------------------------------------------------------------------------
   // 🧠 ESTADOS DE PORCENTAJES (SOLO VISTA)
@@ -485,6 +486,7 @@ export default function Autorizaciones({ user }) {
           cliente_municipio,
           cliente_direccion,
           hsp,
+          generacion_prevista,
           consumo_kwh_dia,
           consumo_kwh_mes,
           consumos_meses,
@@ -528,6 +530,7 @@ export default function Autorizaciones({ user }) {
           clienteLabel: r.cliente_nombre
             ? String(r.cliente_nombre)
             : "—",
+          generacion_prevista: r.generacion_prevista ?? null,
           items: Array.isArray(r.items) ? r.items : [],
         })) || [];
 
@@ -586,6 +589,7 @@ export default function Autorizaciones({ user }) {
     setPorcTarjeta(Number(row.porc_tarjeta || 19.29));
     setPorcIVA(Number(row.porc_iva || 12));
     setComentario(row.comentario_rechazo || "");
+    setGeneracionPrevista(row.generacion_prevista || "");
 
     // Hidratamos items con precios reales
     const itemsConPrecio = await hydrateItemsWithPrices(row.items || []);
@@ -606,6 +610,7 @@ export default function Autorizaciones({ user }) {
     setGananciaEditadaManualmente(false);
     setIvaEditadoManualmente(false);
     setTarjetaEditadaManualmente(false);
+    setGeneracionPrevista("");
   };
 
   // ---------------------------------------------------------------------------
@@ -702,6 +707,10 @@ export default function Autorizaciones({ user }) {
 
         monto: Number(totalFinal) || 0,
         comentario_incluy: editRow?.comentario_incluye || null,
+        generacion_prevista:
+          generacionPrevista !== ""
+            ? Number(generacionPrevista)
+            : null,
       };
 
       const { error } = await supabase
@@ -753,6 +762,10 @@ export default function Autorizaciones({ user }) {
         tarjeta_q: Number(tarjetaQ) || 0,
         monto: Number(totalFinal) || 0,
         comentario_incluy: editRow?.comentario_incluye || null,
+        generacion_prevista:
+          generacionPrevista !== ""
+            ? Number(generacionPrevista)
+            : null,
       };
 
       // el comentario SOLO se guarda si es rechazada
@@ -792,6 +805,7 @@ export default function Autorizaciones({ user }) {
         municipio: row.cliente_municipio || "",
         direccion: row.cliente_direccion || "",
         hsp: row.hsp || "",
+        capacidad_generacion: row.generacion_prevista ?? null,
       };
 
       // 2) Tipo de instalación usando los datos del sistema
@@ -1210,6 +1224,32 @@ export default function Autorizaciones({ user }) {
                     {editRow.descripcion_sistema ||
                       "Sistema propuesto según la cotización."}
                   </p>
+                </div>
+              </div>
+
+              {/* Generación prevista */}
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-3 mt-3">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-white/60">
+                      Sistema capacitado para generar
+                    </p>
+                    <p className="text-sm text-white/80">
+                      Ingresa la generación prevista (kWh) para este sistema.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={generacionPrevista}
+                      onChange={(e) => setGeneracionPrevista(e.target.value)}
+                      className="w-40 rounded-lg bg-white/10 border border-white/20 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-amber-300/60"
+                      placeholder="kWh"
+                    />
+                    <span className="text-xs text-white/60">kWh</span>
+                  </div>
                 </div>
               </div>
 

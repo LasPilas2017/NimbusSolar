@@ -435,7 +435,7 @@ export const FacturaPDFLayout = forwardRef(
               <div style={{ fontWeight: 700, color: "#003366" }}>
                 {FACTURA_EMISOR.nit}
               </div>
-              <div style={{ fontWeight: 700, fontSize: "14px" }}>
+              <div style={{ fontWeight: 400, fontSize: "12px" }}>
                 {FACTURA_EMISOR.responsable}
               </div>
               <div style={{ fontSize: "12px", maxWidth: "90%" }}>
