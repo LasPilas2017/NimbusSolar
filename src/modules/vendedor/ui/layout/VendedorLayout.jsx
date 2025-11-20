@@ -21,7 +21,7 @@ import {
 } from "react-icons/fi";
 import PropTypes from "prop-types";
 
-import supabase from "../../../../supabase.js";
+import { supabase } from "../../../../infra/supabase/supabaseClient";
 
 // 🔹 Páginas internas
 import RESULTADOS from "../pages/RESULTADOS.jsx";

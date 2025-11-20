@@ -32,7 +32,7 @@ import FormMisCotizaciones from "../components/FormMisCotizaciones.jsx";
 import HistorialCotCliente from "../components/HistorialCotCliente.jsx";
 
 // Cliente Supabase global del proyecto
-import supabase from "../../../../supabase.js";
+import { supabase } from "../../../../infra/supabase/supabaseClient";
 
 // Repositorio + casos de uso (arquitectura limpia)
 import { CotizacionesSupabaseRepository } from "../../infra/supabase/CotizacionesSupabaseRepository.js";

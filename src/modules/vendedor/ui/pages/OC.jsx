@@ -5,13 +5,15 @@ import { createRoot } from "react-dom/client";
 import html2canvas from "html2canvas";
 import { GlobalWorkerOptions, getDocument } from "pdfjs-dist/legacy/build/pdf";
 import pdfjsWorker from "pdfjs-dist/legacy/build/pdf.worker.entry";
-import supabase from "../../../../supabase";
+import { supabase } from "../../../../infra/supabase/supabaseClient";
 import { FacturaPDFLayout } from "../../../../utils/pdf/generarFacturaPDF";
+import AnimacionGuardadoSolar from "../../../../components/AnimacionGuardadoSolar";
 
 GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 const ESTADO_OBJETIVO = "aprobada";
-const FACTURAS_BUCKET = "facturas";
+// Bucket real en Supabase
+const FACTURAS_BUCKET = "facturas_cotizacion";
 const FEL_EXTRACTION_URL = process.env.REACT_APP_FEL_EXTRACTION_URL;
 const PDF_QUALITY = 0.6;
 const PDF_MAX_CANVAS_WIDTH = 900; // px en canvas antes de dibujar
@@ -562,6 +564,7 @@ export default function OrdenesCompra() {
   const [cargandoFactura, setCargandoFactura] = useState(false);
   const [extrayendoPdf, setExtrayendoPdf] = useState(false);
   const [mostrarVistaPrevia, setMostrarVistaPrevia] = useState(false);
+  const [mostrarAnimacionSolar, setMostrarAnimacionSolar] = useState(false);
 
   const hasFacturaPreviewData = useMemo(() => {
     if (!selectedRow) return false;
@@ -600,6 +603,7 @@ export default function OrdenesCompra() {
           cliente_municipio,
           cliente_direccion,
           hsp,
+          supervisor_id,
           consumo_kwh_dia,
           consumo_kwh_mes,
           comentario_incluy,
@@ -803,10 +807,22 @@ export default function OrdenesCompra() {
       !facturaForm.numero_dte.trim()
     ) {
       alert(
-        "Por favor completa número de autorización, serie y número de DTE."
+        "Por favor completa n�mero de autorizaci�n, serie y n�mero de DTE."
       );
       return;
     }
+
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession();
+    if (sessionError || !session || !session.user) {
+      console.error("No hay sesi�n activa para guardar factura", sessionError);
+      alert("Debe iniciar sesi�n para guardar la factura");
+      return;
+    }
+    const guardadoPorId = session.user?.user_metadata?.vendedor_id || null;
+    console.log("Guardando factura con guardado_por_id =", guardadoPorId);
 
     setSaving(true);
     try {
@@ -814,13 +830,18 @@ export default function OrdenesCompra() {
 
       if (archivo) {
         const fileName = `${selectedRow.aprob_id}.pdf`;
+        console.log("[upload factura] bucket:", FACTURAS_BUCKET, "path:", fileName);
         const { error: uploadError } = await supabase.storage
           .from(FACTURAS_BUCKET)
           .upload(fileName, archivo, {
             upsert: true,
+            contentType: "application/pdf",
           });
 
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          console.error("[upload factura] error", uploadError);
+          throw uploadError;
+        }
 
         const {
           data: { publicUrl },
@@ -833,11 +854,13 @@ export default function OrdenesCompra() {
 
       const payload = {
         cotizacion_aprobacion_id: selectedRow.aprob_id,
+        supervisor_id: selectedRow.supervisor_id || null,
         numero_autorizacion: facturaForm.numero_autorizacion.trim(),
         serie: facturaForm.serie.trim(),
         numero_dte: facturaForm.numero_dte.trim(),
         fecha_emision: facturaForm.fecha_emision || null,
         pdf_url: pdfUrl || null,
+        guardado_por_id: guardadoPorId,
       };
 
       if (facturaId) {
@@ -874,7 +897,6 @@ export default function OrdenesCompra() {
       setSaving(false);
     }
   };
-
   const handleSave = async () => {
     if (!selectedRow) return;
 
@@ -889,20 +911,38 @@ export default function OrdenesCompra() {
       return;
     }
 
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession();
+    if (sessionError || !session || !session.user) {
+      console.error("No hay sesi�n activa para guardar factura", sessionError);
+      alert("Debe iniciar sesi�n para guardar la factura");
+      return;
+    }
+    const guardadoPorId = session.user?.user_metadata?.vendedor_id || null;
+    console.log("Guardando factura con guardado_por_id =", guardadoPorId);
+
     setSaving(true);
+    setMostrarAnimacionSolar(true);
     try {
       let pdfUrl = facturaForm.pdf_url;
       let pdfNuevoUrl = facturaForm.pdf_nuevo_url;
 
       if (archivo) {
         const fileName = `${selectedRow.aprob_id}.pdf`;
+        console.log("[upload factura] bucket:", FACTURAS_BUCKET, "path:", fileName);
         const { error: uploadError } = await supabase.storage
           .from(FACTURAS_BUCKET)
           .upload(fileName, archivo, {
             upsert: true,
+            contentType: "application/pdf",
           });
 
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          console.error("[upload factura] error", uploadError);
+          throw uploadError;
+        }
 
         const {
           data: { publicUrl },
@@ -946,6 +986,7 @@ export default function OrdenesCompra() {
         pdf_nuevo_url: pdfNuevoUrl || null,
         nit_receptor: facturaForm.nit_receptor || null,
         nombre_receptor: facturaForm.nombre_receptor || null,
+        guardado_por_id: guardadoPorId,
       };
 
       if (facturaId) {
@@ -981,10 +1022,12 @@ export default function OrdenesCompra() {
       );
     } finally {
       setSaving(false);
+      setMostrarAnimacionSolar(false);
     }
   };
 
   return (
+    <>
     <div className="absolute inset-0 w-full h-full p-4 sm:p-6 md:p-8 bg-gradient-to-b from-[#0b1320]/80 to-[#0b1320]/90">
       <div className="w-full h-full rounded-3xl border border-white/10 bg-white/10 backdrop-blur-md flex flex-col">
         <div className="px-5 sm:px-6 md:px-8 py-5 border-b border-white/10 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -1442,8 +1485,11 @@ export default function OrdenesCompra() {
         </div>
       </div>
     </div>
+    <AnimacionGuardadoSolar visible={mostrarAnimacionSolar} />
+    </>
   );
 }
+
 
 
 

@@ -19,7 +19,7 @@ import React, { useMemo, useState, useEffect } from "react";
 // src/modules/vendedor/ui/components/FormMisClientes.jsx )
 import FormMisClientes from "../components/FormMisClientes.jsx";
 
-import supabase from "../../../../supabase.js";
+import { supabase } from "../../../../infra/supabase/supabaseClient";
 import { ClientesSupabaseRepository } from "../../../vendedor/infra/supabase/ClientesSupabaseRepository.js";
 import { createGetMisClientes } from "../../../vendedor/application/use-cases/getMisClientes.js";
 import { calcularCategoriaCliente } from "../../../vendedor/domain/services/calcularCategoriaCliente.js";

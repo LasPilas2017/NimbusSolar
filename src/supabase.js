@@ -1,13 +1,23 @@
-// src/supabase.js
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from "@supabase/supabase-js";
 
-// CRA expone variables que empiezan con REACT_APP_
-const supabaseUrl = (process.env.REACT_APP_SUPABASE_URL || '').trim();
-const supabaseKey = (process.env.REACT_APP_SUPABASE_ANON_KEY || '').trim();
+// Cliente único de Supabase (CRA: usa REACT_APP_*)
+const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseKey) {
-  console.warn('[Supabase] Faltan REACT_APP_SUPABASE_URL o REACT_APP_SUPABASE_ANON_KEY en .env');
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error(
+    "[supabase] Faltan REACT_APP_SUPABASE_URL o REACT_APP_SUPABASE_ANON_KEY en el entorno."
+  );
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+export const supabase =
+  supabaseUrl && supabaseAnonKey
+    ? createClient(supabaseUrl, supabaseAnonKey, {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+        },
+      })
+    : null;
+
 export default supabase;

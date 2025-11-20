@@ -1,61 +1,16 @@
-import React, { useEffect, useMemo, useState } from "react";
+﻿import React from "react";
 
-/**
- * Overlay de animación solar para indicar guardado.
- * Props:
- * - visible: boolean para mostrar/ocultar.
- * - onFinish: callback al terminar la animación y ocultarse.
- */
-export default function AnimacionGuardadoSolar({ visible, onFinish }) {
-  const [active, setActive] = useState(false);
-  const [texto, setTexto] = useState("Guardando datos...");
-  const [animando, setAnimando] = useState(false);
-
-  const shouldRender = useMemo(() => active || visible, [active, visible]);
-
-  useEffect(() => {
-    if (!visible) return;
-
-    setActive(true);
-    setTexto("Guardando datos...");
-    setAnimando(false);
-
-    const raf = requestAnimationFrame(() => setAnimando(true));
-
-    const textoTimer = setTimeout(() => {
-      setTexto("Cambios guardados");
-    }, 3000);
-
-    const hideTimer = setTimeout(() => {
-      setActive(false);
-      setAnimando(false);
-      if (typeof onFinish === "function") {
-        onFinish();
-      }
-    }, 4500);
-
-    return () => {
-      cancelAnimationFrame(raf);
-      clearTimeout(textoTimer);
-      clearTimeout(hideTimer);
-    };
-  }, [visible, onFinish]);
-
-  if (!shouldRender) return null;
+// Overlay de animación solar a pantalla completa.
+// Se muestra mientras visible sea true; el padre controla cuándo ocultarlo.
+export default function AnimacionGuardadoSolar({ visible }) {
+  if (!visible) return null;
 
   return (
     <>
-      <div
-        className={`overlay ${active ? "visible" : "oculto"}`}
-        aria-live="polite"
-        aria-label="Guardando datos"
-      >
-        <div className="escena" role="status">
-          <div
-            className={`sol ${animando ? "animando" : "sin-animacion"}`}
-            id="sol-animado"
-          />
-
+      <div className="overlay-solar" aria-live="polite" aria-label="Guardando datos">
+        <div className="escena-full" role="status">
+          <div className="cielo" />
+          <div className="sol animando" />
           <div className="paneles">
             {[0, 1, 2].map((idx) => (
               <div className="panel-wrapper" key={idx}>
@@ -71,107 +26,57 @@ export default function AnimacionGuardadoSolar({ visible, onFinish }) {
               </div>
             ))}
           </div>
-
           <div className="sombra-panel" />
-
-          <div
-            className={`texto-estado ${
-              texto === "Cambios guardados" ? "texto-ok" : ""
-            }`}
-            id="texto-animacion"
-          >
-            {texto}
-          </div>
+          <div className="texto-estado">Guardando datos...</div>
         </div>
       </div>
 
-      <style jsx>{`
-        .overlay {
+      <style>{`
+        .overlay-solar {
           position: fixed;
           inset: 0;
-          background: radial-gradient(
-              circle at top,
-              rgba(255, 255, 255, 0.08),
-              rgba(0, 0, 0, 0.92)
-            );
-          backdrop-filter: blur(6px);
-          display: flex;
-          justify-content: center;
-          align-items: center;
           z-index: 9999;
-          opacity: 0;
-          pointer-events: none;
-          transition: opacity 0.35s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.08), rgba(0,0,0,0.75));
+          backdrop-filter: blur(10px);
         }
-        .overlay.visible {
-          opacity: 1;
-          pointer-events: auto;
-        }
-        .overlay.oculto {
-          opacity: 0;
-          pointer-events: none;
-        }
-        .escena {
+        .escena-full {
           position: relative;
-          width: 520px;
-          height: 240px;
-          border-radius: 24px;
-          background: linear-gradient(
-            to top,
-            #1b3a52 0%,
-            #87ceeb 65%,
-            #ffffff 100%
-          );
-          box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6);
+          width: 100%;
+          height: 100%;
           overflow: hidden;
-          border: 1px solid rgba(255, 255, 255, 0.08);
+          background: linear-gradient(180deg, #0b1f3b 0%, #123f7a 60%, #0f1a2e 100%);
         }
-        .escena::after {
-          content: "";
+        .cielo {
           position: absolute;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          height: 34%;
-          background: linear-gradient(to top, #264522, #3d6b34);
+          inset: 0;
+          background: radial-gradient(ellipse at top, rgba(255,255,255,0.08), transparent 50%);
+          pointer-events: none;
         }
         .sol {
           position: absolute;
-          top: 90px;
-          left: -70px;
-          width: 70px;
-          height: 70px;
+          top: 50%;
+          left: -80px;
+          width: 120px;
+          height: 120px;
           border-radius: 50%;
-          background: radial-gradient(
-            circle,
-            #fff8c1 0%,
-            #ffd54f 50%,
-            #ff9d00 85%
-          );
-          box-shadow: 0 0 25px rgba(255, 217, 95, 0.9),
-            0 0 60px rgba(255, 193, 7, 0.9);
-        }
-        .sol.sin-animacion {
-          animation: none;
+          background: radial-gradient(circle, #fff8c1 0%, #ffd54f 50%, #ff9d00 85%);
+          box-shadow: 0 0 35px rgba(255, 217, 95, 0.9), 0 0 80px rgba(255, 193, 7, 0.9);
         }
         .sol.animando {
-          animation: recorridoSol 3s linear forwards;
+          animation: recorridoSol 4s linear infinite;
         }
         @keyframes recorridoSol {
-          0% {
-            transform: translate(-60px, 40px);
-          }
-          50% {
-            transform: translate(200px, -40px);
-          }
-          100% {
-            transform: translate(460px, 40px);
-          }
+          0% { transform: translate(-60px, 80px); }
+          50% { transform: translate(400px, -120px); }
+          100% { transform: translate(900px, 80px); }
         }
         .paneles {
           position: absolute;
-          bottom: 55px;
-          left: 70px;
+          bottom: 18%;
+          left: 12%;
           display: flex;
           gap: 12px;
           transform: skewX(-10deg);
@@ -180,8 +85,8 @@ export default function AnimacionGuardadoSolar({ visible, onFinish }) {
         }
         .panel-wrapper {
           position: relative;
-          width: 95px;
-          height: 80px;
+          width: 140px;
+          height: 105px;
         }
         .panel {
           position: relative;
@@ -196,42 +101,24 @@ export default function AnimacionGuardadoSolar({ visible, onFinish }) {
           content: "";
           position: absolute;
           inset: 0;
-          background-image: linear-gradient(
-              to right,
-              rgba(255, 255, 255, 0.16) 1px,
-              transparent 1px
-            ),
-            linear-gradient(
-              to bottom,
-              rgba(255, 255, 255, 0.16) 1px,
-              transparent 1px
-            );
+          background-image:
+            linear-gradient(to right, rgba(255, 255, 255, 0.16) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(255, 255, 255, 0.16) 1px, transparent 1px);
           background-size: 18px 18px, 18px 18px;
           opacity: 0.8;
         }
         .brillo {
           position: absolute;
           inset: 0;
-          background: linear-gradient(
-            120deg,
-            rgba(255, 255, 255, 0) 15%,
-            rgba(255, 255, 255, 0.45) 50%,
-            rgba(255, 255, 255, 0) 85%
-          );
+          background: linear-gradient(120deg, rgba(255, 255, 255, 0) 15%, rgba(255, 255, 255, 0.45) 50%, rgba(255, 255, 255, 0) 85%);
           mix-blend-mode: screen;
           transform: translateX(-130%);
           animation: barridoLuz 3s linear infinite;
         }
         @keyframes barridoLuz {
-          0% {
-            transform: translateX(-130%);
-          }
-          60% {
-            transform: translateX(15%);
-          }
-          100% {
-            transform: translateX(130%);
-          }
+          0% { transform: translateX(-130%); }
+          60% { transform: translateX(15%); }
+          100% { transform: translateX(130%); }
         }
         .estructura {
           position: absolute;
@@ -259,51 +146,32 @@ export default function AnimacionGuardadoSolar({ visible, onFinish }) {
           background: linear-gradient(to top, #4c4f55, #81858c);
           box-shadow: 0 3px 4px rgba(0, 0, 0, 0.6);
         }
-        .pata:nth-child(2) {
-          left: 4px;
-        }
-        .pata:nth-child(3) {
-          left: 50%;
-          transform: translateX(-50%);
-        }
-        .pata:nth-child(4) {
-          right: 4px;
-        }
+        .pata:nth-child(2) { left: 4px; }
+        .pata:nth-child(3) { left: 50%; transform: translateX(-50%); }
+        .pata:nth-child(4) { right: 4px; }
         .sombra-panel {
           position: absolute;
-          bottom: 48px;
-          left: 72px;
-          width: 260px;
-          height: 26px;
-          background: radial-gradient(
-            ellipse at center,
-            rgba(0, 0, 0, 0.6),
-            transparent 70%
-          );
+          bottom: 16%;
+          left: 12%;
+          width: 420px;
+          height: 40px;
+          background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.6), transparent 70%);
           opacity: 0.6;
-          filter: blur(3px);
+          filter: blur(4px);
           transform: skewX(-10deg);
           z-index: 1;
         }
         .texto-estado {
           position: absolute;
-          bottom: 18px;
+          bottom: 8%;
           left: 0;
           right: 0;
           text-align: center;
-          font-size: 18px;
+          font-size: 20px;
           color: #ffffff;
           font-weight: 600;
           text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
           z-index: 3;
-        }
-        .texto-ok {
-          color: #aefad4;
-        }
-        .texto-ok::before {
-          content: "✓ ";
-          color: #00e676;
-          text-shadow: 0 0 12px rgba(0, 255, 138, 0.9);
         }
       `}</style>
     </>
