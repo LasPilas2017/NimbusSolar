@@ -15,6 +15,8 @@ export default function Ventas() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
   const [selectedId, setSelectedId] = useState(null);
+  const [priceById, setPriceById] = useState({});
+  const [mesFiltro, setMesFiltro] = useState("");
   const detailRef = useRef(null);
 
   useEffect(() => {
@@ -29,8 +31,42 @@ export default function Ventas() {
 
         if (error) throw error;
 
-        setRows(data || []);
-        setSelectedId((data && data[0]?.factura_id) || null);
+        const parsedRows = data || [];
+        setRows(parsedRows);
+        setSelectedId(parsedRows[0]?.factura_id || null);
+
+        // Construir mapa de precios desde v_catalogo_items usando item_id
+        const allItemIds = new Set();
+        parsedRows.forEach((r) => {
+          let items = r.items;
+          if (typeof items === "string") {
+            try {
+              items = JSON.parse(items);
+            } catch {
+              items = [];
+            }
+          }
+          if (!Array.isArray(items)) return;
+          items.forEach((it) => {
+            const refId = it.refid || it.refId || it.item_id || it.itemId;
+            if (refId) allItemIds.add(refId);
+          });
+        });
+
+        if (allItemIds.size > 0) {
+          const { data: priceRows, error: priceError } = await supabase
+            .from("v_catalogo_items")
+            .select("item_id, precio")
+            .in("item_id", Array.from(allItemIds));
+
+          if (!priceError && Array.isArray(priceRows)) {
+            const map = {};
+            priceRows.forEach((p) => {
+              map[p.item_id] = Number(p.precio || 0);
+            });
+            setPriceById(map);
+          }
+        }
       } catch (e) {
         console.error(e);
         setErr(e.message || "No se pudieron cargar las ventas facturadas.");
@@ -42,19 +78,38 @@ export default function Ventas() {
     cargar();
   }, []);
 
+  const rowsFiltradas = useMemo(() => {
+    if (!mesFiltro) return rows;
+    return rows.filter((r) => {
+      const fecha = r.fecha_emision || r.fecha || "";
+      return typeof fecha === "string" && fecha.startsWith(mesFiltro);
+    });
+  }, [rows, mesFiltro]);
+
+  const mesesDisponibles = useMemo(() => {
+    const set = new Set();
+    rows.forEach((r) => {
+      const fecha = r.fecha_emision || r.fecha || "";
+      if (typeof fecha === "string" && fecha.length >= 7) {
+        set.add(fecha.slice(0, 7)); // YYYY-MM
+      }
+    });
+    return Array.from(set).sort().reverse();
+  }, [rows]);
+
   const selected = useMemo(
-    () => rows.find((r) => r.factura_id === selectedId) || null,
-    [rows, selectedId]
+    () => rowsFiltradas.find((r) => r.factura_id === selectedId) || null,
+    [rowsFiltradas, selectedId]
   );
 
   const totalVentas = useMemo(
     () =>
-      rows.reduce(
+      rowsFiltradas.reduce(
         (acc, r) =>
           acc + Number(r?.monto ?? r?.subtotal_items ?? 0),
         0
       ),
-    [rows]
+    [rowsFiltradas]
   );
 
   const handleSelect = (id) => {
@@ -88,7 +143,7 @@ export default function Ventas() {
       );
     }
 
-    if (rows.length === 0) {
+    if (rowsFiltradas.length === 0) {
       return (
         <div className="m-4 border border-white/15 rounded-2xl bg-[#020617]/40 p-4 text-white/70 text-sm text-center">
           No hay cotizaciones facturadas todavía.
@@ -108,7 +163,7 @@ export default function Ventas() {
           </tr>
         </thead>
         <tbody>
-          {rows.map((row) => {
+          {rowsFiltradas.map((row) => {
             const sel = selectedId === row.factura_id;
             const montoBase = row?.monto ?? row?.subtotal_items ?? 0;
             const folio = row.numero_dte || row.codigo || "—";
@@ -198,6 +253,7 @@ export default function Ventas() {
           it.precio_unitario ??
           it.precio_catalogo ??
           it.unitario ??
+          priceById[it.refid || it.refId || it.item_id || it.itemId] ??
           0
       );
       const titulo =
@@ -227,7 +283,7 @@ export default function Ventas() {
             <p className="text-xs text-white/60">No. de factura</p>
             <p className="text-lg font-semibold">{folio}</p>
             <p className="text-sm text-white/70 mt-1">
-              {cliente_nombre || "Cliente sin nombre"}
+              Cliente: {cliente_nombre || "Cliente sin nombre"}
             </p>
             <p className="text-xs text-white/60">{fecha_emision || "--"}</p>
           </div>
@@ -276,9 +332,9 @@ export default function Ventas() {
           </div>
         )}
 
-        <div className="flex items-center justify-between">
-          <p className="text-xs text-white/60">Subtotal cotizacion</p>
-          <p className="text-lg font-semibold text-white">
+        <div className="rounded-2xl border border-white/10 bg-[#0b1320]/50 p-4 flex items-center justify-between">
+          <p className="text-sm text-white/70">Subtotal cotizacion</p>
+          <p className="text-xl font-semibold text-white">
             {money(subtotalCotizacion)}
           </p>
         </div>
@@ -362,10 +418,58 @@ export default function Ventas() {
             </p>
           </div>
           <div className="text-right">
-            <p className="text-xs text-white/60">Total de ventas</p>
-            <p className="text-2xl font-bold text-emerald-300">
+            <p className="text-sm text-white/70">Total de ventas</p>
+            <p className="text-4xl font-bold text-emerald-300">
               {money(totalVentas)}
             </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <select
+              value={mesFiltro}
+              onChange={(e) => setMesFiltro(e.target.value)}
+              className="px-3 py-2 rounded-lg bg-white/10 border border-white/15 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-300/60"
+              style={{ backgroundColor: "rgba(255,255,255,0.08)" }}
+            >
+              <option value="" style={{ backgroundColor: "#0b1320", color: "#fff" }}>
+                Todos los meses
+              </option>
+              {mesesDisponibles.map((m) => (
+                <option
+                  key={m}
+                  value={m}
+                  style={{ backgroundColor: "#0b1320", color: "#fff" }}
+                >
+                  {(() => {
+                    const [y, mo] = m.split("-");
+                    const nombres = [
+                      "Enero",
+                      "Febrero",
+                      "Marzo",
+                      "Abril",
+                      "Mayo",
+                      "Junio",
+                      "Julio",
+                      "Agosto",
+                      "Septiembre",
+                      "Octubre",
+                      "Noviembre",
+                      "Diciembre",
+                    ];
+                    const nombreMes = nombres[Number(mo) - 1] || m;
+                    return `${nombreMes} ${y}`;
+                  })()}
+                </option>
+              ))}
+            </select>
+            {mesFiltro && (
+              <button
+                type="button"
+                onClick={() => setMesFiltro("")}
+                className="text-xs px-3 py-2 rounded-lg border border-white/10 bg-white/10 text-white hover:bg-white/15"
+              >
+                Limpiar
+              </button>
+            )}
           </div>
         </div>
 
