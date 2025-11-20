@@ -1,6 +1,8 @@
 ﻿import React, { useEffect, useMemo, useState } from "react";
 import { Loader2, Upload, FileText, Download, X } from "lucide-react";
 import { jsPDF } from "jspdf";
+import { createRoot } from "react-dom/client";
+import html2canvas from "html2canvas";
 import { GlobalWorkerOptions, getDocument } from "pdfjs-dist/legacy/build/pdf";
 import pdfjsWorker from "pdfjs-dist/legacy/build/pdf.worker.entry";
 import supabase from "../../../../supabase";
@@ -21,6 +23,7 @@ const createInitialFacturaState = () => ({
   numero_dte: "",
   fecha_emision: new Date().toISOString().slice(0, 10),
   pdf_url: "",
+  pdf_nuevo_url: "",
   nit_receptor: "",
   nombre_receptor: "",
 });
@@ -119,6 +122,132 @@ const computeResumen = (items, fallbackMonto = 0) => {
     iva: 0,
     total: base,
   };
+};
+
+const waitForNextFrame = () =>
+  new Promise((resolve) => {
+    if (typeof requestAnimationFrame === "function") {
+      requestAnimationFrame(() => resolve());
+    } else {
+      setTimeout(resolve, 16);
+    }
+  });
+
+const buildFacturaDataForPdf = (selectedRow, facturaForm) => {
+  if (!selectedRow) return null;
+
+  const isoDate = facturaForm.fecha_emision || new Date().toISOString().slice(0, 10);
+
+  const previewCliente = {
+    nombre: selectedRow.cliente_nombre,
+    correo: facturaForm.nombre_receptor || selectedRow.cliente_correo || "",
+    pais: selectedRow.cliente_pais || "Guatemala",
+    municipio: selectedRow.cliente_municipio || "",
+    direccion: selectedRow.cliente_direccion || "",
+    hsp: selectedRow.hsp || facturaForm.nit_receptor || "",
+  };
+
+  const previewTipoInstalacion = {
+    nombreSistema: selectedRow.nombre_sistema || "",
+    tipoSistema: selectedRow.tipo_sistema || "",
+    descripcion: selectedRow.descripcion_sistema || "",
+  };
+
+  const previewItems = buildPreviewItems(selectedRow);
+  const previewResumen = computeResumen(previewItems, selectedRow.monto);
+  const comentarioIncluye =
+    selectedRow.comentario_cotizacion ||
+    selectedRow.comentario_incluye ||
+    selectedRow.comentario_incluy ||
+    "Detalle de compra seg�n la factura.";
+
+  return {
+    cliente: previewCliente,
+    tipoInstalacion: previewTipoInstalacion,
+    items: previewItems,
+    numeroFactura: facturaForm.numero_dte || selectedRow.codigo,
+    fecha: isoDate,
+    resumen: previewResumen,
+    comentarioIncluye,
+    datosFel: {
+      numero_autorizacion: facturaForm.numero_autorizacion,
+      serie: facturaForm.serie,
+      numero_dte: facturaForm.numero_dte,
+      fecha_emision: facturaForm.fecha_emision,
+      nit_receptor: facturaForm.nit_receptor,
+      nombre_receptor: facturaForm.nombre_receptor,
+    },
+  };
+};
+
+const generateFacturaNuevoPdf = async (pdfData) => {
+  if (typeof document === "undefined") return null;
+
+  const mountNode = document.createElement("div");
+  mountNode.style.position = "fixed";
+  mountNode.style.left = "-9999px";
+  mountNode.style.top = "0";
+  mountNode.style.pointerEvents = "none";
+  document.body.appendChild(mountNode);
+
+  const root = createRoot(mountNode);
+
+  try {
+    const captureNode = await new Promise((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        reject(new Error("No se pudo renderizar la plantilla del PDF."));
+      }, 1500);
+
+      root.render(
+        <FacturaPDFLayout
+          {...pdfData}
+          ref={(node) => {
+            if (node) {
+              clearTimeout(timeoutId);
+              resolve(node);
+            }
+          }}
+        />
+      );
+    });
+
+    await waitForNextFrame();
+
+    const canvas = await html2canvas(captureNode, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: null,
+    });
+
+    const imgData = canvas.toDataURL("image/png");
+
+    const pdf = new jsPDF({
+      orientation: "portrait",
+      unit: "pt",
+      format: "letter",
+    });
+
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
+
+    const imgWidth = canvas.width;
+    const imgHeight = canvas.height;
+
+    const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+    const imgPrintWidth = imgWidth * ratio;
+    const imgPrintHeight = imgHeight * ratio;
+
+    const x = (pdfWidth - imgPrintWidth) / 2;
+    const y = (pdfHeight - imgPrintHeight) / 2;
+
+    pdf.addImage(imgData, "PNG", x, y, imgPrintWidth, imgPrintHeight);
+    const blob = pdf.output("blob");
+
+    return blob;
+  } finally {
+    root.unmount();
+    document.body.removeChild(mountNode);
+  }
 };
 
 const formatDateDisplay = (value) => {
@@ -548,7 +677,10 @@ export default function OrdenesCompra() {
           serie,
           numero_dte,
           fecha_emision,
-          pdf_url
+          pdf_url,
+          pdf_nuevo_url,
+          nit_receptor,
+          nombre_receptor
         `
         )
         .eq("cotizacion_aprobacion_id", row.aprob_id)
@@ -566,6 +698,7 @@ export default function OrdenesCompra() {
             data.fecha_emision ||
             new Date().toISOString().slice(0, 10),
           pdf_url: data.pdf_url || "",
+          pdf_nuevo_url: data.pdf_nuevo_url || "",
           nit_receptor: data.nit_receptor || "",
           nombre_receptor: data.nombre_receptor || "",
         });
@@ -661,7 +794,7 @@ export default function OrdenesCompra() {
     }
   };
 
-  const handleSave = async () => {
+  const handleSaveOld = async () => {
     if (!selectedRow) return;
 
     if (
@@ -728,6 +861,115 @@ export default function OrdenesCompra() {
       setFacturaForm((prev) => ({
         ...prev,
         pdf_url: pdfUrl || prev.pdf_url,
+      }));
+
+      alert("Factura guardada correctamente.");
+    } catch (error) {
+      console.error(error);
+      alert(
+        error.message ||
+          "No se pudo guardar la factura. Intenta nuevamente."
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!selectedRow) return;
+
+    if (
+      !facturaForm.numero_autorizacion.trim() ||
+      !facturaForm.serie.trim() ||
+      !facturaForm.numero_dte.trim()
+    ) {
+      alert(
+        "Por favor completa n�mero de autorizaci�n, serie y n�mero de DTE."
+      );
+      return;
+    }
+
+    setSaving(true);
+    try {
+      let pdfUrl = facturaForm.pdf_url;
+      let pdfNuevoUrl = facturaForm.pdf_nuevo_url;
+
+      if (archivo) {
+        const fileName = `${selectedRow.aprob_id}.pdf`;
+        const { error: uploadError } = await supabase.storage
+          .from(FACTURAS_BUCKET)
+          .upload(fileName, archivo, {
+            upsert: true,
+          });
+
+        if (uploadError) throw uploadError;
+
+        const {
+          data: { publicUrl },
+        } = supabase.storage
+          .from(FACTURAS_BUCKET)
+          .getPublicUrl(fileName);
+
+        pdfUrl = publicUrl;
+      }
+
+      const pdfData = buildFacturaDataForPdf(selectedRow, facturaForm);
+      if (pdfData) {
+        const pdfBlob = await generateFacturaNuevoPdf(pdfData);
+        if (pdfBlob) {
+          const nuevoFileName = `${selectedRow.aprob_id}-nuevo.pdf`;
+          const { error: nuevoUploadError } = await supabase.storage
+            .from(FACTURAS_BUCKET)
+            .upload(nuevoFileName, pdfBlob, {
+              upsert: true,
+            });
+
+          if (nuevoUploadError) throw nuevoUploadError;
+
+          const {
+            data: { publicUrl: nuevoPublicUrl },
+          } = supabase.storage
+            .from(FACTURAS_BUCKET)
+            .getPublicUrl(nuevoFileName);
+
+          pdfNuevoUrl = nuevoPublicUrl;
+        }
+      }
+
+      const payload = {
+        cotizacion_aprobacion_id: selectedRow.aprob_id,
+        numero_autorizacion: facturaForm.numero_autorizacion.trim(),
+        serie: facturaForm.serie.trim(),
+        numero_dte: facturaForm.numero_dte.trim(),
+        fecha_emision: facturaForm.fecha_emision || null,
+        pdf_url: pdfUrl || null,
+        pdf_nuevo_url: pdfNuevoUrl || null,
+        nit_receptor: facturaForm.nit_receptor || null,
+        nombre_receptor: facturaForm.nombre_receptor || null,
+      };
+
+      if (facturaId) {
+        const { error } = await supabase
+          .from("facturas_cotizacion")
+          .update(payload)
+          .eq("id", facturaId);
+
+        if (error) throw error;
+      } else {
+        const { data, error } = await supabase
+          .from("facturas_cotizacion")
+          .insert(payload)
+          .select("id")
+          .single();
+
+        if (error) throw error;
+        setFacturaId(data.id);
+      }
+
+      setFacturaForm((prev) => ({
+        ...prev,
+        pdf_url: pdfUrl || prev.pdf_url,
+        pdf_nuevo_url: pdfNuevoUrl || prev.pdf_nuevo_url,
       }));
 
       alert("Factura guardada correctamente.");
@@ -1000,6 +1242,46 @@ export default function OrdenesCompra() {
                 {cargandoFactura ? (
                   <div className="flex items-center gap-2 text-white/70 text-sm">
                     <Loader2 className="animate-spin" /> Cargando factura...
+                  </div>
+                ) : facturaId ? (
+                  <div className="space-y-3">
+                    <div className="text-sm text-white/80">
+                      Factura ya registrada. Se muestra la vista previa y los archivos guardados.
+                    </div>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      {facturaForm.pdf_url ? (
+                        <a
+                          href={facturaForm.pdf_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-white/20 text-sm text-white/80 hover:bg-white/10"
+                        >
+                          <FileText className="w-4 h-4" />
+                          PDF FEL
+                        </a>
+                      ) : null}
+                      {facturaForm.pdf_nuevo_url ? (
+                        <a
+                          href={facturaForm.pdf_nuevo_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-white/20 text-sm text-white/80 hover:bg-white/10"
+                        >
+                          <FileText className="w-4 h-4" />
+                          PDF Nuevo
+                        </a>
+                      ) : null}
+                    </div>
+                    {hasFacturaPreviewData ? (
+                      <FacturaPreviewCard
+                        selectedRow={selectedRow}
+                        factura={facturaForm}
+                      />
+                    ) : (
+                      <p className="text-xs text-white/60">
+                        No hay datos suficientes para vista previa.
+                      </p>
+                    )}
                   </div>
                 ) : (
                   <>
