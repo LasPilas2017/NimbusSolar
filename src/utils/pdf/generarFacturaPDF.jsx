@@ -187,64 +187,9 @@ export const FacturaPDFLayout = forwardRef(
               borderTopRightRadius: "0px",
               borderBottomLeftRadius: "0px",
               borderBottomRightRadius: "0px",
-              overflow: "hidden",
-            }}
-          />
-
-          <div
-            style={{
-              position: "absolute",
-              top: "18px",
-              right: "25px",
-              width: "162px",
-              height: "104px",
-              zIndex: 2,
-            }}
-          >
-            <div
-              style={{
-                position: "absolute",
-                top: "12px",
-                right: "12px",
-                width: "81px",
-                height: "81px",
-                borderRadius: "50%",
-                background:
-                  "radial-gradient(circle at 30% 30%, #FFD700 0%, #FFEA00 45%, #FF8C00 80%)",
-                boxShadow:
-                  "0 0 18px rgba(255,215,0,0.45), 0 10px 20px rgba(0,31,77,0.2)",
-                zIndex: 1,
-              }}
-            />
-            <div
-              style={{
-                position: "absolute",
-                bottom: "5px",
-                right: "0px",
-                width: "135px",
-                height: "56px",
-                background:
-                  "linear-gradient(180deg, #E6F4FF 0%, #D7E8FF 100%)",
-                borderRadius: "40px",
-                boxShadow:
-                  "0 10px 22px rgba(0,31,77,0.18), inset 0 -5px 10px rgba(255,255,255,0.55)",
-                zIndex: 2,
-              }}
-            />
-            <div
-              style={{
-                position: "absolute",
-                bottom: "23px",
-                right: "108px",
-                width: "54px",
-                height: "38px",
-                background: "#E6F4FF",
-                borderRadius: "28px",
-                boxShadow: "0 5px 10px rgba(0,31,77,0.16)",
-                zIndex: 3,
-              }}
-            />
-          </div>
+            overflow: "hidden",
+          }}
+        />
 
           <div
             style={{
@@ -308,61 +253,6 @@ export const FacturaPDFLayout = forwardRef(
             zIndex: 2,
           }}
         />
-
-        <div
-          style={{
-            position: "absolute",
-            bottom: "0px",
-            left: "25px",
-            width: "171px",
-            height: "104px",
-            zIndex: 3,
-          }}
-        >
-          <div
-            style={{
-              position: "absolute",
-              bottom: "32px",
-              left: "0px",
-              width: "77px",
-              height: "77px",
-              borderRadius: "50%",
-              background:
-                "radial-gradient(circle at 40% 35%, #FFD700 0%, #FFEA00 45%, #FF8C00 85%)",
-              boxShadow:
-                "0 0 18px rgba(255,215,0,0.45), 0 10px 20px rgba(0,31,77,0.2)",
-              zIndex: 1,
-            }}
-          />
-          <div
-            style={{
-              position: "absolute",
-              bottom: "5px",
-              left: "14px",
-              width: "144px",
-              height: "58px",
-              background:
-                "linear-gradient(180deg, #E6F4FF 0%, #D7E8FF 100%)",
-              borderRadius: "42px",
-              boxShadow:
-                "0 10px 22px rgba(0,31,77,0.18), inset 0 -5px 10px rgba(255,255,255,0.55)",
-              zIndex: 2,
-            }}
-          />
-          <div
-            style={{
-              position: "absolute",
-              bottom: "21px",
-              left: "117px",
-              width: "56px",
-              height: "36px",
-              background: "#E6F4FF",
-              borderRadius: "30px",
-              boxShadow: "0 5px 10px rgba(0,31,77,0.16)",
-              zIndex: 3,
-            }}
-          />
-        </div>
 
         <div
           style={{
