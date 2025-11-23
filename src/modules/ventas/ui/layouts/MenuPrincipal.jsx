@@ -141,7 +141,7 @@ export default function Menuprincipal({
             {menuOpen && (
               <div
                 onClick={() => setMenuOpen(false)}
-                className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 transition-opacity duration-300"
+                className="fixed inset-0 bg-black/30 z-40 transition-opacity duration-300"
               />
             )}
 

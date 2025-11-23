@@ -798,6 +798,26 @@ export default function Autorizaciones({ user }) {
       if (String(row.estado).toLowerCase() !== "aprobada") return;
 
       // 1) Armar objeto cliente con los datos de la vista
+      const capacidadGeneracionCalculada = (() => {
+        const fromGeneracion =
+          row.generacion_prevista !== undefined && row.generacion_prevista !== null
+            ? Number(row.generacion_prevista)
+            : null;
+        if (Number.isFinite(fromGeneracion)) return fromGeneracion;
+
+        const fromConsumoMes =
+          row.consumo_kwh_mes !== undefined && row.consumo_kwh_mes !== null
+            ? Number(row.consumo_kwh_mes)
+            : null;
+        if (Number.isFinite(fromConsumoMes)) return fromConsumoMes;
+
+        const fromConsumoDia =
+          row.consumo_kwh_dia !== undefined && row.consumo_kwh_dia !== null
+            ? Number(row.consumo_kwh_dia) * 30
+            : null;
+        return Number.isFinite(fromConsumoDia) ? fromConsumoDia : null;
+      })();
+
       const cliente = {
         nombre: row.cliente_nombre || "Cliente sin nombre",
         correo: row.cliente_correo || "",
@@ -805,7 +825,7 @@ export default function Autorizaciones({ user }) {
         municipio: row.cliente_municipio || "",
         direccion: row.cliente_direccion || "",
         hsp: row.hsp || "",
-        capacidad_generacion: row.generacion_prevista ?? null,
+        capacidad_generacion: capacidadGeneracionCalculada,
       };
 
       // 2) Tipo de instalación usando los datos del sistema
@@ -870,6 +890,7 @@ export default function Autorizaciones({ user }) {
             row.monto_calculado ??
             subtotalCalculado
         ),
+        capacidad_generacion: capacidadGeneracionCalculada,
       };
 
       if (!resumenMontos.total || resumenMontos.total <= 0) {

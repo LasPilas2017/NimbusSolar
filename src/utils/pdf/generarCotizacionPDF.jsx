@@ -14,6 +14,17 @@ import logoPDF from "../../assets/images/logopdf.jpg";
 const safeText = (value, fallback = "-") =>
   value === undefined || value === null || value === "" ? fallback : value;
 
+const formatCapacidadGeneracion = (value) => {
+  if (value === undefined || value === null || value === "") return "--";
+  const num = Number(value);
+  if (!Number.isFinite(num)) return safeText(value, "--");
+  const hasDecimals = Math.abs(num % 1) > 0.0001;
+  return num.toLocaleString("es-GT", {
+    minimumFractionDigits: hasDecimals ? 2 : 0,
+    maximumFractionDigits: 2,
+  });
+};
+
 const CotizacionPDFLayout = forwardRef(
   (
     {
@@ -94,6 +105,14 @@ const CotizacionPDFLayout = forwardRef(
       typeof fecha === "string"
         ? fecha
         : new Date(fecha || Date.now()).toISOString().slice(0, 10);
+
+    const capacidadGeneracion =
+      cliente.capacidad_generacion ??
+      cliente.generacion_prevista ??
+      cliente.generacion ??
+      tipoInstalacion.capacidad_generacion ??
+      resumen.capacidad_generacion ??
+      null;
 
     return (
       <div
@@ -410,7 +429,7 @@ const CotizacionPDFLayout = forwardRef(
                   lineHeight: 1.05,
                 }}
               >
-                {safeText(cliente.capacidad_generacion, "--")} kWh
+                {formatCapacidadGeneracion(capacidadGeneracion)} kWh
               </div>
             </div>
           </div>
