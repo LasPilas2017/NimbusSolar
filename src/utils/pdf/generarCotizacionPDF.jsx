@@ -235,7 +235,7 @@ const CotizacionPDFLayout = forwardRef(
             zIndex: 4,
           }}
         >
-          <div style={{ fontWeight: 700 }}>Contactanos: 25093575</div>
+          <div style={{ fontWeight: 700 }}>Contactanos: +502 2509-3575</div>
           <div>Boulevar Vista Hermosa 25-80 2do. Nivel Edif. Maria del Alma zona 15</div>
         </div>
 
