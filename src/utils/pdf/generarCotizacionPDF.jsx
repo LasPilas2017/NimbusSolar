@@ -154,61 +154,28 @@ const CotizacionPDFLayout = forwardRef(
         <div
           style={{
             width: "100%",
-            height: "160px",
+            padding: "32px 40px 8px 40px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
             position: "relative",
             zIndex: 2,
           }}
         >
           <div
             style={{
-              position: "absolute",
-              top: "25px",
-              left: 0,
-              width: "68%",
-              height: "115px",
-              backgroundColor: "#151C3A",
-              borderTopLeftRadius: "0px",
-              borderTopRightRadius: "50px",
-              borderBottomLeftRadius: "0px",
-              borderBottomRightRadius: "50px",
-              overflow: "hidden",
-            }}
-          />
-
-          <div
-            style={{
-              position: "absolute",
-              top: "30px",
-              left: "375px",
-              width: "105px",
-              height: "105px",
-              borderRadius: "50%",
-              border: "8px solid #F7A938",
-              zIndex: 2,
-            }}
-          />
-
-          <div
-            style={{
-              position: "absolute",
-              top: "25px",
-              left: 0,
-              width: "68%",
-              height: "115px",
               display: "flex",
               flexDirection: "column",
-              justifyContent: "center",
-              paddingLeft: "45px",
-              lineHeight: 1.1,
-              zIndex: 3,
+              gap: "4px",
+              color: "#151C3A",
             }}
           >
             <span
               style={{
-                fontSize: "35px",
+                fontSize: "32px",
                 fontWeight: "800",
-                letterSpacing: "0.04em",
-                color: "#FFFFFF",
+                letterSpacing: "0.02em",
+                color: "#151C3A",
                 textTransform: "uppercase",
                 fontFamily: "Segoe UI, Roboto, sans-serif",
               }}
@@ -218,11 +185,10 @@ const CotizacionPDFLayout = forwardRef(
 
             <span
               style={{
-                marginTop: "6px",
-                fontSize: "18px",
-                fontWeight: "400",
+                fontSize: "16px",
+                fontWeight: "500",
                 color: "#F7A938",
-                letterSpacing: "0.06em",
+                letterSpacing: "0.04em",
                 fontFamily: "Segoe UI, Roboto, sans-serif",
               }}
             >
@@ -232,18 +198,14 @@ const CotizacionPDFLayout = forwardRef(
 
           <div
             style={{
-              position: "absolute",
-              right: "45px",
-              top: "55px",
               textAlign: "right",
-              zIndex: 5,
+              color: "#1a2440",
             }}
           >
             <div
               style={{
                 fontSize: "15px",
                 fontWeight: 700,
-                color: "#1a2440",
               }}
             >
               COTIZACION: {numeroCotizacion || "SIN-CODIGO"}
@@ -263,58 +225,11 @@ const CotizacionPDFLayout = forwardRef(
         <div
           style={{
             position: "absolute",
-            bottom: "0px",
-            left: 270,
-            width: "68%",
-            height: "115px",
-            backgroundColor: "#151C3A",
-            borderTopLeftRadius: "50px",
-            borderTopRightRadius: "0px",
-            borderBottomLeftRadius: "50px",
-            borderBottomRightRadius: "0px",
-            overflow: "hidden",
-            transform: "scaleY(-1)",
-            zIndex: 2,
-          }}
-        />
-
-        <div
-          style={{
-            position: "absolute",
-            bottom: "10px",
-            left: "275px",
-            width: "100px",
-            height: "100px",
-            borderRadius: "50%",
-            border: "8px solid #F7A938",
-            zIndex: 3,
-          }}
-        />
-
-        <div
-          style={{
-            position: "absolute",
-            bottom: "10px",
-            left: "775px",
-            width: "50px",
-            height: "100px",
-            backgroundColor: "#F7A938",
-            borderTopLeftRadius: "100px",
-            borderBottomLeftRadius: "100px",
-            borderTopRightRadius: "0px",
-            borderBottomRightRadius: "0px",
-            zIndex: 3,
-          }}
-        />
-
-        <div
-          style={{
-            position: "absolute",
-            bottom: "40px",
-            right: "80px",
-            width: "260px",
+            bottom: "24px",
+            left: "50%",
+            transform: "translateX(-50%)",
             textAlign: "center",
-            color: "#ffffff",
+            color: "#0f172a",
             fontSize: "11px",
             lineHeight: 1.4,
             zIndex: 4,
@@ -322,7 +237,6 @@ const CotizacionPDFLayout = forwardRef(
         >
           <div style={{ fontWeight: 700 }}>Contactanos: 25093575</div>
           <div>Boulevar Vista Hermosa 25-80 2do. Nivel Edif. Maria del Alma zona 15</div>
-          <div>www.nimbus-solar.com - hola@nimbus-solar.com</div>
         </div>
 
         <div
