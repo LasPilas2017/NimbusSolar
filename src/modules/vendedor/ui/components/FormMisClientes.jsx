@@ -35,6 +35,7 @@ import { ClientesSupabaseRepository } from "../../infra/supabase/ClientesSupabas
 import { HspResumenSupabaseRepository } from "../../infra/supabase/HspResumenSupabaseRepository.js";
 
 import { createCreateCliente } from "../../application/use-cases/createCliente.js";
+import { createUpdateCliente } from "../../application/use-cases/updateCliente.js";
 import { createGetDepartamentosConHsp } from "../../application/use-cases/getDepartamentosConHsp.js";
 import { createGetHspParaCliente } from "../../application/use-cases/getHspParaCliente.js";
 
@@ -47,6 +48,7 @@ const getHspParaCliente = createGetHspParaCliente({ hspResumenRepository });
 
 const clientesRepository = new ClientesSupabaseRepository(supabase);
 const createCliente = createCreateCliente({ clientesRepository });
+const updateCliente = createUpdateCliente({ clientesRepository });
 
 export default function FormMisClientes({
   onCancel,
@@ -54,8 +56,10 @@ export default function FormMisClientes({
   departamentos = {}, // reservado para futuras integraciones
   paisOptions = ["Guatemala"],
   onDepartamentoSelect,
+  modo = "crear", // "crear" | "editar"
+  cliente = null,
 }) {
-  const [form, setForm] = useState({
+  const blankForm = () => ({
     nombreCompleto: "",
     empresa: "",
     correo: "",
@@ -68,6 +72,8 @@ export default function FormMisClientes({
     hsp: "",
     fechaCreacion: new Date().toISOString().slice(0, 10),
   });
+
+  const [form, setForm] = useState(blankForm());
 
   const [errors, setErrors] = useState({});
   const [enviando, setEnviando] = useState(false);
@@ -158,10 +164,36 @@ export default function FormMisClientes({
     }
   };
 
+  // Rellenar datos cuando estemos en modo edicion
+  useEffect(() => {
+    if (modo !== "editar" || !cliente) return;
+    setForm((prev) => ({
+      ...prev,
+      nombreCompleto: cliente.nombre_completo || cliente.nombreCompleto || "",
+      empresa: cliente.empresa || "",
+      correo: cliente.correo || "",
+      telefono: cliente.telefono || "",
+      celular: cliente.celular || "",
+      pais: cliente.pais || "Guatemala",
+      departamento: cliente.departamento || "",
+      municipio: cliente.municipio || "",
+      direccion: cliente.direccion || "",
+      hsp:
+        cliente.hsp != null
+          ? Number(cliente.hsp).toString()
+          : cliente.hsp === 0
+          ? "0"
+          : "",
+      fechaCreacion:
+        cliente.fecha_creacion ||
+        cliente.fechaCreacion ||
+        new Date().toISOString().slice(0, 10),
+    }));
+  }, [modo, cliente]);
+
   const validar = () => {
     const e = {};
     if (!form.nombreCompleto.trim()) e.nombreCompleto = "Requerido";
-    if (!form.correo.trim()) e.correo = "Requerido";
     if (!form.departamento) e.departamento = "Requerido";
     if (!form.municipio.trim()) e.municipio = "Requerido";
     if (form.correo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.correo)) {
@@ -209,23 +241,28 @@ export default function FormMisClientes({
         vendedor_nombre: vendedorNombre,
       };
 
-      const data = await createCliente(payload);
+      const data =
+        modo === "editar" && cliente?.id
+          ? await updateCliente(cliente.id, payload)
+          : await createCliente(payload);
 
-      // Limpiar campos principales (dejamos fecha igual)
-      setForm((prev) => ({
-        ...prev,
-        nombreCompleto: "",
-        empresa: "",
-        correo: "",
-        telefono: "",
-        celular: "",
-        departamento: "",
-        municipio: "",
-        direccion: "",
-        hsp: "",
-      }));
+      // Limpiar campos principales (dejamos fecha igual) solo cuando creamos
+      if (modo === "crear") {
+        setForm((prev) => ({
+          ...prev,
+          nombreCompleto: "",
+          empresa: "",
+          correo: "",
+          telefono: "",
+          celular: "",
+          departamento: "",
+          municipio: "",
+          direccion: "",
+          hsp: "",
+        }));
+      }
 
-      onSuccess && onSuccess(data);
+      onSuccess && onSuccess(data, modo);
     } catch (err) {
       console.error(err);
       alert("Error al guardar en la base de datos.");
@@ -245,7 +282,7 @@ export default function FormMisClientes({
         <div className="flex items-center justify-between p-5 sm:p-6 border-b border-white/10">
           <div>
             <h1 className="text-2xl sm:text-3xl font-semibold text-white">
-              Ingresar Cliente
+              {modo === "editar" ? "Editar Cliente" : "Ingresar Cliente"}
             </h1>
             <p className="text-white/70 text-sm">
               Formulario para personal de ventas
@@ -269,7 +306,11 @@ export default function FormMisClientes({
               disabled={enviando}
               className="rounded-xl px-4 py-2.5 text-sm font-medium text-white border border-white/10 bg-gradient-to-r from-emerald-400 to-cyan-500 hover:from-emerald-300 hover:to-cyan-400 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {enviando ? "Guardando…" : "Guardar"}
+              {enviando
+                ? "Guardando..."
+                : modo === "editar"
+                ? "Guardar cambios"
+                : "Guardar"}
             </button>
           </div>
         </div>
@@ -296,10 +337,9 @@ export default function FormMisClientes({
               onChange={handleChange}
             />
             <Input
-              label="Correo Electrónico"
+              label="Correo electronico (opcional)"
               name="correo"
               type="email"
-              required
               value={form.correo}
               onChange={handleChange}
               error={errors.correo}

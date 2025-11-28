@@ -22,6 +22,7 @@ import FormMisClientes from "../components/FormMisClientes.jsx";
 import { supabase } from "../../../../infra/supabase/supabaseClient";
 import { ClientesSupabaseRepository } from "../../../vendedor/infra/supabase/ClientesSupabaseRepository.js";
 import { createGetMisClientes } from "../../../vendedor/application/use-cases/getMisClientes.js";
+import { createDeleteCliente } from "../../../vendedor/application/use-cases/deleteCliente.js";
 import { calcularCategoriaCliente } from "../../../vendedor/domain/services/calcularCategoriaCliente.js";
 
 // -----------------------------------------------------------------------------
@@ -29,6 +30,7 @@ import { calcularCategoriaCliente } from "../../../vendedor/domain/services/calc
 // -----------------------------------------------------------------------------
 const clientesRepository = new ClientesSupabaseRepository(supabase);
 const getMisClientes = createGetMisClientes({ clientesRepository });
+const deleteCliente = createDeleteCliente({ clientesRepository });
 
 export default function MisClientes() {
   const [mounted, setMounted] = useState(false);
@@ -36,6 +38,8 @@ export default function MisClientes() {
   const [clientesData, setClientesData] = useState([]);
   const [busqueda, setBusqueda] = useState("");
   const [cargando, setCargando] = useState(true);
+  const [clienteParaEditar, setClienteParaEditar] = useState(null);
+  const [menuAbiertoId, setMenuAbiertoId] = useState(null);
 
   // UI categorías
   const [categoria, setCategoria] = useState("todos");
@@ -91,8 +95,8 @@ export default function MisClientes() {
   }, [categoria, busqueda, clientesData]);
 
   // Cuando el formulario crea un nuevo cliente, lo agregamos a la lista
-  const handleSuccessForm = (nuevo) => {
-    const agregado = {
+  const handleSuccessForm = (nuevo, modo) => {
+    const normalizado = {
       id: nuevo.id,
       nombre_completo: nuevo.nombre_completo || "---",
       empresa: nuevo.empresa || "---",
@@ -104,8 +108,41 @@ export default function MisClientes() {
       pais: nuevo.pais || "---",
       categoria: calcularCategoriaCliente(nuevo.fecha_creacion), // derivado
     };
-    setClientesData((prev) => [agregado, ...prev]);
+
+    setClientesData((prev) => {
+      if (modo === "editar") {
+        return prev.map((c) => (c.id === normalizado.id ? normalizado : c));
+      }
+      return [normalizado, ...prev];
+    });
+
     setAbrirForm(false);
+    setClienteParaEditar(null);
+  };
+
+  const handleEditar = (cliente) => {
+    setClienteParaEditar(cliente);
+    setAbrirForm(true);
+  };
+
+  const handleEliminar = async (cliente) => {
+    const nombre = cliente?.nombre_completo || cliente?.nombre || "este cliente";
+    const confirmar = window.confirm(
+      `¿Seguro que deseas eliminar ${nombre}? Esta accion no se puede deshacer.`
+    );
+    if (!confirmar) return;
+
+    try {
+      setCargando(true);
+      await deleteCliente(cliente.id);
+      setClientesData((prev) => prev.filter((c) => c.id !== cliente.id));
+    } catch (err) {
+      console.error("Error eliminando cliente:", err);
+      alert("No se pudo eliminar el cliente. Intenta de nuevo.");
+    } finally {
+      setCargando(false);
+      setMenuAbiertoId(null);
+    }
   };
 
   const seleccionarCategoria = (cat) => {
@@ -117,8 +154,13 @@ export default function MisClientes() {
     <div className="absolute inset-0 w-full h-full p-4 sm:p-6 md:p-8 bg-gradient-to-b from-[#0b1320]/80 to-[#0b1320]/90">
       {abrirForm ? (
         <FormMisClientes
-          onCancel={() => setAbrirForm(false)}
+          onCancel={() => {
+            setAbrirForm(false);
+            setClienteParaEditar(null);
+          }}
           onSuccess={handleSuccessForm}
+          modo={clienteParaEditar ? "editar" : "crear"}
+          cliente={clienteParaEditar}
         />
       ) : (
         <div
@@ -207,7 +249,10 @@ export default function MisClientes() {
               </div>
 
               <button
-                onClick={() => setAbrirForm(true)}
+                onClick={() => {
+                  setClienteParaEditar(null);
+                  setAbrirForm(true);
+                }}
                 className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium
                            text-white shadow-md border border-white/10
                            bg-gradient-to-r from-emerald-400 to-cyan-500 hover:from-emerald-300 hover:to-cyan-400"
@@ -253,14 +298,17 @@ export default function MisClientes() {
                   <th className="px-4 py-3 text-left border-b border-white/10">
                     País
                   </th>
-                  <th className="px-4 py-3 text-left border-b border-white/10">
-                    Estado
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {!cargando &&
-                  clientesFiltrados.map((c, i) => (
+              <th className="px-4 py-3 text-left border-b border-white/10">
+                Estado
+              </th>
+              <th className="px-4 py-3 text-left border-b border-white/10">
+                Acciones
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {!cargando &&
+              clientesFiltrados.map((c, i) => (
                     <tr
                       key={c.id}
                       className={`${
@@ -291,27 +339,66 @@ export default function MisClientes() {
                       <td className="px-4 py-3 text-white/90">
                         {c.pais || "---"}
                       </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={
-                            "px-2 py-1 rounded-full text-[11px] font-medium border " +
-                            (c.categoria === "frecuentes"
-                              ? "bg-emerald-400/15 text-emerald-200 border-emerald-300/30"
-                              : c.categoria === "recientes"
-                              ? "bg-amber-400/15 text-amber-200 border-amber-300/30"
-                              : "bg-white/10 text-white/80 border-white/20")
-                          }
+                  <td className="px-4 py-3">
+                    <span
+                      className={
+                        "px-2 py-1 rounded-full text-[11px] font-medium border " +
+                        (c.categoria === "frecuentes"
+                          ? "bg-emerald-400/15 text-emerald-200 border-emerald-300/30"
+                          : c.categoria === "recientes"
+                          ? "bg-amber-400/15 text-amber-200 border-amber-300/30"
+                          : "bg-white/10 text-white/80 border-white/20")
+                      }
+                    >
+                      {c.categoria}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 relative">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMenuAbiertoId((prev) => (prev === c.id ? null : c.id));
+                      }}
+                      className="px-2 py-1 rounded-lg border border-white/15 bg-white/5 text-white/80 hover:bg-white/10"
+                      aria-haspopup="true"
+                      aria-expanded={menuAbiertoId === c.id}
+                    >
+                      ☰
+                    </button>
+                    {menuAbiertoId === c.id && (
+                      <div className="absolute right-0 mt-2 w-36 rounded-lg border border-white/15 bg-[#0b1320] text-sm text-white/80 shadow-xl z-10">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setMenuAbiertoId(null);
+                            handleEditar(c);
+                          }}
+                          className="w-full text-left px-3 py-2 hover:bg-white/10"
                         >
-                          {c.categoria}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                          Editar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEliminar(c);
+                          }}
+                          className="w-full text-left px-3 py-2 text-rose-200 hover:bg-rose-500/10"
+                        >
+                          Eliminar
+                        </button>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              ))}
 
                 {cargando && (
                   <tr>
                     <td
-                      colSpan="9"
+                      colSpan="10"
                       className="text-center text-white/60 py-8 italic"
                     >
                       Cargando clientes…
@@ -322,7 +409,7 @@ export default function MisClientes() {
                 {!cargando && clientesFiltrados.length === 0 && (
                   <tr>
                     <td
-                      colSpan="9"
+                      colSpan="10"
                       className="text-center text-white/60 py-8 italic"
                     >
                       No hay clientes registrados.

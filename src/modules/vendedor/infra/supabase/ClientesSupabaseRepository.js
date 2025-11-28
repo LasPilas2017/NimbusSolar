@@ -48,4 +48,27 @@ export class ClientesSupabaseRepository extends ClientesRepository {
 
     return data;
   }
+
+  async updateCliente(id, payload) {
+    const { data, error } = await this.supabase
+      .from("clientes")
+      .update(payload)
+      .eq("id", id)
+      .select("*")
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return data;
+  }
+
+  async deleteCliente(id) {
+    const { error } = await this.supabase.from("clientes").delete().eq("id", id);
+    if (error) {
+      throw error;
+    }
+    return true;
+  }
 }

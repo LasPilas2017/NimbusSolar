@@ -26,6 +26,22 @@ export class ClientesRepository {
    * @param {object} payload - Campos ya mapeados a snake_case para la BD.
    */
   async createCliente(payload) {
-    throw new Error("Método createCliente() no implementado");
+    throw new Error("Metodo createCliente() no implementado");
+  }
+  /**
+   * Debe actualizar un cliente existente y devolver el registro actualizado.
+   * @param {string} id - UUID del cliente a actualizar.
+   * @param {object} payload - Campos ya mapeados a snake_case para la BD.
+   */
+  async updateCliente(id, payload) {
+    throw new Error("Metodo updateCliente() no implementado");
+  }
+
+  /**
+   * Debe eliminar un cliente existente.
+   * @param {string} id - UUID del cliente a eliminar.
+   */
+  async deleteCliente(id) {
+    throw new Error("Metodo deleteCliente() no implementado");
   }
 }

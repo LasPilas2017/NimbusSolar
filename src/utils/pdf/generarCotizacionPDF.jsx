@@ -84,15 +84,15 @@ const CotizacionPDFLayout = forwardRef(
       }
     }
 
-  const lineItems = items.length
-    ? items
-    : [
-        {
-          descripcion: "Sin items registrados",
-          cantidad: 1,
-          precio: subtotalCalculado,
-        },
-      ];
+    const lineItems = items.length
+      ? items
+      : [
+          {
+            descripcion: "Sin items registrados",
+            cantidad: 1,
+            precio: subtotalCalculado,
+          },
+        ];
 
     const formatCurrency = (value) =>
       new Intl.NumberFormat("es-GT", {
@@ -320,8 +320,8 @@ const CotizacionPDFLayout = forwardRef(
             zIndex: 4,
           }}
         >
-          <div style={{ fontWeight: 700 }}>(+502) 1234-5678</div>
-          <div>Calle Cualquiera 123, Ciudad de Guatemala</div>
+          <div style={{ fontWeight: 700 }}>Contactanos: 25093575</div>
+          <div>Boulevar Vista Hermosa 25-80 2do. Nivel Edif. Maria del Alma zona 15</div>
           <div>www.nimbus-solar.com - hola@nimbus-solar.com</div>
         </div>
 
@@ -516,35 +516,26 @@ const CotizacionPDFLayout = forwardRef(
                 }}
               >
                 <span>Total</span>
-              <span>{formatCurrency(totalResumen)}</span>
+                <span>{formatCurrency(totalResumen)}</span>
+              </div>
             </div>
           </div>
-        </div>
 
-        {comentarioIncluye ? (
-          <div
-            style={{
-              marginTop: "16px",
-              borderRadius: "10px",
-              border: "1px solid rgba(21,28,58,0.12)",
-              backgroundColor: "rgba(21,28,58,0.05)",
-              padding: "12px 16px",
-              color: "#111827",
-              fontSize: "12px",
-            }}
-          >
+          {comentarioIncluye ? (
             <div
               style={{
-                fontWeight: 700,
-                marginBottom: "4px",
-                color: "#151C3A",
+                marginTop: "16px",
+                borderRadius: "10px",
+                border: "1px solid rgba(21,28,58,0.12)",
+                backgroundColor: "rgba(21,28,58,0.05)",
+                padding: "12px 16px",
+                color: "#111827",
+                fontSize: "12px",
               }}
             >
-              Qué incluye la compra
+              <div style={{ lineHeight: 1.4 }}>{comentarioIncluye}</div>
             </div>
-            <div style={{ lineHeight: 1.4 }}>{comentarioIncluye}</div>
-          </div>
-        ) : null}
+          ) : null}
 
           <div
             style={{
@@ -651,22 +642,22 @@ export default async function generarCotizacionPDF(params = {}) {
       }, 2000);
 
       root.render(
-      <CotizacionPDFLayout
-        ref={(node) => {
-          if (node) {
-            clearTimeout(timeoutId);
-            resolve(node);
-          }
-        }}
-        cliente={cliente}
-        tipoInstalacion={tipoInstalacion}
-        items={items}
-        numeroCotizacion={numeroCotizacion}
-        fecha={fecha}
-        resumen={resumen}
-        comentarioIncluye={comentarioIncluye}
-      />
-    );
+        <CotizacionPDFLayout
+          ref={(node) => {
+            if (node) {
+              clearTimeout(timeoutId);
+              resolve(node);
+            }
+          }}
+          cliente={cliente}
+          tipoInstalacion={tipoInstalacion}
+          items={items}
+          numeroCotizacion={numeroCotizacion}
+          fecha={fecha}
+          resumen={resumen}
+          comentarioIncluye={comentarioIncluye}
+        />
+      );
     });
 
     await waitForNextFrame();
