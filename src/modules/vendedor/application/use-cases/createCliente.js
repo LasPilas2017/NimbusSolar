@@ -23,7 +23,8 @@ export function createCreateCliente({ clientesRepository }) {
     const payload = {
       nombre_completo: trimOrNull(form.nombreCompleto),
       empresa: trimOrNull(form.empresa),
-      correo: trimOrNull(form.correo),
+      // correo es opcional, pero la columna es NOT NULL; guardamos cadena vacía si viene vacío
+      correo: trimOrNull(form.correo) ?? "",
       telefono: trimOrNull(form.telefono),
       celular: trimOrNull(form.celular),
       departamento: trimOrNull(form.departamento),

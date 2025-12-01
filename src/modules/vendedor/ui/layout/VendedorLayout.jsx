@@ -14,6 +14,7 @@ import {
   FiUsers,
   FiUserCheck,
   FiCheckSquare,
+  FiPhoneCall,
   FiFileText,
   FiShoppingCart,
   FiChevronLeft,
@@ -28,6 +29,7 @@ import RESULTADOS from "../pages/RESULTADOS.jsx";
 import PROSPECTOS from "../pages/PROSPECTOS.jsx";
 import MisClientes from "../pages/MisClientes.jsx";
 import Cotizaciones from "../pages/Cotizaciones.jsx";
+import Llamadas from "../pages/Llamadas.jsx";
 import OC from "../pages/OC.jsx";
 import Ventas from "../pages/Ventas.jsx";
 import Autorizaciones from "../pages/Autorizaciones.jsx";
@@ -42,6 +44,7 @@ const PERMISOS_VENDEDOR_POR_ROL = {
       "MI RESUMEN",
       "MIS VENDEDORES",
       "MIS CLIENTES",
+      "LLAMADAS",
       "COTIZACIONES",
       "AUTORIZACIONES",
       "ÓRDENES DE COMPRA",
@@ -50,7 +53,7 @@ const PERMISOS_VENDEDOR_POR_ROL = {
     floatViews: ["resultados", "prospectos", "crm"],
   },
   vendedor: {
-    tabs: ["MI RESUMEN", "MIS CLIENTES", "COTIZACIONES", "VENTAS"],
+    tabs: ["MI RESUMEN", "MIS CLIENTES", "LLAMADAS", "COTIZACIONES", "VENTAS"],
     floatViews: ["resultados", "prospectos", "crm"],
   },
   admin: {
@@ -58,6 +61,7 @@ const PERMISOS_VENDEDOR_POR_ROL = {
       "MI RESUMEN",
       "MIS VENDEDORES",
       "MIS CLIENTES",
+      "LLAMADAS",
       "COTIZACIONES",
       "AUTORIZACIONES",
       "ÓRDENES DE COMPRA",
@@ -94,6 +98,7 @@ export default function VendedorLayout({ user, rolUsuario, onLogout }) {
     { label: "MI RESUMEN", icon: <FiHome /> },
     { label: "MIS VENDEDORES", icon: <FiUsers /> },
     { label: "MIS CLIENTES", icon: <FiUserCheck /> },
+    { label: "LLAMADAS", icon: <FiPhoneCall /> },
     { label: "COTIZACIONES", icon: <FiCheckSquare /> },
     { label: "AUTORIZACIONES", icon: <FiCheckCircle /> },
     { label: "ÓRDENES DE COMPRA", icon: <FiFileText /> },
@@ -157,6 +162,16 @@ export default function VendedorLayout({ user, rolUsuario, onLogout }) {
   // ---------------------------------------------------------------------------
   const renderContenido = () => {
     if (tab === "MIS CLIENTES") return <MisClientes />;
+    if (tab === "LLAMADAS") return <Llamadas user={user} />;
+    if (tab === "CRM")
+      return (
+        <CRMPage
+          theme="vendedor"
+          origen="sistema-vendedor"
+          user={user}
+          rolUsuario={rolUsuario}
+        />
+      );
     if (tab === "COTIZACIONES") return <Cotizaciones user={user} />;
     if (tab === "AUTORIZACIONES")
       return <Autorizaciones user={user} rolUsuario={rolUsuario} />;
@@ -345,3 +360,4 @@ VendedorLayout.propTypes = {
   rolUsuario: PropTypes.string,
   onLogout: PropTypes.func, // 👈 nuevo (opcional, pero recomendado)
 };
+
