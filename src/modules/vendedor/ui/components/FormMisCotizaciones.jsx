@@ -183,6 +183,8 @@ export default function FormMisCotizaciones({
   const [clienteSel, setClienteSel] = useState(null); // {id, nombre}
   const [sugerencias, setSugerencias] = useState([]);
   const [cargandoSug, setCargandoSug] = useState(false);
+  const [readyCotizacion, setReadyCotizacion] = useState(false);
+  const [readyMsg, setReadyMsg] = useState("");
 
   // ===== sistemas =====
   const [sistemas, setSistemas] = useState([]);
@@ -352,10 +354,38 @@ export default function FormMisCotizaciones({
   const displayName = (r) =>
     (r?.nombre_completo?.trim() || r?.empresa?.trim() || "").trim();
 
+  const verificarListoCotizacion = async (clienteId) => {
+    setReadyCotizacion(false);
+    setReadyMsg("");
+    if (!clienteId) return;
+    try {
+      const { data, error } = await supabase
+        .from("llamadas")
+        .select("tipo_gestion")
+        .eq("cliente_id", clienteId)
+        .order("fecha_hora", { ascending: false })
+        .limit(1);
+      if (error) throw error;
+      const ultima = data?.[0]?.tipo_gestion || "";
+      const ok = ultima.toLowerCase() === "cotización";
+      setReadyCotizacion(ok);
+      setReadyMsg(
+        ok
+          ? "Cliente listo para cotización (última gestión: Cotización)."
+          : "El cliente no está listo para cotización (asigna gestión 'Cotización' en Llamadas)."
+      );
+    } catch (e) {
+      console.error("verificar listo cotizacion:", e);
+      setReadyMsg("No se pudo verificar el estado del cliente para cotizar.");
+      setReadyCotizacion(false);
+    }
+  };
+
   const seleccionarCliente = (r) => {
     const nombre = displayName(r);
     setClienteSel({ id: r.id, nombre });
     setQ(nombre);
+    verificarListoCotizacion(r.id);
   };
 
   // código generado tipo "CLI-001" (solo para nuevas)
@@ -532,6 +562,10 @@ export default function FormMisCotizaciones({
   const submit = async (e) => {
     e.preventDefault();
     if (!clienteSel) return;
+    if (modo === "nuevo" && !readyCotizacion) {
+      alert("El cliente no está listo para cotización (asigna gestión 'Cotización' en Llamadas).");
+      return;
+    }
 
     // ===== MODO EDITAR: UPDATE directo en Supabase =====
     if (modo === "editar" && cotizacionId) {
@@ -735,6 +769,17 @@ export default function FormMisCotizaciones({
                         </button>
                       );
                     })}
+                </div>
+              )}
+              {clienteSel && readyMsg && (
+                <div
+                  className={`mt-2 text-xs px-3 py-2 rounded-xl border ${
+                    readyCotizacion
+                      ? "bg-emerald-400/10 border-emerald-400/30 text-emerald-100"
+                      : "bg-amber-500/10 border-amber-400/30 text-amber-100"
+                  }`}
+                >
+                  {readyMsg}
                 </div>
               )}
             </div>
