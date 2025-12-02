@@ -42,7 +42,6 @@ const PERMISOS_VENDEDOR_POR_ROL = {
   supervisor_ventas: {
     tabs: [
       "MI RESUMEN",
-      "MIS VENDEDORES",
       "MIS CLIENTES",
       "LLAMADAS",
       "COTIZACIONES",
@@ -59,7 +58,6 @@ const PERMISOS_VENDEDOR_POR_ROL = {
   admin: {
     tabs: [
       "MI RESUMEN",
-      "MIS VENDEDORES",
       "MIS CLIENTES",
       "LLAMADAS",
       "COTIZACIONES",
@@ -96,7 +94,6 @@ export default function VendedorLayout({ user, rolUsuario, onLogout }) {
 
   const menuLateral = [
     { label: "MI RESUMEN", icon: <FiHome /> },
-    { label: "MIS VENDEDORES", icon: <FiUsers /> },
     { label: "MIS CLIENTES", icon: <FiUserCheck /> },
     { label: "LLAMADAS", icon: <FiPhoneCall /> },
     { label: "COTIZACIONES", icon: <FiCheckSquare /> },
