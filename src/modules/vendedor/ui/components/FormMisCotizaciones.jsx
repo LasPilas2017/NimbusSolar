@@ -14,22 +14,29 @@ const TABLE_BASE = "cotizaciones_aprobacion";
 const TABLE_CONSUMOS = "cliente_consumos";
 
 /* ========== Sub-componentes UI compactos ========== */
-function InputCalcCompact({ value, suffix, placeholder }) {
+function InputCalcCompact({ value, suffix, placeholder = "", disabled = false, className = "" }) {
   const hasSuffix = Boolean(suffix);
   return (
-    <div className="relative rounded-xl border border-white/10 bg-white/10 text-white focus-within:ring-2 focus-within:ring-cyan-400/60">
+    <div
+      className={[
+        "relative rounded-xl border border-white/10 bg-white/10 text-white focus-within:ring-2 focus-within:ring-cyan-400/60",
+        disabled ? "cursor-not-allowed" : "",
+        className,
+      ].join(" ")}
+    >
       <input
         readOnly
+        disabled={disabled}
         value={value}
         placeholder={placeholder}
         className={[
-          "w-full bg-transparent px-3 text-sm placeholder-white/60 focus:outline-none",
-          "h-9",
-          hasSuffix ? "pr-12" : "",
+          "w-full bg-transparent px-4 text-xs placeholder-white/60 focus:outline-none text-center",
+          "h-10",
+          hasSuffix ? "pr-14" : "",
         ].join(" ")}
       />
       {hasSuffix && (
-        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] px-2 py-0.5 rounded-lg border border-white/10 bg-white/10 text-white/80">
+        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] px-2.5 py-0.5 rounded-lg border border-white/10 bg-white/10 text-white/80">
           {suffix}
         </span>
       )}
@@ -637,6 +644,9 @@ export default function FormMisCotizaciones({
       ? codigoCot || prefill?.codigo || codigoCliente
       : codigoCliente;
 
+  // Solo bloquea cuando ya hay cliente seleccionado y no está listo
+  const formBloqueado = modo === "nuevo" && clienteSel && !readyCotizacion;
+
   return (
     <div
       className={`pointer-events-auto mx-auto w-full max-w-4xl rounded-3xl border border-white/10
@@ -695,14 +705,37 @@ export default function FormMisCotizaciones({
       </div>
 
       {/* Formulario principal */}
-      <form id="form-cot-min" onSubmit={submit} className="p-5 sm:p-6 space-y-5">
+      <div className="relative">
+        {formBloqueado && (
+          <div className="absolute inset-0 z-30 bg-black/35 backdrop-blur-sm flex items-center justify-center text-white text-sm px-4 text-center rounded-b-3xl pointer-events-none">
+            {readyMsg || "El cliente no está listo para cotización (asigna gestión 'Cotización' en Llamadas)."}
+          </div>
+        )}
+        <form id="form-cot-min" onSubmit={submit} className="p-5 sm:p-6 space-y-5">
         {/* Sistema + Cliente */}
         <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {/* Cliente */}
             <div className="min-w-0 relative">
-              <label className="block text-[11px] uppercase tracking-wide text-white/60 mb-2">
+              <label className="block text-[11px] uppercase tracking-wide text-white/60 mb-2 flex items-center gap-2">
                 Cliente
+                {clienteSel && (
+                  <span
+                    className={[
+                      "inline-flex items-center justify-center w-5 h-5 rounded-full border text-xs font-bold",
+                      readyCotizacion
+                        ? "border-emerald-400 text-emerald-300 bg-emerald-400/10"
+                        : "border-rose-400 text-rose-300 bg-rose-400/10",
+                    ].join(" ")}
+                    title={
+                      readyCotizacion
+                        ? "Cliente listo para cotizar"
+                        : "El cliente no tiene gestión 'Cotización'"
+                    }
+                  >
+                    ✓
+                  </span>
+                )}
               </label>
               <div className="relative group focus-within:ring-2 focus-within:ring-cyan-400/60 rounded-xl">
                 <input
@@ -712,6 +745,8 @@ export default function FormMisCotizaciones({
                     // si el usuario escribe a mano, desvinculamos el cliente seleccionado
                     if (e.target.value !== (clienteSel?.nombre || "")) {
                       setClienteSel(null);
+                      setReadyCotizacion(false);
+                      setReadyMsg("");
                     }
                   }}
                   placeholder={
@@ -730,9 +765,9 @@ export default function FormMisCotizaciones({
                     focus:border-cyan-300/40
                     focus:bg-white/10
                   "
+                  // permitido para seleccionar otro cliente aunque esté bloqueado
                 />
               </div>
-
               {/* Sugerencias */}
               {q.trim() && !clienteSel && (
                 <div className="absolute left-0 right-0 z-20 mt-2 max-h-60 overflow-auto rounded-xl
@@ -771,17 +806,6 @@ export default function FormMisCotizaciones({
                     })}
                 </div>
               )}
-              {clienteSel && readyMsg && (
-                <div
-                  className={`mt-2 text-xs px-3 py-2 rounded-xl border ${
-                    readyCotizacion
-                      ? "bg-emerald-400/10 border-emerald-400/30 text-emerald-100"
-                      : "bg-amber-500/10 border-amber-400/30 text-amber-100"
-                  }`}
-                >
-                  {readyMsg}
-                </div>
-              )}
             </div>
             {/* Sistema */}
             <div className="min-w-0">
@@ -793,42 +817,43 @@ export default function FormMisCotizaciones({
                 value={sistemaSel}
                 onChange={setSistemaSel}
                 placeholder="Seleccionar sistema..."
-                disabled={cargandoSistemas}
+                disabled={cargandoSistemas || formBloqueado}
               />
             </div>
           </div>
         </div>
 
         {/* Resultados calculadora (sin botón Guardar) */}
-        <div className="mt-2 flex flex-nowrap items-center gap-2 overflow-x-auto no-scrollbar">
+        <div className="mt-2 flex flex-nowrap items-center gap-3 justify-center overflow-x-auto no-scrollbar">
           <button
             type="button"
             onClick={() => setOpenCalc(true)}
-            disabled={!clienteSel}
-            className="h-9 flex-shrink-0 whitespace-nowrap rounded-lg px-3 text-sm font-medium text-white
-               border border-white/10 bg-gradient-to-r from-cyan-400 to-blue-600
-               hover:from-cyan-300 hover:to-blue-500 disabled:opacity-40 disabled:cursor-not-allowed"
+            disabled={!clienteSel || formBloqueado}
+            className="h-10 flex-shrink-0 rounded-lg px-4 text-sm font-semibold text-white border border-white/10 bg-gradient-to-r from-cyan-400 to-blue-600 hover:from-cyan-300 hover:to-blue-500 disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{ minWidth: "120px" }}
           >
-            Calcular promedios (kWh/mes)
+            Calc
           </button>
-
           <InputCalcCompact
             value={calc.kwDia}
-            placeholder="kW/d"
+            placeholder=""
             suffix="kWh/d"
-            className="!w-[90px]"
+            className="!w-[140px] text-xs"
+            disabled={formBloqueado}
           />
           <InputCalcCompact
             value={calc.promedioKW}
-            placeholder="kW/mes"
+            placeholder=""
             suffix="kWh/mes"
-            className="!w-[90px]"
+            className="!w-[140px] text-xs"
+            disabled={formBloqueado}
           />
           <InputCalcCompact
             value={calc.precioKWh}
-            placeholder="Q/kWh"
+            placeholder=""
             suffix="Q/kWh"
-            className="!w-[90px]"
+            className="!w-[140px] text-xs"
+            disabled={formBloqueado}
           />
         </div>
 
@@ -863,6 +888,7 @@ export default function FormMisCotizaciones({
           </div>
         )}
       </form>
+      </div>
 
       {/* Modal calculadora */}
       <CalculadoraProm
