@@ -37,6 +37,10 @@ import PrimerIngreso from "../modules/usuarios/ui/pages/PrimerIngreso.jsx";
 // SISTEMA DEL VENDEDOR (layout azul, independiente del admin)
 import VendedorLayout from "../modules/vendedor/ui/layout/VendedorLayout.jsx";
 
+// SISTEMA DEL CONTADOR (nuevo modulo con arquitectura limpia)
+import ContabilidadLayout from "../modules/contabilidad/ui/layouts/ContabilidadLayout";
+import TableroContable from "../modules/contabilidad/ui/pages/TableroContable";
+
 // main.jsx o index.jsx
 import generarCotizacionPDF from "../utils/pdf/generarCotizacionPDF";
 
@@ -125,6 +129,14 @@ export default function App() {
   const getSessionUC = useMemo(() => new GetSessionUseCase(authRepo), [authRepo]);
   const logoutUC = useMemo(() => new LogoutUseCase(authRepo), [authRepo]);
 
+  // Normalizamos rol y sistema asignado del usuario autenticado para decidir
+  // qué layout cargar (vendedor, contabilidad o admin).
+  const role = String(usuario?.rol || "").toLowerCase();
+  const sistema = String(
+    usuario?.sistema || usuario?.sistema_asignado || ""
+  ).toLowerCase();
+  const esContador = role === "contador";
+
   // ===== Permissions by user (solo para sistema ADMIN)
   const allowedIds = useMemo(() => {
     if (!usuario) return [];
@@ -191,6 +203,17 @@ export default function App() {
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Ajuste de ruta base para el rol contador (sin tocar router central)
+  useEffect(() => {
+    if (esContador) {
+      try {
+        window.history.replaceState(null, "", "/contabilidad/tablero");
+      } catch (error) {
+        console.warn("No se pudo ajustar la ruta del contador:", error);
+      }
+    }
+  }, [esContador]);
 
   // ===== Guards (solo admin)
   const canAccess = (tabId) => allowedIds.includes(tabId);
@@ -291,12 +314,6 @@ export default function App() {
   // DECISIÓN: ¿SISTEMA DEL VENDEDOR o SISTEMA ADMINISTRATIVO?
   // =========================================================
 
-  // Normalizamos rol y sistema asignado del usuario autenticado
-  const role = String(usuario.rol || "").toLowerCase();
-  const sistema = String(
-    usuario.sistema || usuario.sistema_asignado || ""
-  ).toLowerCase();
-
   // Entra al sistema AZUL si:
   // - es vendedor (ventas)
   // - es supervisor de ventas
@@ -309,6 +326,19 @@ export default function App() {
     return (
       <div className="relative min-h-screen h-screen bg-[#020617] overflow-hidden flex flex-col">
         <VendedorLayout user={usuario} rolUsuario={role} onLogout={handleLogout} />
+      </div>
+    );
+  }
+
+  // 👉 Sistema del CONTADOR (nuevo modulo independiente del admin)
+  // Carga el layout ContabilidadLayout y define /contabilidad/tablero como home.
+  if (esContador) {
+    return (
+      <div className="relative min-h-screen h-screen bg-slate-100 overflow-hidden flex flex-col">
+        <ContabilidadLayout>
+          {/* Pagina inicial del sistema contable */}
+          <TableroContable />
+        </ContabilidadLayout>
       </div>
     );
   }
