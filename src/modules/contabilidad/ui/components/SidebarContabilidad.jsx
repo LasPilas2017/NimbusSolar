@@ -51,6 +51,7 @@ const ICON_MAP = {
   ShieldCheck,
   Users,
   LogOut,
+  FolderKanban,
 };
 
 // Componente base reutilizable que pinta el menú usando las props de control.
@@ -105,8 +106,12 @@ function SidebarBase({ location, onNavigate, onLogout }) {
       } flex-col bg-white/60 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.12)] border-r border-white/40 text-slate-900 rounded-tr-3xl rounded-br-3xl overflow-hidden transition-[width] duration-200`}
     >
       {/* Encabezado del sidebar */}
-      <div className="px-4 py-4 border-b border-white/40 bg-white/70 backdrop-blur-lg flex items-center justify-between">
-        {!collapsed && <h2 className="text-lg font-semibold text-gray-900">Directorio Contable</h2>}
+      <div className="px-4 py-4 border-b border-white/40 bg-white/40 backdrop-blur-xl flex items-center justify-between">
+        {!collapsed && (
+          <div className="flex items-center gap-2 text-gray-800">
+            <FolderKanban size={18} />
+          </div>
+        )}
         <button
           type="button"
           onClick={() => {
