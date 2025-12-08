@@ -444,10 +444,6 @@ const listadoFiltrado = useMemo(() => {
             )}
           </div>
 
-          <div className="mt-3 text-[11px] text-white/50">
-            *Mostrando 1 (la última) por cliente. Haz clic en el nombre para
-            ver el historial.
-          </div>
         </div>
 
         {/* MODAL: Crear cotización (modo NUEVO) */}
