@@ -10,7 +10,6 @@ import React from "react";
 import { motion } from "framer-motion";
 import { FileText, Wallet, Banknote, Percent } from "lucide-react";
 
-// Datos de resumen mock (simulan totales del periodo)
 const resumenMock = {
   facturasMes: 47,
   montoPorCobrar: 152340.5,
@@ -18,7 +17,6 @@ const resumenMock = {
   ivaDebito: 18234.12,
 };
 
-// Facturas recientes (mock)
 const facturasRecientesMock = [
   { cliente: "Cliente Solar", fecha: "2025-01-04", total: 12500, estado: "pendiente" },
   { cliente: "Energia GT", fecha: "2025-01-03", total: 8400, estado: "observada" },
@@ -26,42 +24,38 @@ const facturasRecientesMock = [
   { cliente: "Industrias Luz", fecha: "2025-01-01", total: 22150, estado: "pendiente" },
 ];
 
-// Alertas de cuentas por cobrar (mock)
 const alertasCxcMock = [
   { cliente: "Cliente Solar", dias: 5, monto: 5200, severidad: "media" },
   { cliente: "Comercial Verde", dias: 18, monto: 3100, severidad: "alta" },
   { cliente: "Tecnologia Andina", dias: 30, monto: 8450, severidad: "alta" },
 ];
 
-// Formatea moneda en Q
 const fmtQ = (num) =>
   new Intl.NumberFormat("es-GT", { style: "currency", currency: "GTQ", minimumFractionDigits: 2 }).format(num);
 
-// Estilos utilitarios para tarjetas glass
-const glassCard = "bg-white/5 border border-white/10 backdrop-blur-xl shadow-sm rounded-2xl";
+// Estilos utilitarios para tarjetas glass con look futurista
+const glassCard =
+  "rounded-3xl bg-white/60 backdrop-blur-xl shadow-[0_8px_20px_rgba(0,0,0,0.08)] border border-white/20 p-6";
 
 export default function TableroContable() {
   return (
-    <div className="space-y-6">
-      {/* Encabezado con espacio para futuros filtros */}
+    <div className="space-y-8 bg-gradient-to-br from-gray-100 via-white to-gray-200 p-2 md:p-3 rounded-3xl">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Tablero Contable</h1>
-          <p className="text-sm text-slate-600">
+          <h1 className="text-2xl md:text-3xl font-semibold text-gray-800">Tablero Contable</h1>
+          <p className="text-sm md:text-base text-gray-500 font-light">
             Resumen de facturas, bancos, cuentas por cobrar e impuestos del período actual.
           </p>
         </div>
-        {/* Boton de filtros placeholder; aqui se integraria un selector de periodo/fecha */}
         <button
           type="button"
-          className="px-4 py-2 text-sm rounded-xl border border-dashed border-slate-300 text-slate-500 bg-white/60"
+          className="px-4 py-2 text-sm rounded-full border border-dashed border-white/30 bg-white/60 backdrop-blur-md text-gray-600 shadow-sm"
         >
           Filtros (próximamente)
         </button>
       </div>
 
-      {/* Tarjetas de resumen con glass y animación hover */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
         <SummaryCard
           title="Facturas del mes"
           value={`${resumenMock.facturasMes} emitidas`}
@@ -88,33 +82,31 @@ export default function TableroContable() {
         />
       </div>
 
-      {/* Paneles inferiores */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Panel de facturas recientes */}
-        <div className={`${glassCard} p-4`}>
-          <div className="flex items-center justify-between mb-3">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className={glassCard}>
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-lg font-semibold text-slate-900">Facturas recientes</h3>
-              <p className="text-xs text-slate-500">Últimos registros recibidos desde ventas</p>
+              <h3 className="text-xl font-semibold text-gray-800">Facturas recientes</h3>
+              <p className="text-xs text-gray-500 font-light">Últimos registros recibidos desde ventas</p>
             </div>
           </div>
-          <div className="overflow-hidden rounded-xl border border-white/5">
-            <table className="min-w-full text-sm text-slate-700">
-              <thead className="bg-white/5 text-slate-500">
+          <div className="overflow-hidden rounded-3xl bg-white/60 backdrop-blur-xl border border-white/20 shadow-[0_8px_20px_rgba(0,0,0,0.08)]">
+            <table className="min-w-full text-sm text-gray-700">
+              <thead className="bg-white/70 text-gray-500">
                 <tr>
-                  <th className="py-2 px-3 text-left">Cliente</th>
-                  <th className="py-2 px-3 text-left">Fecha</th>
-                  <th className="py-2 px-3 text-left">Total</th>
-                  <th className="py-2 px-3 text-left">Estado</th>
+                  <th className="py-3 px-4 text-left">Cliente</th>
+                  <th className="py-3 px-4 text-left">Fecha</th>
+                  <th className="py-3 px-4 text-left">Total</th>
+                  <th className="py-3 px-4 text-left">Estado</th>
                 </tr>
               </thead>
-              <tbody className="bg-white/30">
+              <tbody className="bg-white/70">
                 {facturasRecientesMock.map((fac, idx) => (
-                  <tr key={`${fac.cliente}-${idx}`} className="border-b border-white/10">
-                    <td className="py-2 px-3">{fac.cliente}</td>
-                    <td className="py-2 px-3 text-slate-600">{fac.fecha}</td>
-                    <td className="py-2 px-3 font-semibold">{fmtQ(fac.total)}</td>
-                    <td className="py-2 px-3">
+                  <tr key={`${fac.cliente}-${idx}`} className="border-b border-white/30">
+                    <td className="py-3 px-4">{fac.cliente}</td>
+                    <td className="py-3 px-4 text-gray-600">{fac.fecha}</td>
+                    <td className="py-3 px-4 font-semibold">{fmtQ(fac.total)}</td>
+                    <td className="py-3 px-4">
                       <EstadoPill estado={fac.estado} />
                     </td>
                   </tr>
@@ -124,31 +116,30 @@ export default function TableroContable() {
           </div>
         </div>
 
-        {/* Panel de alertas de CxC */}
-        <div className={`${glassCard} p-4`}>
-          <div className="flex items-center justify-between mb-3">
+        <div className={glassCard}>
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-lg font-semibold text-slate-900">Alertas de cuentas por cobrar</h3>
-              <p className="text-xs text-slate-500">Clientes con riesgo o atraso</p>
+              <h3 className="text-xl font-semibold text-gray-800">Alertas de cuentas por cobrar</h3>
+              <p className="text-xs text-gray-500 font-light">Clientes con riesgo o atraso</p>
             </div>
           </div>
           <div className="space-y-3">
             {alertasCxcMock.map((alerta, idx) => (
               <div
                 key={`${alerta.cliente}-${idx}`}
-                className={`${glassCard} p-3 flex items-center justify-between`}
+                className={`${glassCard} p-4 flex items-center justify-between bg-white/70`}
               >
                 <div>
-                  <p className="text-sm font-semibold text-slate-900">{alerta.cliente}</p>
-                  <p className="text-xs text-slate-500">Días de atraso: {alerta.dias}</p>
+                  <p className="text-sm font-semibold text-gray-800">{alerta.cliente}</p>
+                  <p className="text-xs text-gray-500">Días de atraso: {alerta.dias}</p>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm font-bold text-slate-900">{fmtQ(alerta.monto)}</p>
+                <div className="text-right space-y-2">
+                  <p className="text-sm font-bold text-gray-800">{fmtQ(alerta.monto)}</p>
                   <span
-                    className={`inline-flex items-center px-2 py-1 rounded-full text-[11px] font-semibold ${
+                    className={`inline-flex items-center px-3 py-1 rounded-full text-[11px] font-semibold ${
                       alerta.severidad === "alta"
-                        ? "bg-red-500/15 text-red-700"
-                        : "bg-amber-500/15 text-amber-700"
+                        ? "bg-red-100 text-red-700 border border-red-200"
+                        : "bg-amber-100 text-amber-700 border border-amber-200"
                     }`}
                   >
                     {alerta.severidad === "alta" ? "Riesgo alto" : "Atención"}
@@ -163,36 +154,36 @@ export default function TableroContable() {
   );
 }
 
-// Tarjeta de resumen con animación suave en hover
 function SummaryCard({ title, value, delta, icon: Icon }) {
   return (
     <motion.div
-      whileHover={{ scale: 1.02, boxShadow: "0 10px 30px rgba(0,0,0,0.15)" }}
-      className={`${glassCard} p-4 flex items-start justify-between`}
+      whileHover={{ scale: 1.02, y: -2 }}
+      className={`${glassCard} flex items-start justify-between`}
     >
-      <div className="space-y-1">
-        <p className="text-xs uppercase tracking-wide text-slate-500">{title}</p>
-        <p className="text-xl font-bold text-slate-900">{value}</p>
-        <p className="text-xs text-emerald-600">{delta}</p>
+      <div className="space-y-2">
+        <p className="text-xs uppercase tracking-wide text-gray-500 font-semibold">{title}</p>
+        <p className="text-2xl font-semibold text-gray-800">{value}</p>
+        <span className="inline-flex rounded-full px-3 py-1 bg-white/40 backdrop-blur-md border border-white/20 text-gray-700">
+          {delta}
+        </span>
       </div>
-      <div className="p-3 rounded-xl bg-white/20 text-slate-900">
-        <Icon size={20} />
+      <div className="p-3 rounded-3xl bg-white/70 text-gray-800 shadow-[0_6px_14px_rgba(0,0,0,0.06)]">
+        <Icon size={22} />
       </div>
     </motion.div>
   );
 }
 
-// Pill para estado de factura
 function EstadoPill({ estado }) {
   const color =
     estado === "aprobada"
-      ? "bg-emerald-500/15 text-emerald-700"
+      ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
       : estado === "observada"
-      ? "bg-amber-500/15 text-amber-700"
-      : "bg-slate-500/15 text-slate-700";
+      ? "bg-amber-100 text-amber-700 border border-amber-200"
+      : "bg-slate-100 text-slate-700 border border-slate-200";
 
   return (
-    <span className={`inline-flex items-center px-2 py-1 rounded-full text-[11px] font-semibold ${color}`}>
+    <span className={`inline-flex items-center px-3 py-1 rounded-full text-[11px] font-semibold ${color}`}>
       {estado}
     </span>
   );
