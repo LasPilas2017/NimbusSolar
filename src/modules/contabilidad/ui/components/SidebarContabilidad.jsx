@@ -30,6 +30,8 @@ import {
   ShieldCheck,
   Users,
   LogOut,
+  ChevronLeft,
+  FolderKanban,
 } from "lucide-react";
 import { MENU_CONTABILIDAD } from "../navigation/menuContabilidad";
 
@@ -55,6 +57,8 @@ const ICON_MAP = {
 function SidebarBase({ location, onNavigate, onLogout }) {
   // openGroup controla qué grupo está desplegado; string vacía significa todos cerrados.
   const [openGroup, setOpenGroup] = useState("");
+  // Estado para contraer/expandir el sidebar; en modo contraído solo se ven iconos.
+  const [collapsed, setCollapsed] = useState(false);
 
   // Obtiene el componente de ícono según el nombre definido en la config.
   const getIconComponent = (iconName) => ICON_MAP[iconName] || LayoutDashboard;
@@ -63,38 +67,60 @@ function SidebarBase({ location, onNavigate, onLogout }) {
   const isActive = (path) => location.pathname.startsWith(path);
 
   // Determina clases para botones principales según si vienen del documento (verde) o no (estilo base).
-  const getGroupClasses = (isFromDocument, isOpen) => {
+  const getGroupClasses = (isFromDocument, isOpen, isCollapsed) => {
+    const layout = isCollapsed ? "justify-center px-2" : "justify-between px-3";
     if (isFromDocument) {
       // Verde para grupos definidos en el documento
-      return `w-full flex items-center justify-between px-3 py-2 text-sm font-semibold rounded-xl transition border ${
-        isOpen ? "bg-green-700 text-white border-green-700" : "bg-green-600 text-white border-green-700 hover:bg-green-700"
+      return `w-full flex items-center ${layout} py-2 text-sm font-semibold rounded-xl transition border ${
+        isOpen
+          ? "bg-green-300/90 text-gray-900 border-green-400"
+          : "bg-green-200/90 text-gray-900 border-green-300 hover:bg-green-300/90"
       }`;
     }
     // Estilo original del sidebar para grupos fuera del documento
-    return `w-full flex items-center justify-between px-3 py-2 text-sm font-semibold rounded-xl transition ${
-      isOpen ? "bg-white/10 text-white" : "text-slate-200 hover:bg-slate-700/60"
+    return `w-full flex items-center ${layout} py-2 text-sm font-semibold rounded-xl transition ${
+      isOpen ? "bg-white/80 text-gray-900" : "text-gray-900 hover:bg-white/70"
     }`;
   };
 
   // Determina clases para sub-botones según si vienen del documento (verde) o no (base).
-  const getItemClasses = (isFromDocument, active) => {
+  const getItemClasses = (isFromDocument, active, isCollapsed) => {
+    const layout = isCollapsed ? "justify-center px-2" : "justify-start px-3";
     if (isFromDocument) {
       // Verde para items del documento
       return active
-        ? "w-full text-left px-3 py-2 rounded-lg text-sm transition bg-green-600 text-white"
-        : "w-full text-left px-3 py-2 rounded-lg text-sm transition text-green-600 hover:bg-green-50 hover:text-green-700 font-semibold";
+        ? `w-full flex items-center gap-2 ${layout} py-2 rounded-lg text-sm transition bg-green-200 text-gray-900`
+        : `w-full flex items-center gap-2 ${layout} py-2 rounded-lg text-sm transition text-gray-800 hover:bg-green-100 hover:text-gray-900 font-semibold`;
     }
     // Estilo base para items nuevos
     return active
-      ? "w-full text-left px-3 py-2 rounded-lg text-sm transition bg-slate-900 text-white shadow-sm"
-      : "w-full text-left px-3 py-2 rounded-lg text-sm transition text-slate-400 hover:bg-slate-100 hover:text-slate-800";
+      ? `w-full flex items-center gap-2 ${layout} py-2 rounded-lg text-sm transition bg-slate-200 text-gray-900 shadow-sm`
+      : `w-full flex items-center gap-2 ${layout} py-2 rounded-lg text-sm transition text-gray-700 hover:bg-slate-100 hover:text-gray-900`;
   };
 
   return (
-    <aside className="h-full bg-slate-950/80 backdrop-blur-xl border-r border-white/10 text-slate-100 flex flex-col">
+    <aside
+      className={`hidden sm:flex h-full ${
+        collapsed ? "w-20" : "w-72"
+      } flex-col bg-white/60 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.12)] border-r border-white/40 text-slate-900 rounded-tr-3xl rounded-br-3xl overflow-hidden transition-[width] duration-200`}
+    >
       {/* Encabezado del sidebar */}
-      <div className="px-4 py-4 border-b border-white/10">
-        <h2 className="text-lg font-semibold">Directorio Contable</h2>
+      <div className="px-4 py-4 border-b border-white/40 bg-white/70 backdrop-blur-lg flex items-center justify-between">
+        {!collapsed && <h2 className="text-lg font-semibold text-gray-900">Directorio Contable</h2>}
+        <button
+          type="button"
+          onClick={() => {
+            setCollapsed((prev) => !prev);
+            setOpenGroup(""); // cerrar grupos al contraer
+          }}
+          className="h-8 w-8 flex items-center justify-center rounded-full bg-white/80 border border-white/60 text-gray-700 hover:bg-white"
+          aria-label="Contraer/Expandir directorio"
+        >
+          <ChevronLeft
+            size={16}
+            className={`transition-transform duration-200 ${collapsed ? "rotate-180" : ""}`}
+          />
+        </button>
       </div>
 
       {/* Lista de grupos principales */}
@@ -106,7 +132,7 @@ function SidebarBase({ location, onNavigate, onLogout }) {
           return (
             <div
               key={group.groupKey}
-              className="rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 transition-colors"
+              className="rounded-2xl bg-white/50 backdrop-blur-lg border border-white/40 shadow-[0_6px_18px_rgba(0,0,0,0.08)] transition-colors"
             >
               {/* Botón principal del grupo */}
               <button
@@ -117,21 +143,23 @@ function SidebarBase({ location, onNavigate, onLogout }) {
                     onNavigate("/contabilidad/tablero", group.groupKey);
                     return;
                   }
+                  if (collapsed) return; // en modo contraído no se expanden
                   setOpenGroup((prev) => (prev === group.groupKey ? "" : group.groupKey));
                 }}
-                className={getGroupClasses(group.isFromDocument, isOpen)}
+                className={getGroupClasses(group.isFromDocument, isOpen, collapsed)}
               >
                 <span className="flex items-center gap-2">
-                  <Icon size={16} className="text-slate-200" />
-                  {group.label}
+                  {/* Icono siempre visible en escritorio */}
+                  <Icon size={18} className="text-gray-900" />
+                  {!collapsed && <span className="text-sm">{group.label}</span>}
                 </span>
-                {group.groupKey !== "inicio" && (
-                  <span className="text-xs text-slate-300">{isOpen ? "▾" : "▸"}</span>
+                {group.groupKey !== "inicio" && !collapsed && (
+                  <span className="text-xs text-gray-700">{isOpen ? "▾" : "▸"}</span>
                 )}
               </button>
 
               {/* Sub-botones animados con framer-motion (solo para grupos que no sean inicio) */}
-              {group.groupKey !== "inicio" && (
+              {group.groupKey !== "inicio" && !collapsed && (
                 <AnimatePresence initial={false}>
                   {isOpen && (
                     <motion.div
@@ -144,18 +172,20 @@ function SidebarBase({ location, onNavigate, onLogout }) {
                     >
                       {group.items.map((item) => (
                         <button
-                          key={item.key}
-                          type="button"
-                          onClick={() => onNavigate(item.path, group.groupKey)}
-                          className={getItemClasses(item.isFromDocument, isActive(item.path))}
-                        >
-                          {item.label}
-                        </button>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              )}
+                        key={item.key}
+                        type="button"
+                        onClick={() => onNavigate(item.path, group.groupKey)}
+                        className={getItemClasses(item.isFromDocument, isActive(item.path), collapsed)}
+                      >
+                        {!collapsed && item.label}
+                        {collapsed && <span className="sr-only">{item.label}</span>}
+                        {collapsed && <span />}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            )}
             </div>
           );
         })}
@@ -166,10 +196,10 @@ function SidebarBase({ location, onNavigate, onLogout }) {
         <button
           type="button"
           onClick={onLogout}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold bg-red-600 text-white hover:bg-red-700 transition shadow-sm"
+          className={`w-full flex items-center ${collapsed ? "justify-center px-2" : "justify-center px-3 gap-2"} py-2 rounded-lg text-sm font-semibold bg-red-600 text-white hover:bg-red-700 transition shadow-sm`}
         >
           <LogOut size={16} />
-          Salir
+          {!collapsed && "Salir"}
         </button>
       </div>
     </aside>
