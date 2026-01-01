@@ -51,18 +51,15 @@ export default function Personal({ usuario }) {
 
   const tarjetasMenu = [
     {
-      titulo: "Agregar Personal",
-      descripcion: "Formulario para ingresar trabajadores",
+      titulo: "Ingreso de Personal",
       vista: "formulario",
     },
     {
-      titulo: "Ver Planilla",
-      descripcion: "Visualizar la planilla del personal",
+      titulo: "Planilla",
       vista: "planilla",
     },
     {
-      titulo: "Ver Personal",
-      descripcion: "Listado completo de trabajadores",
+      titulo: "Personal de Empresa",
       vista: "ver_personal",
     },
   ];
@@ -78,8 +75,7 @@ export default function Personal({ usuario }) {
                 onClick={() => manejarCambioVista(t.vista)}
                 className="w-full max-w-2xl cursor-pointer bg-gradient-to-r from-slate-100 to-white border border-slate-200 shadow-lg px-8 py-6 text-center rounded-2xl hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200"
               >
-                <h3 className="text-xl font-semibold mb-2 tracking-wide text-gray-900">{t.titulo}</h3>
-                <p className="text-sm text-gray-600">{t.descripcion}</p>
+                <h3 className="text-xl font-semibold tracking-wide text-gray-900">{t.titulo}</h3>
               </button>
             ))}
           </div>
