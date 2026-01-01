@@ -1,5 +1,4 @@
 import { useState, useEffect, lazy, Suspense } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import supabase from "../../supabase";
 
 const AgregarPersonal = lazy(() => import("./AgregarPersonal"));
@@ -23,7 +22,11 @@ export default function Personal({ usuario }) {
   };
 
   const obtenerPersonal = async () => {
-    let consulta = supabase.from("registrodepersonal").select("*");
+    let consulta = supabase
+      .from("registrodepersonal")
+      .select(
+        "id,nombrecompleto,modalidad,salariopordia,salarioporquincena,bonificacion,pagoporhoraextra,viaticos_diarios,dpi,telefono,fechadeingreso,urlpapeleria"
+      );
     if (usuarioActual?.rol === "temporal") {
       consulta = consulta.eq("modalidad", "temporal");
     }
@@ -34,7 +37,9 @@ export default function Personal({ usuario }) {
   };
 
   useEffect(() => {
-    obtenerPersonal();
+    if (vista === "ver_personal") {
+      obtenerPersonal();
+    }
   }, [vista, recargarTabla]);
 
   const abrirModificar = (persona) => setPersonaSeleccionada(persona);
@@ -63,51 +68,50 @@ export default function Personal({ usuario }) {
   ];
 
   return (
-    <motion.div
-      layout
-      transition={{ duration: 1.2, ease: "easeInOut", type: "tween" }}
-      className="mt-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4"
-    >
+    <div className="mt-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
       {vista === "menu" && !ocultandoMenu && (
-        <div className="flex flex-col lg:flex-row gap-6 max-w-5xl mx-auto">
-          <div className="flex flex-col gap-6 flex-grow">
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="flex flex-col gap-6 w-full max-w-4xl items-center">
             {tarjetasMenu.map((t, i) => (
-              <div
+              <button
                 key={i}
                 onClick={() => manejarCambioVista(t.vista)}
-                className="cursor-pointer bg-white border border-black shadow-md px-6 py-8 w-full max-w-sm mx-auto text-center hover:bg-gray-200 transition-all duration-300"
+                className="w-full max-w-2xl cursor-pointer bg-gradient-to-r from-slate-100 to-white border border-slate-200 shadow-lg px-8 py-6 text-center rounded-2xl hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200"
               >
-                <h3 className="text-xl font-semibold mb-2 tracking-wide text-black">{t.titulo}</h3>
-                <p className="text-sm text-gray-700 transition">{t.descripcion}</p>
-              </div>
+                <h3 className="text-xl font-semibold mb-2 tracking-wide text-gray-900">{t.titulo}</h3>
+                <p className="text-sm text-gray-600">{t.descripcion}</p>
+              </button>
             ))}
           </div>
         </div>
       )}
 
-      <Suspense fallback={<div className="text-center py-10">Cargando...</div>}>
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={vista}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.4 }}
+      {vista !== "menu" && (
+        <div className="mb-4">
+          <button
+            onClick={() => setVista("menu")}
+            className="px-4 py-2 rounded bg-gray-200 text-gray-800 hover:bg-gray-300 transition"
           >
-            {vista === "formulario" && (
-              <AgregarPersonal onCerrar={() => setVista("menu")} usuario={usuarioActual} />
-            )}
-            {vista === "planilla" && (
-              <VerPlanilla personal={personal} onModificar={abrirModificar} />
-            )}
-            {vista === "ver_personal" && (
-              <VerPersonal personal={personal} onModificar={abrirModificar} />
-            )}
-            {vista === "asistencia" && (
-              <ReportarAsistencia usuario={usuarioActual} onCerrar={() => setVista("menu")} />
-            )}
-          </motion.div>
-        </AnimatePresence>
+            Regresar
+          </button>
+        </div>
+      )}
+
+      <Suspense fallback={<div className="text-center py-10">Cargando...</div>}>
+        <>
+          {vista === "formulario" && (
+            <AgregarPersonal onCerrar={() => setVista("menu")} usuario={usuarioActual} />
+          )}
+          {vista === "planilla" && (
+            <VerPlanilla usuario={usuarioActual} onModificar={abrirModificar} />
+          )}
+          {vista === "ver_personal" && (
+            <VerPersonal personal={personal} usuario={usuarioActual} onModificar={abrirModificar} />
+          )}
+          {vista === "asistencia" && (
+            <ReportarAsistencia usuario={usuarioActual} onCerrar={() => setVista("menu")} />
+          )}
+        </>
       </Suspense>
 
       {personaSeleccionada && (
@@ -118,6 +122,6 @@ export default function Personal({ usuario }) {
           onRecargar={() => setRecargarTabla(!recargarTabla)}
         />
       )}
-    </motion.div>
+    </div>
   );
 }
