@@ -1,25 +1,28 @@
 // src/app/AppRouter.jsx
 // -----------------------------------------------------------------------------
-// QUÉ HACE ESTE ARCHIVO
+// QUE HACE ESTE ARCHIVO
 // -----------------------------------------------------------------------------
-// Este componente actúa como el **enrutador interno (router visual)** del sistema Nimbus Solar.
+// Este componente actua como el **enrutador interno (router visual)** del sistema
+// Nimbus Solar.
 //
-// Se encarga de decidir **qué vista o módulo se renderiza** según la pestaña activa (`tab`),
-// tomando en cuenta los permisos del usuario.
+// Se encarga de decidir **que vista o modulo se renderiza** segun la pestana
+// activa (`tab`), tomando en cuenta los permisos del usuario.
 //
-// Es una especie de “mini-router” interno dentro del layout principal,
-// que reemplaza al tradicional <Routes /> de React Router, pero de forma más
+// Es una especie de "mini-router" interno dentro del layout principal,
+// que reemplaza al tradicional <Routes /> de React Router, pero de forma mas
 // controlada y simple.
 // -----------------------------------------------------------------------------
 
 import React from "react";
 
-// Layout con el botón flotante global para Ventas (administración)
+// Layout con el boton flotante global para Ventas (administracion)
 import VentasLayout from "../modules/ventas/ui/layouts/VentasLayout.jsx";
-// 🆕 Sistema del vendedor (CRM con diseño del vendedor)
+// Sistema del vendedor (CRM con diseno del vendedor)
 import VendedorLayout from "../modules/vendedor/ui/layout/VendedorLayout.jsx";
-// ✅ Gestión de usuarios (solo admin)
+// Gestion de usuarios (solo admin)
 import GestionUsuarios from "../modules/usuarios/ui/pages/GestionUsuarios.jsx";
+// Modulo de personal completo
+import Personal from "../modules/Personal/Personal.jsx";
 
 export default function AppRouter({
   tab,
@@ -30,44 +33,40 @@ export default function AppRouter({
 }) {
   switch (tab) {
     case "personal":
-      return canAccess("personal") ? (
-        <div className="text-center text-xl font-semibold">
-          Personal (Próximamente)
-        </div>
-      ) : null;
+      return canAccess("personal") ? <Personal usuario={usuario} /> : null;
 
     case "Liquidez":
       return canAccess("Liquidez") ? (
         <div className="text-center text-xl font-semibold">
-          Contabilidad (Próximamente)
+          Contabilidad (Proximamente)
         </div>
       ) : null;
 
     case "VistaMovimientos":
       return canAccess("VistaMovimientos") ? (
         <div className="text-center text-xl font-semibold">
-          Vista de Movimientos (Próximamente)
+          Vista de Movimientos (Proximamente)
         </div>
       ) : null;
 
     case "proyectos":
       return canAccess("proyectos") ? (
         <div className="text-center text-xl font-semibold">
-          Proyectos (Próximamente)
+          Proyectos (Proximamente)
         </div>
       ) : null;
 
     case "servicios":
       return canAccess("servicios") ? (
         <div className="space-y-3 text-center">
-          <div className="text-xl font-semibold">Servicios (Próximamente)</div>
+          <div className="text-xl font-semibold">Servicios (Proximamente)</div>
           <div className="text-sm text-gray-500">
             Vista actual: <b>{vistaServicio}</b>
           </div>
         </div>
       ) : null;
 
-    // 🆕 Sistema del VENDEDOR (CRM con diseño del vendedor)
+    // Sistema del VENDEDOR (CRM con diseno del vendedor)
     case "vendedor":
       return canAccess("vendedor") ? (
         <VendedorLayout
@@ -76,7 +75,7 @@ export default function AppRouter({
         />
       ) : null;
 
-    // ✅ Ventas: módulo de administración, con su propio layout y botón flotante
+    // Ventas: modulo de administracion, con su propio layout y boton flotante
     case "ventas":
       return canAccess("ventas") ? (
         <VentasLayout
@@ -91,21 +90,21 @@ export default function AppRouter({
     case "inventario":
       return canAccess("inventario") ? (
         <div className="text-center text-xl font-semibold">
-          Inventario (Próximamente)
+          Inventario (Proximamente)
         </div>
       ) : null;
 
     case "papeleria":
       return canAccess("papeleria") ? (
         <div className="text-center text-xl font-semibold">
-          Papelería (Próximamente)
+          Papeleria (Proximamente)
         </div>
       ) : null;
 
     default:
       return (
         <div className="text-center text-gray-500">
-          Selecciona una sección
+          Selecciona una seccion
         </div>
       );
   }
