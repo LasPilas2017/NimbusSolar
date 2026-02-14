@@ -34,6 +34,10 @@ const InventoryPage = () => {
   const [showPanelForm, setShowPanelForm] = useState(false);
   const [panelSaving, setPanelSaving] = useState(false);
   const [panelEditingId, setPanelEditingId] = useState(null);
+  const [expandedSystemId, setExpandedSystemId] = useState(null);
+  const [componentsBySystem, setComponentsBySystem] = useState({});
+  const [loadingSystemId, setLoadingSystemId] = useState(null);
+  const [errorBySystem, setErrorBySystem] = useState({});
   const [form, setForm] = useState({
     nombre: "",
     precio_compra: "",
@@ -50,6 +54,26 @@ const InventoryPage = () => {
   });
   const [panels, setPanels] = useState([]);
   const [panelsLoading, setPanelsLoading] = useState(true);
+
+  const systemCards = [
+    {
+      id: "75305240-fa28-47ca-b276-aa281d0d16a7",
+      title: "Sistema Hibrido",
+    },
+    {
+      id: "f87a846b-965a-4abc-8b77-fdd91dceaf9a",
+      title: "Sistema Aislado",
+    },
+    {
+      id: "1f47c367-3bb8-452c-a66b-31adb4e4e44a",
+      title: "Sistema Atado a red",
+    },
+  ];
+
+  const componentPriceFormatter = new Intl.NumberFormat("es-GT", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 
   useEffect(() => {
     if (!showForm && !showPanelForm) return undefined;
@@ -342,6 +366,46 @@ const InventoryPage = () => {
     setShowPanelForm(false);
     resetPanelForm();
     setPanelSaving(false);
+  };
+
+  const handleToggleSystem = async (systemId) => {
+    if (expandedSystemId === systemId) {
+      setExpandedSystemId(null);
+      return;
+    }
+
+    setExpandedSystemId(systemId);
+
+    if (componentsBySystem[systemId]) {
+      return;
+    }
+
+    setLoadingSystemId(systemId);
+    setErrorBySystem((prev) => ({ ...prev, [systemId]: "" }));
+
+    const { data, error: queryError } = await supabase
+      .from("componentes_sistema")
+      .select(
+        "id,nombre_componente,categoria,precio,moneda,potencia_kw,detalles"
+      )
+      .eq("sistema_id", systemId)
+      .order("categoria", { ascending: true });
+
+    if (queryError) {
+      setErrorBySystem((prev) => ({
+        ...prev,
+        [systemId]:
+          queryError.message ||
+          "No se pudieron cargar los componentes. Intenta nuevamente.",
+      }));
+    } else {
+      setComponentsBySystem((prev) => ({
+        ...prev,
+        [systemId]: Array.isArray(data) ? data : [],
+      }));
+    }
+
+    setLoadingSystemId(null);
   };
 
   const handleEdit = (item) => {
@@ -664,6 +728,113 @@ const InventoryPage = () => {
               )}
             </>
           )}
+        </div>
+
+        <div className="mt-6 space-y-6">
+          {systemCards.map((system) => {
+            const isExpanded = expandedSystemId === system.id;
+            const systemComponents = componentsBySystem[system.id] || [];
+            const systemError = errorBySystem[system.id];
+            const isLoading = loadingSystemId === system.id;
+
+            return (
+              <div
+                key={system.id}
+                className="rounded-2xl border border-slate-200 bg-white shadow-sm"
+              >
+                <div className="flex flex-col gap-3 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h2 className="text-lg font-semibold text-slate-900">
+                      {system.title}
+                    </h2>
+                    <p className="text-sm text-slate-500">
+                      Componentes compatibles
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className="inline-flex items-center justify-center rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+                    onClick={() => handleToggleSystem(system.id)}
+                  >
+                    {isExpanded ? "Ocultar" : "Mostrar"}
+                  </button>
+                </div>
+
+                {isExpanded && (
+                  <>
+                    {isLoading && (
+                      <div className="px-6 pb-6 text-sm text-slate-500">
+                        Cargando componentes...
+                      </div>
+                    )}
+
+                    {systemError && !isLoading && (
+                      <div className="mx-6 mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                        {systemError}
+                      </div>
+                    )}
+
+                    {!isLoading && !systemError && (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm">
+                          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+                            <tr>
+                              <th className="px-6 py-3">Componente</th>
+                              <th className="px-6 py-3">Categoria</th>
+                              <th className="px-6 py-3">Potencia</th>
+                              <th className="px-6 py-3">Precio</th>
+                              <th className="px-6 py-3">Detalles</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {systemComponents.map((component) => (
+                              <tr
+                                key={component.id}
+                                className="border-t border-slate-100 hover:bg-slate-50"
+                              >
+                                <td className="px-6 py-4 font-medium text-slate-900">
+                                  {component.nombre_componente}
+                                </td>
+                                <td className="px-6 py-4 text-slate-600">
+                                  {component.categoria || "—"}
+                                </td>
+                                <td className="px-6 py-4 text-slate-600">
+                                  {component.potencia_kw == null
+                                    ? "—"
+                                    : `${toNumber(component.potencia_kw)} kW`}
+                                </td>
+                                <td className="px-6 py-4 text-slate-600">
+                                  {(component.moneda || "—") +
+                                    " " +
+                                    componentPriceFormatter.format(
+                                      toNumber(component.precio)
+                                    )}
+                                </td>
+                                <td className="px-6 py-4 text-slate-600">
+                                  {component.detalles || "—"}
+                                </td>
+                              </tr>
+                            ))}
+
+                            {systemComponents.length === 0 && (
+                              <tr>
+                                <td
+                                  colSpan={5}
+                                  className="px-6 py-6 text-center text-sm text-slate-500"
+                                >
+                                  No hay componentes
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 
