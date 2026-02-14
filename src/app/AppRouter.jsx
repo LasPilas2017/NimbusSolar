@@ -23,6 +23,8 @@ import VendedorLayout from "../modules/vendedor/ui/layout/VendedorLayout.jsx";
 import GestionUsuarios from "../modules/usuarios/ui/pages/GestionUsuarios.jsx";
 // Modulo de personal completo
 import Personal from "../modules/Personal/Personal.jsx";
+// Inventario
+import InventoryPage from "../modules/inventario/ui/InventoryPage.jsx";
 
 export default function AppRouter({
   tab,
@@ -88,11 +90,7 @@ export default function AppRouter({
       return canAccess("gestionUsuarios") ? <GestionUsuarios /> : null;
 
     case "inventario":
-      return canAccess("inventario") ? (
-        <div className="text-center text-xl font-semibold">
-          Inventario (Proximamente)
-        </div>
-      ) : null;
+      return canAccess("inventario") ? <InventoryPage /> : null;
 
     case "papeleria":
       return canAccess("papeleria") ? (
