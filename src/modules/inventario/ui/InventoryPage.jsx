@@ -1,5 +1,6 @@
 // src/modules/inventario/ui/InventoryPage.jsx
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   Plus,
   Package,
@@ -38,6 +39,14 @@ const InventoryPage = () => {
   const [componentsBySystem, setComponentsBySystem] = useState({});
   const [loadingSystemId, setLoadingSystemId] = useState(null);
   const [errorBySystem, setErrorBySystem] = useState({});
+  const [showComponentForm, setShowComponentForm] = useState(false);
+  const [componentSaving, setComponentSaving] = useState(false);
+  const [componentEditingId, setComponentEditingId] = useState(null);
+  const [componentEditingSystemId, setComponentEditingSystemId] =
+    useState(null);
+  const [systems, setSystems] = useState([]);
+  const [systemsLoading, setSystemsLoading] = useState(true);
+  const [systemsError, setSystemsError] = useState("");
   const [form, setForm] = useState({
     nombre: "",
     precio_compra: "",
@@ -52,31 +61,25 @@ const InventoryPage = () => {
     precio: "",
     moneda: "",
   });
+  const [componentForm, setComponentForm] = useState({
+    nombre_componente: "",
+    categoria: "",
+    potencia_kw: "",
+    precio: "",
+    moneda: "",
+    detalles: "",
+  });
   const [panels, setPanels] = useState([]);
   const [panelsLoading, setPanelsLoading] = useState(true);
-
-  const systemCards = [
-    {
-      id: "75305240-fa28-47ca-b276-aa281d0d16a7",
-      title: "Sistema Hibrido",
-    },
-    {
-      id: "f87a846b-965a-4abc-8b77-fdd91dceaf9a",
-      title: "Sistema Aislado",
-    },
-    {
-      id: "1f47c367-3bb8-452c-a66b-31adb4e4e44a",
-      title: "Sistema Atado a red",
-    },
-  ];
 
   const componentPriceFormatter = new Intl.NumberFormat("es-GT", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
+  const modalRoot = typeof document !== "undefined" ? document.body : null;
 
   useEffect(() => {
-    if (!showForm && !showPanelForm) return undefined;
+    if (!showForm && !showPanelForm && !showComponentForm) return undefined;
     const originalBodyOverflow = document.body.style.overflow;
     const originalHtmlOverflow = document.documentElement.style.overflow;
     const shell = document.querySelector("main");
@@ -89,7 +92,7 @@ const InventoryPage = () => {
       document.documentElement.style.overflow = originalHtmlOverflow;
       if (shell) shell.style.overflow = originalShellOverflow;
     };
-  }, [showForm, showPanelForm]);
+  }, [showForm, showPanelForm, showComponentForm]);
 
   useEffect(() => {
     let isMounted = true;
@@ -120,6 +123,39 @@ const InventoryPage = () => {
     };
 
     fetchInventory();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchSystems = async () => {
+      setSystemsLoading(true);
+      setSystemsError("");
+
+      const { data, error: queryError } = await supabase
+        .from("sistemas_solares")
+        .select("id,nombre,descripcion")
+        .order("nombre", { ascending: true });
+
+      if (!isMounted) return;
+
+      if (queryError) {
+        setSystemsError(
+          "No se pudieron cargar los sistemas. Intenta nuevamente."
+        );
+        setSystems([]);
+      } else {
+        setSystems(Array.isArray(data) ? data : []);
+      }
+
+      setSystemsLoading(false);
+    };
+
+    fetchSystems();
 
     return () => {
       isMounted = false;
@@ -229,6 +265,19 @@ const InventoryPage = () => {
     setPanelEditingId(null);
   };
 
+  const resetComponentForm = () => {
+    setComponentForm({
+      nombre_componente: "",
+      categoria: "",
+      potencia_kw: "",
+      precio: "",
+      moneda: "",
+      detalles: "",
+    });
+    setComponentEditingId(null);
+    setComponentEditingSystemId(null);
+  };
+
   const handlePanelChange = (event) => {
     const { name, value } = event.target;
     if (name === "potencia_watts") {
@@ -246,6 +295,25 @@ const InventoryPage = () => {
       return;
     }
     setPanelForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleComponentChange = (event) => {
+    const { name, value } = event.target;
+    if (name === "potencia_kw") {
+      setComponentForm((prev) => ({
+        ...prev,
+        [name]: value.replace(/[^\d.]/g, ""),
+      }));
+      return;
+    }
+    if (name === "precio") {
+      setComponentForm((prev) => ({
+        ...prev,
+        [name]: value.replace(/[^\d.]/g, ""),
+      }));
+      return;
+    }
+    setComponentForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleChange = (event) => {
@@ -366,6 +434,69 @@ const InventoryPage = () => {
     setShowPanelForm(false);
     resetPanelForm();
     setPanelSaving(false);
+  };
+
+  const handleComponentEdit = (component, systemId) => {
+    setComponentEditingId(component.id);
+    setComponentEditingSystemId(systemId);
+    setComponentForm({
+      nombre_componente: component.nombre_componente ?? "",
+      categoria: component.categoria ?? "",
+      potencia_kw:
+        component.potencia_kw == null ? "" : String(component.potencia_kw),
+      precio: component.precio == null ? "" : String(component.precio),
+      moneda: component.moneda ?? "",
+      detalles: component.detalles ?? "",
+    });
+    setShowComponentForm(true);
+  };
+
+  const handleComponentSave = async () => {
+    if (!componentEditingId || !componentEditingSystemId) return;
+    setComponentSaving(true);
+    setErrorBySystem((prev) => ({ ...prev, [componentEditingSystemId]: "" }));
+
+    const payload = {
+      nombre_componente: componentForm.nombre_componente.trim(),
+      categoria: componentForm.categoria.trim() || null,
+      potencia_kw:
+        componentForm.potencia_kw === ""
+          ? null
+          : toNumber(componentForm.potencia_kw),
+      precio: toNumber(componentForm.precio),
+      moneda: componentForm.moneda.trim() || null,
+      detalles: componentForm.detalles.trim() || null,
+    };
+
+    const { error: updateError } = await supabase
+      .from("componentes_sistema")
+      .update(payload)
+      .eq("id", componentEditingId);
+
+    if (updateError) {
+      setErrorBySystem((prev) => ({
+        ...prev,
+        [componentEditingSystemId]:
+          updateError.message ||
+          "No se pudo actualizar el componente. Intenta nuevamente.",
+      }));
+      setComponentSaving(false);
+      return;
+    }
+
+    setComponentsBySystem((prev) => {
+      const current = prev[componentEditingSystemId] || [];
+      return {
+        ...prev,
+        [componentEditingSystemId]: current.map((item) =>
+          item.id === componentEditingId ? { ...item, ...payload } : item
+        ),
+      };
+    });
+
+    setShowComponentForm(false);
+    resetComponentForm();
+    setComponentSaving(false);
   };
 
   const handleToggleSystem = async (systemId) => {
@@ -731,7 +862,21 @@ const InventoryPage = () => {
         </div>
 
         <div className="mt-6 space-y-6">
-          {systemCards.map((system) => {
+          {systemsLoading && (
+            <div className="rounded-2xl border border-slate-200 bg-white px-6 py-4 text-sm text-slate-500 shadow-sm">
+              Cargando sistemas...
+            </div>
+          )}
+
+          {systemsError && !systemsLoading && (
+            <div className="rounded-2xl border border-red-200 bg-red-50 px-6 py-4 text-sm text-red-700 shadow-sm">
+              {systemsError}
+            </div>
+          )}
+
+          {!systemsLoading &&
+            !systemsError &&
+            systems.map((system) => {
             const isExpanded = expandedSystemId === system.id;
             const systemComponents = componentsBySystem[system.id] || [];
             const systemError = errorBySystem[system.id];
@@ -745,7 +890,7 @@ const InventoryPage = () => {
                 <div className="flex flex-col gap-3 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h2 className="text-lg font-semibold text-slate-900">
-                      {system.title}
+                      {system.nombre}
                     </h2>
                     <p className="text-sm text-slate-500">
                       Componentes compatibles
@@ -784,6 +929,7 @@ const InventoryPage = () => {
                               <th className="px-6 py-3">Potencia</th>
                               <th className="px-6 py-3">Precio</th>
                               <th className="px-6 py-3">Detalles</th>
+                              <th className="px-6 py-3">Acciones</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -813,13 +959,35 @@ const InventoryPage = () => {
                                 <td className="px-6 py-4 text-slate-600">
                                   {component.detalles || "—"}
                                 </td>
+                                <td className="px-6 py-4">
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      type="button"
+                                      title="Editar"
+                                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
+                                      onClick={() =>
+                                        handleComponentEdit(component, system.id)
+                                      }
+                                    >
+                                      <Pencil className="h-4 w-4" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      title="Eliminar"
+                                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
+                                      onClick={() => {}}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </button>
+                                  </div>
+                                </td>
                               </tr>
                             ))}
 
                             {systemComponents.length === 0 && (
                               <tr>
                                 <td
-                                  colSpan={5}
+                                  colSpan={6}
                                   className="px-6 py-6 text-center text-sm text-slate-500"
                                 >
                                   No hay componentes
@@ -838,27 +1006,273 @@ const InventoryPage = () => {
         </div>
       </div>
 
-      {showForm && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/40 px-4 py-6">
-          <div className="mx-auto flex min-h-full w-full max-w-2xl items-start sm:items-center">
-            <div className="w-full rounded-2xl border border-slate-200 bg-white p-6 shadow-lg">
+      {showForm &&
+        modalRoot &&
+        createPortal(
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4 py-6">
+            <div className="w-full max-w-2xl">
+              <div className="max-h-[90vh] w-full overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-lg">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="text-xl font-semibold text-slate-900">
+                      {editingId ? "Editar producto" : "Agregar producto"}
+                    </h3>
+                    <p className="text-sm text-slate-500">
+                      {editingId
+                        ? "Actualiza la informacion del producto."
+                        : "Completa los datos para registrar un nuevo producto."}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className="text-sm font-medium text-slate-500 hover:text-slate-700"
+                    onClick={() => {
+                      setShowForm(false);
+                      resetForm();
+                    }}
+                  >
+                    Cerrar
+                  </button>
+                </div>
+
+                <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="sm:col-span-2">
+                    <label className="text-sm font-medium text-slate-600">
+                      Nombre
+                    </label>
+                    <input
+                      type="text"
+                      name="nombre"
+                      value={form.nombre}
+                      onChange={handleChange}
+                      className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+                      placeholder="Ej. Panel solar 450W"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-600">
+                      Precio de compra
+                    </label>
+                    <input
+                      type="text"
+                      name="precio_compra"
+                      value={form.precio_compra}
+                      onChange={handleChange}
+                      className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-600">
+                      Precio de venta
+                    </label>
+                    <input
+                      type="text"
+                      name="precio_venta"
+                      value={form.precio_venta}
+                      onChange={handleChange}
+                      className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-600">
+                      Disponibles
+                    </label>
+                    <input
+                      type="text"
+                      name="disponibles"
+                      value={form.disponibles}
+                      onChange={handleChange}
+                      className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="text-sm font-medium text-slate-600">
+                      Comentario
+                    </label>
+                    <textarea
+                      name="comentario"
+                      value={form.comentario}
+                      onChange={handleChange}
+                      rows={3}
+                      className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+                      placeholder="Detalle adicional"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+                  <button
+                    type="button"
+                    className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                    onClick={() => {
+                      setShowForm(false);
+                      resetForm();
+                    }}
+                    disabled={saving}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+                    onClick={handleSave}
+                    disabled={saving}
+                  >
+                    {saving ? "Guardando..." : "Guardar"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>,
+          modalRoot
+        )}
+
+      {showPanelForm &&
+        modalRoot &&
+        createPortal(
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4 py-6">
+            <div className="w-full max-w-2xl">
+              <div className="max-h-[90vh] w-full overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-lg">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="text-xl font-semibold text-slate-900">
+                      Editar panel solar
+                    </h3>
+                    <p className="text-sm text-slate-500">
+                      Actualiza la informacion del panel.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className="text-sm font-medium text-slate-500 hover:text-slate-700"
+                    onClick={() => {
+                      setShowPanelForm(false);
+                      resetPanelForm();
+                    }}
+                  >
+                    Cerrar
+                  </button>
+                </div>
+
+                <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="sm:col-span-2">
+                    <label className="text-sm font-medium text-slate-600">
+                      Marca
+                    </label>
+                    <input
+                      type="text"
+                      name="marca"
+                      value={panelForm.marca}
+                      onChange={handlePanelChange}
+                      className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+                      placeholder="Ej. Trina Solar"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-600">
+                      Potencia (W)
+                    </label>
+                    <input
+                      type="text"
+                      name="potencia_watts"
+                      value={panelForm.potencia_watts}
+                      onChange={handlePanelChange}
+                      className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-600">
+                      Tipo
+                    </label>
+                    <input
+                      type="text"
+                      name="tipo"
+                      value={panelForm.tipo}
+                      onChange={handlePanelChange}
+                      className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+                      placeholder="Monocristalino"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-600">
+                      Precio
+                    </label>
+                    <input
+                      type="text"
+                      name="precio"
+                      value={panelForm.precio}
+                      onChange={handlePanelChange}
+                      className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-600">
+                      Moneda
+                    </label>
+                    <input
+                      type="text"
+                      name="moneda"
+                      value={panelForm.moneda}
+                      onChange={handlePanelChange}
+                      className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+                      placeholder="GTQ"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+                  <button
+                    type="button"
+                    className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                    onClick={() => {
+                      setShowPanelForm(false);
+                      resetPanelForm();
+                    }}
+                    disabled={panelSaving}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+                    onClick={handlePanelSave}
+                    disabled={panelSaving}
+                  >
+                    {panelSaving ? "Guardando..." : "Guardar"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>,
+          modalRoot
+        )}
+
+      {showComponentForm &&
+        modalRoot &&
+        createPortal(
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4 py-6">
+            <div className="w-full max-w-2xl">
+              <div className="max-h-[90vh] w-full overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-lg">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h3 className="text-xl font-semibold text-slate-900">
-                    {editingId ? "Editar producto" : "Agregar producto"}
+                    Editar componente
                   </h3>
                   <p className="text-sm text-slate-500">
-                    {editingId
-                      ? "Actualiza la informacion del producto."
-                      : "Completa los datos para registrar un nuevo producto."}
+                    Actualiza la informacion del componente.
                   </p>
                 </div>
                 <button
                   type="button"
                   className="text-sm font-medium text-slate-500 hover:text-slate-700"
                   onClick={() => {
-                    setShowForm(false);
-                    resetForm();
+                    setShowComponentForm(false);
+                    resetComponentForm();
                   }}
                 >
                   Cerrar
@@ -868,64 +1282,77 @@ const InventoryPage = () => {
               <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="sm:col-span-2">
                   <label className="text-sm font-medium text-slate-600">
-                    Nombre
+                    Componente
                   </label>
                   <input
                     type="text"
-                    name="nombre"
-                    value={form.nombre}
-                    onChange={handleChange}
+                    name="nombre_componente"
+                    value={componentForm.nombre_componente}
+                    onChange={handleComponentChange}
                     className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
-                    placeholder="Ej. Panel solar 450W"
+                    placeholder="Ej. Inversor"
                   />
                 </div>
                 <div>
                   <label className="text-sm font-medium text-slate-600">
-                    Precio de compra
+                    Categoria
                   </label>
                   <input
                     type="text"
-                    name="precio_compra"
-                    value={form.precio_compra}
-                    onChange={handleChange}
+                    name="categoria"
+                    value={componentForm.categoria}
+                    onChange={handleComponentChange}
+                    className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+                    placeholder="Control"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-slate-600">
+                    Potencia (kW)
+                  </label>
+                  <input
+                    type="text"
+                    name="potencia_kw"
+                    value={componentForm.potencia_kw}
+                    onChange={handleComponentChange}
                     className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
                     placeholder="0.00"
                   />
                 </div>
                 <div>
                   <label className="text-sm font-medium text-slate-600">
-                    Precio de venta
+                    Precio
                   </label>
                   <input
                     type="text"
-                    name="precio_venta"
-                    value={form.precio_venta}
-                    onChange={handleChange}
+                    name="precio"
+                    value={componentForm.precio}
+                    onChange={handleComponentChange}
                     className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
                     placeholder="0.00"
                   />
                 </div>
                 <div>
                   <label className="text-sm font-medium text-slate-600">
-                    Disponibles
+                    Moneda
                   </label>
                   <input
                     type="text"
-                    name="disponibles"
-                    value={form.disponibles}
-                    onChange={handleChange}
+                    name="moneda"
+                    value={componentForm.moneda}
+                    onChange={handleComponentChange}
                     className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
-                    placeholder="0"
+                    placeholder="GTQ"
                   />
                 </div>
                 <div className="sm:col-span-2">
                   <label className="text-sm font-medium text-slate-600">
-                    Comentario
+                    Detalles
                   </label>
                   <textarea
-                    name="comentario"
-                    value={form.comentario}
-                    onChange={handleChange}
+                    name="detalles"
+                    value={componentForm.detalles}
+                    onChange={handleComponentChange}
                     rows={3}
                     className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
                     placeholder="Detalle adicional"
@@ -938,145 +1365,28 @@ const InventoryPage = () => {
                   type="button"
                   className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
                   onClick={() => {
-                    setShowForm(false);
-                    resetForm();
+                    setShowComponentForm(false);
+                    resetComponentForm();
                   }}
-                  disabled={saving}
+                  disabled={componentSaving}
                 >
                   Cancelar
                 </button>
                 <button
                   type="button"
                   className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
-                  onClick={handleSave}
-                  disabled={saving}
+                  onClick={handleComponentSave}
+                  disabled={componentSaving}
                 >
-                  {saving ? "Guardando..." : "Guardar"}
+                  {componentSaving ? "Guardando..." : "Guardar"}
                 </button>
               </div>
             </div>
-          </div>
-        </div>
-      )}
-
-      {showPanelForm && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/40 px-4 py-6">
-          <div className="mx-auto flex min-h-full w-full max-w-2xl items-start sm:items-center">
-            <div className="w-full rounded-2xl border border-slate-200 bg-white p-6 shadow-lg">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h3 className="text-xl font-semibold text-slate-900">
-                    Editar panel solar
-                  </h3>
-                  <p className="text-sm text-slate-500">
-                    Actualiza la informacion del panel.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  className="text-sm font-medium text-slate-500 hover:text-slate-700"
-                  onClick={() => {
-                    setShowPanelForm(false);
-                    resetPanelForm();
-                  }}
-                >
-                  Cerrar
-                </button>
-              </div>
-
-              <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="sm:col-span-2">
-                  <label className="text-sm font-medium text-slate-600">
-                    Marca
-                  </label>
-                  <input
-                    type="text"
-                    name="marca"
-                    value={panelForm.marca}
-                    onChange={handlePanelChange}
-                    className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
-                    placeholder="Ej. Trina Solar"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-slate-600">
-                    Potencia (W)
-                  </label>
-                  <input
-                    type="text"
-                    name="potencia_watts"
-                    value={panelForm.potencia_watts}
-                    onChange={handlePanelChange}
-                    className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
-                    placeholder="0"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-slate-600">
-                    Tipo
-                  </label>
-                  <input
-                    type="text"
-                    name="tipo"
-                    value={panelForm.tipo}
-                    onChange={handlePanelChange}
-                    className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
-                    placeholder="Monocristalino"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-slate-600">
-                    Precio
-                  </label>
-                  <input
-                    type="text"
-                    name="precio"
-                    value={panelForm.precio}
-                    onChange={handlePanelChange}
-                    className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
-                    placeholder="0.00"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-slate-600">
-                    Moneda
-                  </label>
-                  <input
-                    type="text"
-                    name="moneda"
-                    value={panelForm.moneda}
-                    onChange={handlePanelChange}
-                    className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
-                    placeholder="GTQ"
-                  />
-                </div>
-              </div>
-
-              <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
-                <button
-                  type="button"
-                  className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
-                  onClick={() => {
-                    setShowPanelForm(false);
-                    resetPanelForm();
-                  }}
-                  disabled={panelSaving}
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
-                  onClick={handlePanelSave}
-                  disabled={panelSaving}
-                >
-                  {panelSaving ? "Guardando..." : "Guardar"}
-                </button>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          modalRoot
+        )}
     </div>
   );
 };
