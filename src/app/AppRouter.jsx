@@ -25,6 +25,8 @@ import GestionUsuarios from "../modules/usuarios/ui/pages/GestionUsuarios.jsx";
 import Personal from "../modules/Personal/Personal.jsx";
 // Inventario
 import InventoryPage from "../modules/inventario/ui/InventoryPage.jsx";
+// Papeleria
+import PapeleriaPage from "../modules/papeleria/ui/PapeleriaPage.jsx";
 
 export default function AppRouter({
   tab,
@@ -93,11 +95,7 @@ export default function AppRouter({
       return canAccess("inventario") ? <InventoryPage /> : null;
 
     case "papeleria":
-      return canAccess("papeleria") ? (
-        <div className="text-center text-xl font-semibold">
-          Papeleria (Proximamente)
-        </div>
-      ) : null;
+      return canAccess("papeleria") ? <PapeleriaPage /> : null;
 
     default:
       return (
