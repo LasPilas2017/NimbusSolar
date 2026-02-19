@@ -3,7 +3,7 @@ import FilaResumen from "./FilaResumen";
 
 export default function Resumen({
   quincena = null,       // si mandás null => "Sin quincena"
-  resumen = null,        // si viene vacío usamos mock
+  resumen = null,
 }) {
   const dataResumen = Array.isArray(resumen) ? resumen : [];
 
