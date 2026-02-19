@@ -81,6 +81,46 @@ const InventoryPage = () => {
   });
   const modalRoot = typeof document !== "undefined" ? document.body : null;
 
+  const loadInventory = async () => {
+    setLoading(true);
+    setError("");
+
+    const { data, error: queryError } = await supabase
+      .from("inventario")
+      .select(
+        "id,nombre,precio_compra,precio_venta,disponibles,comentario,created_at"
+      )
+      .order("created_at", { ascending: false });
+
+    if (queryError) {
+      setError("No se pudo cargar el inventario. Intenta nuevamente.");
+      setItems([]);
+    } else {
+      setItems(Array.isArray(data) ? data : []);
+    }
+
+    setLoading(false);
+  };
+
+  const loadPanels = async () => {
+    setPanelsLoading(true);
+    setPanelsError("");
+
+    const { data, error: queryError } = await supabase
+      .from("paneles")
+      .select("id,marca,potencia_watts,tipo,precio,moneda,created_at")
+      .order("created_at", { ascending: false });
+
+    if (queryError) {
+      setPanelsError("No se pudieron cargar los paneles. Intenta nuevamente.");
+      setPanels([]);
+    } else {
+      setPanels(Array.isArray(data) ? data : []);
+    }
+
+    setPanelsLoading(false);
+  };
+
   useEffect(() => {
     if (!showForm && !showPanelForm && !showComponentForm) return undefined;
     const originalBodyOverflow = document.body.style.overflow;
