@@ -28,6 +28,8 @@ const InventoryPage = () => {
   const [panelsError, setPanelsError] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [addCategory, setAddCategory] = useState("materiales");
+  const [addError, setAddError] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [editingCreatedAt, setEditingCreatedAt] = useState("");
   const [showMaterials, setShowMaterials] = useState(false);
@@ -44,6 +46,7 @@ const InventoryPage = () => {
   const [componentEditingId, setComponentEditingId] = useState(null);
   const [componentEditingSystemId, setComponentEditingSystemId] =
     useState(null);
+  const [componentSystemId, setComponentSystemId] = useState("");
   const [systems, setSystems] = useState([]);
   const [systemsLoading, setSystemsLoading] = useState(true);
   const [systemsError, setSystemsError] = useState("");
