@@ -5,7 +5,7 @@ import "../../../EstilosCSS/TablaProduccion.css";
  * Activa datos ficticios para ver la tabla llena.
  * (puedes poner en false cuando ya tengas datos reales)
  */
-const DEMO = true;
+const DEMO = false;
 
 /** Generador determinístico de enteros en [min,max] a partir de una cadena */
 function hashInt(str, min = 0, max = 6) {

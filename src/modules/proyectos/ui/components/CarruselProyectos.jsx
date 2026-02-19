@@ -7,7 +7,6 @@ export default function CarruselProyectos({ categoria, lista, abrirDetalle }) {
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
 
-  // 🔹 Funciones para el arrastre con mouse
   const handleMouseDown = (e) => {
     setIsDragging(true);
     setStartX(e.pageX - scrollRef.current.offsetLeft);
@@ -17,42 +16,14 @@ export default function CarruselProyectos({ categoria, lista, abrirDetalle }) {
   const handleMouseMove = (e) => {
     if (!isDragging) return;
     const x = e.pageX - scrollRef.current.offsetLeft;
-    const walk = (x - startX) * 1.5; // velocidad de desplazamiento
+    const walk = (x - startX) * 1.5;
     scrollRef.current.scrollLeft = scrollLeft - walk;
   };
 
   const handleMouseUp = () => {
     setIsDragging(false);
   };
-
-  // 🔹 Proyectos de prueba actualizados
-  const proyectosPrueba = [
-   
-    {
-      id: "p2",
-      nombre: "Granja San Miguel",
-      monto_total: 15000,
-      utilidad: -700,
-      descripcion: "Sistema solar trifásico en granja",
-    },
-    {
-      id: "p3",
-      nombre: "Tienda Don Pedro",
-      monto_total: 5400,
-      utilidad: 450,
-      descripcion: "Kit solar con respaldo de batería",
-    },
-    
-    {
-      id: "p5",
-      nombre: "Bodega Central",
-      monto_total: 21000,
-      utilidad: 5600,
-      descripcion: "Instalación industrial completa",
-    },
-  ];
-
-  const proyectosCombinados = [...proyectosPrueba, ...lista];
+  const proyectosCombinados = Array.isArray(lista) ? lista : [];
 
   return (
     <div>
@@ -77,3 +48,4 @@ export default function CarruselProyectos({ categoria, lista, abrirDetalle }) {
     </div>
   );
 }
+

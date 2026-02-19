@@ -4,12 +4,20 @@ import AsignacionPersonal from "./AsignacionPersonal";
 import { XCircle } from "lucide-react";
 
 export default function NuevoProyecto({ onGuardar }) {
-  const [nuevoProyecto, setNuevoProyecto] = useState({ nombre: "", descripcion: "", categoria_id: "" });
+  const [nuevoProyecto, setNuevoProyecto] = useState({
+    nombre: "",
+    descripcion: "",
+    tipo_preyecto: ""
+  });
   const [supervisoresSeleccionados, setSupervisoresSeleccionados] = useState([]);
   const [trabajadoresSeleccionados, setTrabajadoresSeleccionados] = useState([]);
   const [trabajos, setTrabajos] = useState([{ nombre: "", unidades: "" }]);
   const [personalDisponible, setPersonalDisponible] = useState([]);
-  const [categoriasIngreso, setCategoriasIngreso] = useState([]);
+  const tiposProyecto = [
+    { id: "domiciliar", label: "Domiciliar" },
+    { id: "industrial", label: "Industrial" },
+    { id: "rapido", label: "Rapido" }
+  ];
 
   useEffect(() => {
     const cargarDatos = async () => {
@@ -20,11 +28,7 @@ export default function NuevoProyecto({ onGuardar }) {
       const disponibles = personal?.filter((p) => !idsAsignados.includes(p.id)) || [];
       setPersonalDisponible(disponibles);
 
-      const { data: categorias } = await supabase
-        .from("categorias_contables")
-        .select("id, nombre")
-        .eq("tipo", "ingreso");
-      if (categorias) setCategoriasIngreso(categorias);
+      // Tipo de proyecto se define localmente.
     };
 
     cargarDatos();
@@ -40,7 +44,7 @@ export default function NuevoProyecto({ onGuardar }) {
           {
             nombre: nuevoProyecto.nombre,
             descripcion: nuevoProyecto.descripcion || null,
-            categoria_id: nuevoProyecto.categoria_id ? parseInt(nuevoProyecto.categoria_id) : null,
+            tipo_preyecto: nuevoProyecto.tipo_preyecto || null,
           },
         ])
         .select();
@@ -106,14 +110,14 @@ export default function NuevoProyecto({ onGuardar }) {
       />
 
       <select
-        value={nuevoProyecto.categoria_id}
-        onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, categoria_id: e.target.value })}
+        value={nuevoProyecto.tipo_preyecto}
+        onChange={(e) => setNuevoProyecto({ ...nuevoProyecto, tipo_preyecto: e.target.value })}
         className="w-full p-3 border rounded-xl"
       >
         <option value="">Selecciona tipo de proyecto</option>
-        {categoriasIngreso.map((cat) => (
+        {tiposProyecto.map((cat) => (
           <option key={cat.id} value={cat.id}>
-            {cat.nombre}
+            {cat.label}
           </option>
         ))}
       </select>
@@ -178,7 +182,7 @@ export default function NuevoProyecto({ onGuardar }) {
       <div className="flex justify-end gap-4 mt-4">
         <button
           onClick={() => {
-            setNuevoProyecto({ nombre: "", descripcion: "", categoria_id: "" });
+            setNuevoProyecto({ nombre: "", descripcion: "", tipo_preyecto: "" });
             setSupervisoresSeleccionados([]);
             setTrabajadoresSeleccionados([]);
             setTrabajos([{ nombre: "", unidades: "" }]);

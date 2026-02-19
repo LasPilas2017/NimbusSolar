@@ -42,8 +42,6 @@ export default function Proyectos() {
   const abrirDetalle = async (idProyecto) => {
     setCargando(true);
     try {
-      // si quieres simular delay, déjalo, si no, elimina las 2 líneas del timeout:
-      await new Promise((r) => setTimeout(r, 3000)); // ⏳ demo
       const datos = await cargarDatosProyecto(idProyecto);
       if (datos) {
         setProyectoSeleccionado(datos);

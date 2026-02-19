@@ -9,20 +9,8 @@ export default function ResumenGeneral({
   trabajos = null,  // [{ trabajo, cantidad, precioUnitario }]
   avanceProyecto,   // ← % global opcional (si no viene, usamos fallback)
 }) {
-  // Mock
-  const mockResumen = [
-    { nombre: "Producción", monto: 100115, porcentaje: 100 },
-    { nombre: "Gastos",     monto: 45000,  porcentaje: 45  },
-    { nombre: "Utilidad",   monto: 75000,  porcentaje: 75  },
-  ];
-  const mockTrabajos = [
-    { trabajo: "Instalación de paneles", cantidad: 56,  precioUnitario: 120 },
-    { trabajo: "Tendido de cable",       cantidad: 120, precioUnitario: 35  },
-    { trabajo: "Limpieza de maleza",     cantidad: 80,  precioUnitario: 25  },
-  ];
-
-  const dataResumen = Array.isArray(resumen)  && resumen.length  ? resumen  : mockResumen;
-  const dataTrab    = Array.isArray(trabajos) && trabajos.length ? trabajos : mockTrabajos;
+  const dataResumen = Array.isArray(resumen) ? resumen : [];
+  const dataTrab = Array.isArray(trabajos) ? trabajos : [];
 
   // % global del proyecto (elige tu regla real).
   // Si no te pasan 'avanceProyecto', usamos el promedio simple de los % mostrados (fallback).
