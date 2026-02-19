@@ -62,14 +62,12 @@ const InventoryPage = () => {
     potencia_watts: "",
     tipo: "",
     precio: "",
-    moneda: "",
   });
   const [componentForm, setComponentForm] = useState({
     nombre_componente: "",
     categoria: "",
     potencia_kw: "",
     precio: "",
-    moneda: "",
     detalles: "",
   });
   const [panels, setPanels] = useState([]);
@@ -283,7 +281,6 @@ const InventoryPage = () => {
       potencia_watts: "",
       tipo: "",
       precio: "",
-      moneda: "",
     });
     setPanelEditingId(null);
   };
@@ -294,7 +291,6 @@ const InventoryPage = () => {
       categoria: "",
       potencia_kw: "",
       precio: "",
-      moneda: "",
       detalles: "",
     });
     setComponentEditingId(null);
@@ -494,7 +490,6 @@ const InventoryPage = () => {
       potencia_watts: String(panel.potencia_watts ?? ""),
       tipo: panel.tipo ?? "",
       precio: String(panel.precio ?? ""),
-      moneda: panel.moneda ?? "",
     });
     setShowPanelForm(true);
   };
