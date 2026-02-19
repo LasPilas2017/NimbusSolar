@@ -73,13 +73,13 @@ export default function VerPersonal({ personal, usuario }) {
             <th className="px-4 py-2 border">Nombre</th>
             <th className="px-4 py-2 border">Modalidad</th>
             <th className="px-4 py-2 border">Salario</th>
-            <th className="px-4 py-2 border">Bono por dÃ­a trabajado</th>
+            <th className="px-4 py-2 border">Bono por día trabajado</th>
             <th className="px-4 py-2 border">Hora extra</th>
-            <th className="px-4 py-2 border">ViÃ¡ticos</th>
+            <th className="px-4 py-2 border">Viáticos</th>
             <th className="px-4 py-2 border">DPI</th>
-            <th className="px-4 py-2 border">TelÃ©fono</th>
+            <th className="px-4 py-2 border">Teléfono</th>
             <th className="px-4 py-2 border">Ingreso</th>
-            <th className="px-4 py-2 border">PapelerÃ­a</th>
+            <th className="px-4 py-2 border">Papelería</th>
           </tr>
         </thead>
         <tbody>
