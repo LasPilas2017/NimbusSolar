@@ -64,10 +64,6 @@ const InventoryPage = () => {
     precio: "",
     moneda: "",
   });
-  const [panelBrandChoice, setPanelBrandChoice] = useState("");
-  const [panelBrandCustom, setPanelBrandCustom] = useState("");
-  const [panelTypeChoice, setPanelTypeChoice] = useState("");
-  const [panelTypeCustom, setPanelTypeCustom] = useState("");
   const [componentForm, setComponentForm] = useState({
     nombre_componente: "",
     categoria: "",
@@ -290,10 +286,6 @@ const InventoryPage = () => {
       moneda: "",
     });
     setPanelEditingId(null);
-    setPanelBrandChoice("");
-    setPanelBrandCustom("");
-    setPanelTypeChoice("");
-    setPanelTypeCustom("");
   };
 
   const resetComponentForm = () => {
