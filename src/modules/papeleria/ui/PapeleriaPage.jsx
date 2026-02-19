@@ -113,6 +113,7 @@ const PapeleriaPage = () => {
       banco: person.banco || "",
       archivoDpi: null,
     });
+    setAccountStatus("idle");
     setShowForm(true);
   };
 
@@ -125,13 +126,50 @@ const PapeleriaPage = () => {
     setForm((prev) => ({ ...prev, archivoDpi: event.target.files[0] }));
   };
 
+  useEffect(() => {
+    if (!showForm || !selectedPerson?.id) return undefined;
+    const accountValue = String(form.numeroCuenta || "").trim();
+    if (!accountValue) {
+      setAccountStatus("idle");
+      return undefined;
+    }
+
+    setAccountStatus("checking");
+    const timer = setTimeout(async () => {
+      const { data, error } = await supabase
+        .from("registrodepersonal")
+        .select("id")
+        .eq("numero_cuenta", accountValue)
+        .neq("id", selectedPerson.id)
+        .limit(1);
+
+      if (error) {
+        setAccountStatus("idle");
+        return;
+      }
+
+      const exists = Array.isArray(data) && data.length > 0;
+      setAccountStatus(exists ? "exists" : "available");
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [form.numeroCuenta, selectedPerson, showForm]);
+
   const handleGuardar = async () => {
     if (!String(form.dpi || "").trim()) {
-      alert("Por favor, ingresa el DPI del personal.");
+      openModal(
+        "Faltan datos",
+        "Por favor, ingresa el DPI del personal.",
+        "error"
+      );
       return;
     }
     if (!selectedPerson?.id) {
-      alert("Selecciona un trabajador antes de guardar.");
+      openModal(
+        "Selecciona personal",
+        "Debes seleccionar un trabajador para ingresar sus datos.",
+        "error"
+      );
       return;
     }
 
@@ -148,7 +186,11 @@ const PapeleriaPage = () => {
         .upload(nombreArchivo, archivo);
 
       if (errorUpload) {
-        alert("Error al subir la papeleria.");
+        openModal(
+          "Error al subir archivo",
+          errorUpload.message || "No se pudo subir la papeleria.",
+          "error"
+        );
         setSaving(false);
         return;
       }
@@ -160,7 +202,7 @@ const PapeleriaPage = () => {
       urlPapeleria = data?.publicUrl || null;
     }
 
-    const dpiValue = String(form.dpi || "").trim();
+    const dpiValue = normalizeDpi(form.dpi);
     const payload = {
       numero_cuenta: form.numeroCuenta || "",
       tipo_cuenta: form.tipoCuenta || "",
@@ -169,6 +211,15 @@ const PapeleriaPage = () => {
     };
 
     if (payload.numero_cuenta) {
+      if (accountStatus === "exists") {
+        openModal(
+          "No. de cuenta duplicado",
+          "Ese No. de cuenta ya esta registrado en otro trabajador.",
+          "error"
+        );
+        setSaving(false);
+        return;
+      }
       const { data: accountMatch, error: accountError } = await supabase
         .from("registrodepersonal")
         .select("id")
@@ -177,13 +228,21 @@ const PapeleriaPage = () => {
         .limit(1);
 
       if (accountError) {
-        alert("Ocurrio un error al validar el numero de cuenta.");
+        openModal(
+          "Error de validacion",
+          "Ocurrio un error al validar el numero de cuenta.",
+          "error"
+        );
         setSaving(false);
         return;
       }
 
       if (Array.isArray(accountMatch) && accountMatch.length > 0) {
-        alert("Ese No. de cuenta ya esta registrado en otro trabajador.");
+        openModal(
+          "No. de cuenta duplicado",
+          "Ese No. de cuenta ya esta registrado en otro trabajador.",
+          "error"
+        );
         setSaving(false);
         return;
       }
@@ -196,13 +255,21 @@ const PapeleriaPage = () => {
       .limit(1);
 
     if (lookupError) {
-      alert("Ocurrio un error al validar el DPI.");
+      openModal(
+        "Error al validar DPI",
+        lookupError.message || "Ocurrio un error al validar el DPI.",
+        "error"
+      );
       setSaving(false);
       return;
     }
 
     if (!existing || existing.length === 0) {
-      alert("Ese DPI no existe en planilla. Primero debes registrarlo.");
+      openModal(
+        "DPI no registrado",
+        "Ese DPI no existe en planilla. Primero debes registrarlo.",
+        "error"
+      );
       setSaving(false);
       return;
     }
@@ -213,11 +280,20 @@ const PapeleriaPage = () => {
       .eq("id", existing[0].id);
 
     if (error) {
-      alert("Ocurrio un error al guardar la papeleria.");
+      openModal(
+        "Error al guardar",
+        error.message || "Ocurrio un error al guardar la papeleria.",
+        "error"
+      );
       setSaving(false);
       return;
     }
 
+    openModal(
+      "Datos guardados",
+      "La informacion bancaria y el DPI digital fueron actualizados.",
+      "success"
+    );
     resetForm();
     setShowForm(false);
     await fetchStaff({ current: true });
@@ -310,7 +386,7 @@ const PapeleriaPage = () => {
                           {person.dpi || "-"}
                         </td>
                         <td className="px-6 py-4 text-slate-700">
-                          {person.telefono || "-"}
+                          {person.telefono ? formatPhone(person.telefono) : "-"}
                         </td>
                         <td className="px-6 py-4">
                           {hasDpiDigital ? (
@@ -411,9 +487,25 @@ const PapeleriaPage = () => {
                       name="numeroCuenta"
                       value={form.numeroCuenta}
                       onChange={handleChange}
-                      className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+                      className={`mt-2 w-full rounded-xl border px-4 py-2 text-sm text-slate-700 outline-none focus:ring-2 ${
+                        accountStatus === "available"
+                          ? "border-emerald-400 focus:border-emerald-400 focus:ring-emerald-200"
+                          : accountStatus === "exists"
+                          ? "border-red-400 focus:border-red-400 focus:ring-red-200"
+                          : "border-slate-200 focus:border-slate-300 focus:ring-slate-200"
+                      }`}
                       placeholder="Numero de cuenta"
                     />
+                    {accountStatus === "available" && (
+                      <p className="mt-1 text-xs text-emerald-600">
+                        Numero de cuenta disponible
+                      </p>
+                    )}
+                    {accountStatus === "exists" && (
+                      <p className="mt-1 text-xs text-red-600">
+                        Numero de cuenta ya registrado
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="text-sm font-medium text-slate-600">
@@ -513,6 +605,50 @@ const PapeleriaPage = () => {
                     {saving ? "Guardando..." : "Guardar datos"}
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>,
+          modalRoot
+        )}
+
+      {modalState.open &&
+        modalRoot &&
+        createPortal(
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4 py-6">
+            <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-lg">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900">
+                    {modalState.title}
+                  </h3>
+                  <p
+                    className={`mt-2 text-sm ${
+                      modalState.tone === "success"
+                        ? "text-emerald-600"
+                        : modalState.tone === "error"
+                        ? "text-red-600"
+                        : "text-slate-600"
+                    }`}
+                  >
+                    {modalState.message}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="text-sm font-medium text-slate-500 hover:text-slate-700"
+                  onClick={closeModal}
+                >
+                  Cerrar
+                </button>
+              </div>
+              <div className="mt-6 flex justify-end">
+                <button
+                  type="button"
+                  className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
+                  onClick={closeModal}
+                >
+                  Aceptar
+                </button>
               </div>
             </div>
           </div>,
