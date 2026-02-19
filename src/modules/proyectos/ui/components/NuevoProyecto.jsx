@@ -14,9 +14,9 @@ export default function NuevoProyecto({ onGuardar }) {
   const [trabajos, setTrabajos] = useState([{ nombre: "", unidades: "" }]);
   const [personalDisponible, setPersonalDisponible] = useState([]);
   const tiposProyecto = [
-    { id: "domiciliar", label: "Domiciliar" },
-    { id: "industrial", label: "Industrial" },
-    { id: "rapido", label: "Rapido" }
+    { id: "domiciliar", label: "Proyecto Domiciliar" },
+    { id: "industrial", label: "Proyecto Industrial" },
+    { id: "rapido", label: "Proyecto Rapido" }
   ];
 
   useEffect(() => {

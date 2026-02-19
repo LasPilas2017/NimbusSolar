@@ -3,8 +3,17 @@ import FilaResumen from "./FilaResumen";
 
 export default function Resumen({
   quincena = null,       // si mandás null => "Sin quincena"
-  resumen = null,
+  resumen = null,        // si viene vacío usamos mock
 }) {
+  // ----- MOCK DATA SOLO PARA VISTA -----
+  const mockResumen = [
+    { nombre: "Producción", monto: 120000, porcentaje: 100 },
+    { nombre: "Gastos",     monto: 45000,  porcentaje: 38  },
+    { nombre: "Utilidad",   monto: 75000,  porcentaje: 62  },
+  ];
+  // -------------------------------------
+
+  const dataResumen = Array.isArray(resumen) && resumen.length ? resumen : mockResumen;
   const dataResumen = Array.isArray(resumen) ? resumen : [];
 
   return (

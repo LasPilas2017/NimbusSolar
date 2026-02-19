@@ -31,9 +31,17 @@ export default function Proyectos() {
     }, []);
 
   // ✅ Blindado por si proyectos viene undefined al principio
+  const formatearTipoProyecto = (tipo) => {
+    if (!tipo) return "";
+    const limpio = String(tipo).trim();
+    if (!limpio) return "";
+    const cap = limpio.charAt(0).toUpperCase() + limpio.slice(1);
+    return `Proyecto ${cap}`;
+  };
+
   const proyectosPorCategoria = (proyectos || []).reduce((acc, proyecto) => {
     const categoria =
-      proyecto?.tipo_preyecto?.trim() ||
+      formatearTipoProyecto(proyecto?.tipo_preyecto) ||
       proyecto?.categorias_contables?.nombre?.trim() ||
       "Sin Categoría";
     if (!acc[categoria]) acc[categoria] = [];
