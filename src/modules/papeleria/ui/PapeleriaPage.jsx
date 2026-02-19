@@ -1,7 +1,7 @@
 // src/modules/papeleria/ui/PapeleriaPage.jsx
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { CheckCircle2, Plus } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import { supabase } from "../../../infra/supabase/supabaseClient";
 
 const PapeleriaPage = () => {
@@ -10,6 +10,14 @@ const PapeleriaPage = () => {
   const [staffError, setStaffError] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [selectedPerson, setSelectedPerson] = useState(null);
+  const [modalState, setModalState] = useState({
+    open: false,
+    title: "",
+    message: "",
+    tone: "neutral",
+  });
+  const [accountStatus, setAccountStatus] = useState("idle");
   const [form, setForm] = useState({
     dpi: "",
     numeroCuenta: "",
@@ -18,6 +26,22 @@ const PapeleriaPage = () => {
     archivoDpi: null,
   });
   const modalRoot = typeof document !== "undefined" ? document.body : null;
+
+  const normalizeDpi = (value) => String(value || "").replace(/\D/g, "");
+  const normalizePhone = (value) => String(value || "").replace(/\D/g, "");
+
+  const formatPhone = (value) => {
+    const digits = normalizePhone(value).slice(0, 8);
+    return digits.replace(/(\d{4})(\d+)/, "$1-$2");
+  };
+
+  const openModal = (title, message, tone = "neutral") => {
+    setModalState({ open: true, title, message, tone });
+  };
+
+  const closeModal = () => {
+    setModalState((prev) => ({ ...prev, open: false }));
+  };
 
   const fetchStaff = async (isMounted) => {
     setStaffLoading(true);
@@ -76,6 +100,20 @@ const PapeleriaPage = () => {
       banco: "",
       archivoDpi: null,
     });
+    setSelectedPerson(null);
+    setAccountStatus("idle");
+  };
+
+  const openFormForPerson = (person) => {
+    setSelectedPerson(person);
+    setForm({
+      dpi: person.dpi || "",
+      numeroCuenta: person.numero_cuenta || "",
+      tipoCuenta: person.tipo_cuenta || "",
+      banco: person.banco || "",
+      archivoDpi: null,
+    });
+    setShowForm(true);
   };
 
   const handleChange = (event) => {
@@ -90,6 +128,10 @@ const PapeleriaPage = () => {
   const handleGuardar = async () => {
     if (!String(form.dpi || "").trim()) {
       alert("Por favor, ingresa el DPI del personal.");
+      return;
+    }
+    if (!selectedPerson?.id) {
+      alert("Selecciona un trabajador antes de guardar.");
       return;
     }
 
@@ -125,6 +167,27 @@ const PapeleriaPage = () => {
       banco: form.banco || "",
       ...(urlPapeleria ? { urlpapeleria: urlPapeleria } : {}),
     };
+
+    if (payload.numero_cuenta) {
+      const { data: accountMatch, error: accountError } = await supabase
+        .from("registrodepersonal")
+        .select("id")
+        .eq("numero_cuenta", payload.numero_cuenta)
+        .neq("id", selectedPerson.id)
+        .limit(1);
+
+      if (accountError) {
+        alert("Ocurrio un error al validar el numero de cuenta.");
+        setSaving(false);
+        return;
+      }
+
+      if (Array.isArray(accountMatch) && accountMatch.length > 0) {
+        alert("Ese No. de cuenta ya esta registrado en otro trabajador.");
+        setSaving(false);
+        return;
+      }
+    }
 
     const { data: existing, error: lookupError } = await supabase
       .from("registrodepersonal")
@@ -171,14 +234,6 @@ const PapeleriaPage = () => {
               Documentos del personal en PDF
             </p>
           </div>
-          <button
-            type="button"
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
-            onClick={() => setShowForm(true)}
-          >
-            <Plus className="h-4 w-4" />
-            Agregar personal
-          </button>
         </div>
 
         <div className="mt-8 rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -220,13 +275,16 @@ const PapeleriaPage = () => {
                     Tipo de cuenta
                   </th>
                   <th className="px-6 py-3 text-left font-medium">Banco</th>
+                  <th className="px-6 py-3 text-left font-medium">
+                    Acciones
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
                 {staffLoading && (
                   <tr>
                     <td
-                      colSpan={7}
+                      colSpan={8}
                       className="px-6 py-6 text-center text-slate-500"
                     >
                       Cargando papeleria...
@@ -240,6 +298,8 @@ const PapeleriaPage = () => {
                     const accountType = person.tipo_cuenta || "";
                     const bank = person.banco || "";
                     const hasDpiDigital = Boolean(person.urlpapeleria);
+                    const hasBankData =
+                      accountNumber || accountType || bank || hasDpiDigital;
 
                     return (
                       <tr key={person.id || person.nombrecompleto}>
@@ -271,6 +331,15 @@ const PapeleriaPage = () => {
                         <td className="px-6 py-4 text-slate-700">
                           {bank || "-"}
                         </td>
+                        <td className="px-6 py-4">
+                          <button
+                            type="button"
+                            className="rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                            onClick={() => openFormForPerson(person)}
+                          >
+                            {hasBankData ? "Actualizar" : "Ingresar datos"}
+                          </button>
+                        </td>
                       </tr>
                     );
                   })}
@@ -278,7 +347,7 @@ const PapeleriaPage = () => {
                 {!staffLoading && staff.length === 0 && !staffError && (
                   <tr>
                     <td
-                      colSpan={7}
+                      colSpan={8}
                       className="px-6 py-6 text-center text-slate-500"
                     >
                       No hay personal registrado
@@ -300,10 +369,10 @@ const PapeleriaPage = () => {
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <h3 className="text-xl font-semibold text-slate-900">
-                      Agregar personal
+                      {selectedPerson ? "Actualizar datos" : "Ingresar datos"}
                     </h3>
                     <p className="text-sm text-slate-500">
-                      Completa los datos del trabajador y su papeleria.
+                      Completa los datos bancarios y el DPI en digital.
                     </p>
                   </div>
                   <button
@@ -324,11 +393,12 @@ const PapeleriaPage = () => {
                       DPI
                     </label>
                     <input
-                      type="number"
+                      type="text"
                       name="dpi"
                       value={form.dpi}
                       onChange={handleChange}
-                      className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+                      readOnly
+                      className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
                       placeholder="No. DPI"
                     />
                   </div>
@@ -440,7 +510,7 @@ const PapeleriaPage = () => {
                     onClick={handleGuardar}
                     disabled={saving}
                   >
-                    {saving ? "Guardando..." : "Guardar personal"}
+                    {saving ? "Guardando..." : "Guardar datos"}
                   </button>
                 </div>
               </div>
