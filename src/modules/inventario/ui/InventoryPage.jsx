@@ -64,6 +64,10 @@ const InventoryPage = () => {
     precio: "",
     moneda: "",
   });
+  const [panelBrandChoice, setPanelBrandChoice] = useState("");
+  const [panelBrandCustom, setPanelBrandCustom] = useState("");
+  const [panelTypeChoice, setPanelTypeChoice] = useState("");
+  const [panelTypeCustom, setPanelTypeCustom] = useState("");
   const [componentForm, setComponentForm] = useState({
     nombre_componente: "",
     categoria: "",
@@ -286,6 +290,10 @@ const InventoryPage = () => {
       moneda: "",
     });
     setPanelEditingId(null);
+    setPanelBrandChoice("");
+    setPanelBrandCustom("");
+    setPanelTypeChoice("");
+    setPanelTypeCustom("");
   };
 
   const resetComponentForm = () => {
@@ -319,6 +327,38 @@ const InventoryPage = () => {
       return;
     }
     setPanelForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handlePanelBrandSelect = (value) => {
+    setPanelBrandChoice(value);
+    if (value === "__other__") {
+      setPanelBrandCustom("");
+      setPanelForm((prev) => ({ ...prev, marca: "" }));
+      return;
+    }
+    setPanelBrandCustom("");
+    setPanelForm((prev) => ({ ...prev, marca: value }));
+  };
+
+  const handlePanelBrandCustomChange = (value) => {
+    setPanelBrandCustom(value);
+    setPanelForm((prev) => ({ ...prev, marca: value }));
+  };
+
+  const handlePanelTypeSelect = (value) => {
+    setPanelTypeChoice(value);
+    if (value === "__other__") {
+      setPanelTypeCustom("");
+      setPanelForm((prev) => ({ ...prev, tipo: "" }));
+      return;
+    }
+    setPanelTypeCustom("");
+    setPanelForm((prev) => ({ ...prev, tipo: value }));
+  };
+
+  const handlePanelTypeCustomChange = (value) => {
+    setPanelTypeCustom(value);
+    setPanelForm((prev) => ({ ...prev, tipo: value }));
   };
 
   const handleComponentChange = (event) => {
@@ -488,13 +528,21 @@ const InventoryPage = () => {
 
   const handlePanelEdit = (panel) => {
     setPanelEditingId(panel.id);
+    const brandValue = panel.marca ?? "";
+    const typeValue = panel.tipo ?? "";
+    const hasBrandOption = panelBrandOptions.includes(brandValue);
+    const hasTypeOption = panelTypeOptions.includes(typeValue);
     setPanelForm({
-      marca: panel.marca ?? "",
+      marca: brandValue,
       potencia_watts: String(panel.potencia_watts ?? ""),
-      tipo: panel.tipo ?? "",
+      tipo: typeValue,
       precio: String(panel.precio ?? ""),
       moneda: panel.moneda ?? "",
     });
+    setPanelBrandChoice(brandValue ? (hasBrandOption ? brandValue : "__other__") : "");
+    setPanelBrandCustom(!hasBrandOption && brandValue ? brandValue : "");
+    setPanelTypeChoice(typeValue ? (hasTypeOption ? typeValue : "__other__") : "");
+    setPanelTypeCustom(!hasTypeOption && typeValue ? typeValue : "");
     setShowPanelForm(true);
   };
 
