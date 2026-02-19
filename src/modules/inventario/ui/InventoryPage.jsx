@@ -200,6 +200,22 @@ const InventoryPage = () => {
     };
   }, []);
 
+  const panelTypeOptions = useMemo(() => {
+    const types = new Set();
+    panels.forEach((panel) => {
+      if (panel.tipo) types.add(panel.tipo);
+    });
+    return Array.from(types);
+  }, [panels]);
+
+  const panelBrandOptions = useMemo(() => {
+    const brands = new Set();
+    panels.forEach((panel) => {
+      if (panel.marca) brands.add(panel.marca);
+    });
+    return Array.from(brands);
+  }, [panels]);
+
   const stats = useMemo(() => {
     const total = items.length;
     const totalValue = items.reduce((acc, item) => {
@@ -1223,14 +1239,19 @@ const InventoryPage = () => {
                         <label className="text-sm font-medium text-slate-600">
                           Marca
                         </label>
-                        <input
-                          type="text"
+                        <select
                           name="marca"
                           value={panelForm.marca}
                           onChange={handlePanelChange}
-                          className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
-                          placeholder="Ej. Trina Solar"
-                        />
+                          className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+                        >
+                          <option value="">Selecciona una marca</option>
+                          {panelBrandOptions.map((marca) => (
+                            <option key={marca} value={marca}>
+                              {marca}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                       <div>
                         <label className="text-sm font-medium text-slate-600">
@@ -1249,14 +1270,19 @@ const InventoryPage = () => {
                         <label className="text-sm font-medium text-slate-600">
                           Tipo
                         </label>
-                        <input
-                          type="text"
+                        <select
                           name="tipo"
                           value={panelForm.tipo}
                           onChange={handlePanelChange}
-                          className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
-                          placeholder="Monocristalino"
-                        />
+                          className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+                        >
+                          <option value="">Selecciona un tipo</option>
+                          {panelTypeOptions.map((tipo) => (
+                            <option key={tipo} value={tipo}>
+                              {tipo}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                       <div>
                         <label className="text-sm font-medium text-slate-600">
