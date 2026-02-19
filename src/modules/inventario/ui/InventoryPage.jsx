@@ -321,37 +321,6 @@ const InventoryPage = () => {
     setPanelForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handlePanelBrandSelect = (value) => {
-    setPanelBrandChoice(value);
-    if (value === "__other__") {
-      setPanelBrandCustom("");
-      setPanelForm((prev) => ({ ...prev, marca: "" }));
-      return;
-    }
-    setPanelBrandCustom("");
-    setPanelForm((prev) => ({ ...prev, marca: value }));
-  };
-
-  const handlePanelBrandCustomChange = (value) => {
-    setPanelBrandCustom(value);
-    setPanelForm((prev) => ({ ...prev, marca: value }));
-  };
-
-  const handlePanelTypeSelect = (value) => {
-    setPanelTypeChoice(value);
-    if (value === "__other__") {
-      setPanelTypeCustom("");
-      setPanelForm((prev) => ({ ...prev, tipo: "" }));
-      return;
-    }
-    setPanelTypeCustom("");
-    setPanelForm((prev) => ({ ...prev, tipo: value }));
-  };
-
-  const handlePanelTypeCustomChange = (value) => {
-    setPanelTypeCustom(value);
-    setPanelForm((prev) => ({ ...prev, tipo: value }));
-  };
 
   const handleComponentChange = (event) => {
     const { name, value } = event.target;
@@ -520,21 +489,13 @@ const InventoryPage = () => {
 
   const handlePanelEdit = (panel) => {
     setPanelEditingId(panel.id);
-    const brandValue = panel.marca ?? "";
-    const typeValue = panel.tipo ?? "";
-    const hasBrandOption = panelBrandOptions.includes(brandValue);
-    const hasTypeOption = panelTypeOptions.includes(typeValue);
     setPanelForm({
-      marca: brandValue,
+      marca: panel.marca ?? "",
       potencia_watts: String(panel.potencia_watts ?? ""),
-      tipo: typeValue,
+      tipo: panel.tipo ?? "",
       precio: String(panel.precio ?? ""),
       moneda: panel.moneda ?? "",
     });
-    setPanelBrandChoice(brandValue ? (hasBrandOption ? brandValue : "__other__") : "");
-    setPanelBrandCustom(!hasBrandOption && brandValue ? brandValue : "");
-    setPanelTypeChoice(typeValue ? (hasTypeOption ? typeValue : "__other__") : "");
-    setPanelTypeCustom(!hasTypeOption && typeValue ? typeValue : "");
     setShowPanelForm(true);
   };
 
@@ -1279,33 +1240,20 @@ const InventoryPage = () => {
                         <label className="text-sm font-medium text-slate-600">
                           Marca
                         </label>
-                        <select
+                        <input
+                          type="text"
                           name="marca"
-                          value={panelBrandChoice}
-                          onChange={(event) =>
-                            handlePanelBrandSelect(event.target.value)
-                          }
-                          className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
-                        >
-                          <option value="">Selecciona una marca</option>
+                          value={panelForm.marca}
+                          onChange={handlePanelChange}
+                          list="panel-brand-options"
+                          className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+                          placeholder="Ej. Trina Solar"
+                        />
+                        <datalist id="panel-brand-options">
                           {panelBrandOptions.map((marca) => (
-                            <option key={marca} value={marca}>
-                              {marca}
-                            </option>
+                            <option key={marca} value={marca} />
                           ))}
-                          <option value="__other__">Otra...</option>
-                        </select>
-                        {panelBrandChoice === "__other__" && (
-                          <input
-                            type="text"
-                            value={panelBrandCustom}
-                            onChange={(event) =>
-                              handlePanelBrandCustomChange(event.target.value)
-                            }
-                            className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
-                            placeholder="Escribe una marca nueva"
-                          />
-                        )}
+                        </datalist>
                       </div>
                       <div>
                         <label className="text-sm font-medium text-slate-600">
@@ -1324,33 +1272,20 @@ const InventoryPage = () => {
                         <label className="text-sm font-medium text-slate-600">
                           Tipo
                         </label>
-                        <select
+                        <input
+                          type="text"
                           name="tipo"
-                          value={panelTypeChoice}
-                          onChange={(event) =>
-                            handlePanelTypeSelect(event.target.value)
-                          }
-                          className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
-                        >
-                          <option value="">Selecciona un tipo</option>
+                          value={panelForm.tipo}
+                          onChange={handlePanelChange}
+                          list="panel-type-options"
+                          className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+                          placeholder="Monocristalino"
+                        />
+                        <datalist id="panel-type-options">
                           {panelTypeOptions.map((tipo) => (
-                            <option key={tipo} value={tipo}>
-                              {tipo}
-                            </option>
+                            <option key={tipo} value={tipo} />
                           ))}
-                          <option value="__other__">Otro...</option>
-                        </select>
-                        {panelTypeChoice === "__other__" && (
-                          <input
-                            type="text"
-                            value={panelTypeCustom}
-                            onChange={(event) =>
-                              handlePanelTypeCustomChange(event.target.value)
-                            }
-                            className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
-                            placeholder="Escribe un tipo nuevo"
-                          />
-                        )}
+                        </datalist>
                       </div>
                       <div>
                         <label className="text-sm font-medium text-slate-600">
@@ -1550,33 +1485,20 @@ const InventoryPage = () => {
                     <label className="text-sm font-medium text-slate-600">
                       Marca
                     </label>
-                    <select
+                    <input
+                      type="text"
                       name="marca"
-                      value={panelBrandChoice}
-                      onChange={(event) =>
-                        handlePanelBrandSelect(event.target.value)
-                      }
-                      className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
-                    >
-                      <option value="">Selecciona una marca</option>
+                      value={panelForm.marca}
+                      onChange={handlePanelChange}
+                      list="panel-brand-options"
+                      className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+                      placeholder="Ej. Trina Solar"
+                    />
+                    <datalist id="panel-brand-options">
                       {panelBrandOptions.map((marca) => (
-                        <option key={marca} value={marca}>
-                          {marca}
-                        </option>
+                        <option key={marca} value={marca} />
                       ))}
-                      <option value="__other__">Otra...</option>
-                    </select>
-                    {panelBrandChoice === "__other__" && (
-                      <input
-                        type="text"
-                        value={panelBrandCustom}
-                        onChange={(event) =>
-                          handlePanelBrandCustomChange(event.target.value)
-                        }
-                        className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
-                        placeholder="Escribe una marca nueva"
-                      />
-                    )}
+                    </datalist>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-slate-600">
@@ -1595,33 +1517,20 @@ const InventoryPage = () => {
                   <label className="text-sm font-medium text-slate-600">
                     Tipo
                   </label>
-                  <select
+                  <input
+                    type="text"
                     name="tipo"
-                    value={panelTypeChoice}
-                    onChange={(event) =>
-                      handlePanelTypeSelect(event.target.value)
-                    }
-                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
-                  >
-                    <option value="">Selecciona un tipo</option>
+                    value={panelForm.tipo}
+                    onChange={handlePanelChange}
+                    list="panel-type-options"
+                    className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+                    placeholder="Monocristalino"
+                  />
+                  <datalist id="panel-type-options">
                     {panelTypeOptions.map((tipo) => (
-                      <option key={tipo} value={tipo}>
-                        {tipo}
-                      </option>
+                      <option key={tipo} value={tipo} />
                     ))}
-                    <option value="__other__">Otro...</option>
-                  </select>
-                  {panelTypeChoice === "__other__" && (
-                    <input
-                      type="text"
-                      value={panelTypeCustom}
-                      onChange={(event) =>
-                        handlePanelTypeCustomChange(event.target.value)
-                      }
-                      className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
-                      placeholder="Escribe un tipo nuevo"
-                    />
-                  )}
+                  </datalist>
                 </div>
                   <div>
                     <label className="text-sm font-medium text-slate-600">
