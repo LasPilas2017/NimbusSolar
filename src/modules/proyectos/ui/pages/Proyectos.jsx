@@ -33,7 +33,9 @@ export default function Proyectos() {
   // ✅ Blindado por si proyectos viene undefined al principio
   const proyectosPorCategoria = (proyectos || []).reduce((acc, proyecto) => {
     const categoria =
-      proyecto?.categorias_contables?.nombre?.trim() || "Sin Categoría";
+      proyecto?.tipo_preyecto?.trim() ||
+      proyecto?.categorias_contables?.nombre?.trim() ||
+      "Sin Categoría";
     if (!acc[categoria]) acc[categoria] = [];
     acc[categoria].push(proyecto);
     return acc;
