@@ -141,28 +141,8 @@ const InventoryPage = () => {
     let isMounted = true;
 
     const fetchInventory = async () => {
-      setLoading(true);
-      setError("");
-
-      const { data, error: queryError } = await supabase
-        .from("inventario")
-        .select(
-          "id,nombre,precio_compra,precio_venta,disponibles,comentario,created_at"
-        )
-        .order("created_at", { ascending: false });
-
       if (!isMounted) return;
-
-      if (queryError) {
-        setError(
-          "No se pudo cargar el inventario. Intenta nuevamente más tarde."
-        );
-        setItems([]);
-      } else {
-        setItems(Array.isArray(data) ? data : []);
-      }
-
-      setLoading(false);
+      await loadInventory();
     };
 
     fetchInventory();
@@ -209,26 +189,8 @@ const InventoryPage = () => {
     let isMounted = true;
 
     const fetchPanels = async () => {
-      setPanelsLoading(true);
-      setPanelsError("");
-
-      const { data, error: queryError } = await supabase
-        .from("paneles")
-        .select("id,marca,potencia_watts,tipo,precio,moneda,created_at")
-        .order("created_at", { ascending: false });
-
       if (!isMounted) return;
-
-      if (queryError) {
-        setPanelsError(
-          "No se pudieron cargar los paneles. Intenta nuevamente."
-        );
-        setPanels([]);
-      } else {
-        setPanels(Array.isArray(data) ? data : []);
-      }
-
-      setPanelsLoading(false);
+      await loadPanels();
     };
 
     fetchPanels();
@@ -295,6 +257,8 @@ const InventoryPage = () => {
     });
     setEditingId(null);
     setEditingCreatedAt("");
+    setAddCategory("materiales");
+    setAddError("");
   };
 
   const resetPanelForm = () => {
@@ -319,6 +283,7 @@ const InventoryPage = () => {
     });
     setComponentEditingId(null);
     setComponentEditingSystemId(null);
+    setComponentSystemId("");
   };
 
   const handlePanelChange = (event) => {
@@ -374,55 +339,135 @@ const InventoryPage = () => {
 
   const handleSave = async () => {
     setSaving(true);
-    setError("");
-
-    const payload = {
-      nombre: form.nombre.trim(),
-      precio_compra: toNumber(form.precio_compra),
-      precio_venta: toNumber(form.precio_venta),
-      disponibles: toNumber(form.disponibles),
-      comentario: form.comentario.trim() || null,
-    };
+    setAddError("");
 
     if (editingId) {
+      const payload = {
+        nombre: form.nombre.trim(),
+        precio_compra: toNumber(form.precio_compra),
+        precio_venta: toNumber(form.precio_venta),
+        disponibles: toNumber(form.disponibles),
+        comentario: form.comentario.trim() || null,
+      };
+
       const { error: updateError } = await supabase
         .from("inventario")
         .update(payload)
         .eq("id", editingId);
 
       if (updateError) {
-        setError("No se pudo actualizar el producto. Intenta nuevamente.");
+        setAddError("No se pudo actualizar el producto. Intenta nuevamente.");
         setSaving(false);
         return;
       }
-    } else {
+
+      setShowForm(false);
+      resetForm();
+      await loadInventory();
+      setSaving(false);
+      return;
+    }
+
+    if (addCategory === "materiales") {
+      const payload = {
+        nombre: form.nombre.trim(),
+        precio_compra: toNumber(form.precio_compra),
+        precio_venta: toNumber(form.precio_venta),
+        disponibles: toNumber(form.disponibles),
+        comentario: form.comentario.trim() || null,
+        created_at: new Date().toISOString(),
+      };
+
       const { error: insertError } = await supabase
         .from("inventario")
-        .insert([{ ...payload, created_at: new Date().toISOString() }]);
+        .insert([payload]);
 
       if (insertError) {
-        setError("No se pudo guardar el producto. Intenta nuevamente.");
+        setAddError("No se pudo guardar el producto. Intenta nuevamente.");
         setSaving(false);
         return;
       }
+
+      setShowForm(false);
+      resetForm();
+      await loadInventory();
+      setSaving(false);
+      return;
     }
 
-    setShowForm(false);
-    resetForm();
-    const { data, error: refreshError } = await supabase
-      .from("inventario")
-      .select(
-        "id,nombre,precio_compra,precio_venta,disponibles,comentario,created_at"
-      )
-      .order("created_at", { ascending: false });
+    if (addCategory === "paneles") {
+      const payload = {
+        marca: panelForm.marca.trim(),
+        potencia_watts: toNumber(panelForm.potencia_watts),
+        tipo: panelForm.tipo.trim() || null,
+        precio: toNumber(panelForm.precio),
+        moneda: panelForm.moneda.trim() || null,
+        created_at: new Date().toISOString(),
+      };
 
-    if (refreshError) {
-      setError("El producto se guardo, pero no se pudo actualizar la lista.");
-    } else {
-      setItems(Array.isArray(data) ? data : []);
+      const { error: insertError } = await supabase
+        .from("paneles")
+        .insert([payload]);
+
+      if (insertError) {
+        setAddError("No se pudo guardar el panel. Intenta nuevamente.");
+        setSaving(false);
+        return;
+      }
+
+      setShowForm(false);
+      resetForm();
+      resetPanelForm();
+      await loadPanels();
+      setSaving(false);
+      return;
     }
 
-    setSaving(false);
+    if (addCategory === "componentes") {
+      if (!componentSystemId) {
+        setAddError("Selecciona un sistema.");
+        setSaving(false);
+        return;
+      }
+
+      const payload = {
+        sistema_id: componentSystemId,
+        nombre_componente: componentForm.nombre_componente.trim(),
+        categoria: componentForm.categoria.trim() || null,
+        potencia_kw:
+          componentForm.potencia_kw === ""
+            ? null
+            : toNumber(componentForm.potencia_kw),
+        precio: toNumber(componentForm.precio),
+        moneda: componentForm.moneda.trim() || null,
+        detalles: componentForm.detalles.trim() || null,
+      };
+
+      const { data, error: insertError } = await supabase
+        .from("componentes_sistema")
+        .insert([payload])
+        .select(
+          "id,nombre_componente,categoria,precio,moneda,potencia_kw,detalles"
+        );
+
+      if (insertError) {
+        setAddError("No se pudo guardar el componente. Intenta nuevamente.");
+        setSaving(false);
+        return;
+      }
+
+      if (componentsBySystem[componentSystemId] && Array.isArray(data)) {
+        setComponentsBySystem((prev) => ({
+          ...prev,
+          [componentSystemId]: [...prev[componentSystemId], ...data],
+        }));
+      }
+
+      setShowForm(false);
+      resetForm();
+      resetComponentForm();
+      setSaving(false);
+    }
   };
 
   const handlePanelEdit = (panel) => {
@@ -612,6 +657,9 @@ const InventoryPage = () => {
             className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
             onClick={() => {
               resetForm();
+              resetPanelForm();
+              resetComponentForm();
+              setAddCategory("materiales");
               setShowForm(true);
             }}
           >
