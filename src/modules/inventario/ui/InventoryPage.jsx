@@ -414,7 +414,7 @@ const InventoryPage = () => {
         potencia_watts: toNumber(panelForm.potencia_watts),
         tipo: panelForm.tipo.trim() || null,
         precio: toNumber(panelForm.precio),
-        moneda: panelForm.moneda.trim() || null,
+        moneda: "Q",
         created_at: new Date().toISOString(),
       };
 
@@ -452,7 +452,7 @@ const InventoryPage = () => {
             ? null
             : toNumber(componentForm.potencia_kw),
         precio: toNumber(componentForm.precio),
-        moneda: componentForm.moneda.trim() || null,
+        moneda: "Q",
         detalles: componentForm.detalles.trim() || null,
       };
 
