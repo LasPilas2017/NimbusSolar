@@ -1127,72 +1127,275 @@ const InventoryPage = () => {
                 </div>
 
                 <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div className="sm:col-span-2">
-                    <label className="text-sm font-medium text-slate-600">
-                      Nombre
-                    </label>
-                    <input
-                      type="text"
-                      name="nombre"
-                      value={form.nombre}
-                      onChange={handleChange}
-                      className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
-                      placeholder="Ej. Panel solar 450W"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-slate-600">
-                      Precio de compra
-                    </label>
-                    <input
-                      type="text"
-                      name="precio_compra"
-                      value={form.precio_compra}
-                      onChange={handleChange}
-                      className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
-                      placeholder="0.00"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-slate-600">
-                      Precio de venta
-                    </label>
-                    <input
-                      type="text"
-                      name="precio_venta"
-                      value={form.precio_venta}
-                      onChange={handleChange}
-                      className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
-                      placeholder="0.00"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-slate-600">
-                      Disponibles
-                    </label>
-                    <input
-                      type="text"
-                      name="disponibles"
-                      value={form.disponibles}
-                      onChange={handleChange}
-                      className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
-                      placeholder="0"
-                    />
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label className="text-sm font-medium text-slate-600">
-                      Comentario
-                    </label>
-                    <textarea
-                      name="comentario"
-                      value={form.comentario}
-                      onChange={handleChange}
-                      rows={3}
-                      className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
-                      placeholder="Detalle adicional"
-                    />
-                  </div>
+                  {!editingId && (
+                    <div className="sm:col-span-2">
+                      <label className="text-sm font-medium text-slate-600">
+                        Categoria
+                      </label>
+                      <select
+                        name="categoria"
+                        value={addCategory}
+                        onChange={(event) => setAddCategory(event.target.value)}
+                        className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+                      >
+                        <option value="materiales">
+                          Materiales para instalaciones
+                        </option>
+                        <option value="paneles">Paneles solares</option>
+                        <option value="componentes">Componentes de sistema</option>
+                      </select>
+                    </div>
+                  )}
+
+                  {(editingId || addCategory === "materiales") && (
+                    <>
+                      <div className="sm:col-span-2">
+                        <label className="text-sm font-medium text-slate-600">
+                          Nombre
+                        </label>
+                        <input
+                          type="text"
+                          name="nombre"
+                          value={form.nombre}
+                          onChange={handleChange}
+                          className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+                          placeholder="Ej. Panel solar 450W"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-slate-600">
+                          Precio de compra
+                        </label>
+                        <input
+                          type="text"
+                          name="precio_compra"
+                          value={form.precio_compra}
+                          onChange={handleChange}
+                          className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+                          placeholder="0.00"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-slate-600">
+                          Precio de venta
+                        </label>
+                        <input
+                          type="text"
+                          name="precio_venta"
+                          value={form.precio_venta}
+                          onChange={handleChange}
+                          className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+                          placeholder="0.00"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-slate-600">
+                          Disponibles
+                        </label>
+                        <input
+                          type="text"
+                          name="disponibles"
+                          value={form.disponibles}
+                          onChange={handleChange}
+                          className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+                          placeholder="0"
+                        />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label className="text-sm font-medium text-slate-600">
+                          Comentario
+                        </label>
+                        <textarea
+                          name="comentario"
+                          value={form.comentario}
+                          onChange={handleChange}
+                          rows={3}
+                          className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+                          placeholder="Detalle adicional"
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {addCategory === "paneles" && !editingId && (
+                    <>
+                      <div className="sm:col-span-2">
+                        <label className="text-sm font-medium text-slate-600">
+                          Marca
+                        </label>
+                        <input
+                          type="text"
+                          name="marca"
+                          value={panelForm.marca}
+                          onChange={handlePanelChange}
+                          className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+                          placeholder="Ej. Trina Solar"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-slate-600">
+                          Potencia (W)
+                        </label>
+                        <input
+                          type="text"
+                          name="potencia_watts"
+                          value={panelForm.potencia_watts}
+                          onChange={handlePanelChange}
+                          className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+                          placeholder="0"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-slate-600">
+                          Tipo
+                        </label>
+                        <input
+                          type="text"
+                          name="tipo"
+                          value={panelForm.tipo}
+                          onChange={handlePanelChange}
+                          className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+                          placeholder="Monocristalino"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-slate-600">
+                          Precio
+                        </label>
+                        <input
+                          type="text"
+                          name="precio"
+                          value={panelForm.precio}
+                          onChange={handlePanelChange}
+                          className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+                          placeholder="0.00"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-slate-600">
+                          Moneda
+                        </label>
+                        <input
+                          type="text"
+                          name="moneda"
+                          value={panelForm.moneda}
+                          onChange={handlePanelChange}
+                          className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+                          placeholder="GTQ"
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {addCategory === "componentes" && !editingId && (
+                    <>
+                      <div className="sm:col-span-2">
+                        <label className="text-sm font-medium text-slate-600">
+                          Sistema
+                        </label>
+                        <select
+                          name="sistema"
+                          value={componentSystemId}
+                          onChange={(event) =>
+                            setComponentSystemId(event.target.value)
+                          }
+                          className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+                        >
+                          <option value="">Selecciona un sistema</option>
+                          {systems.map((system) => (
+                            <option key={system.id} value={system.id}>
+                              {system.nombre}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label className="text-sm font-medium text-slate-600">
+                          Componente
+                        </label>
+                        <input
+                          type="text"
+                          name="nombre_componente"
+                          value={componentForm.nombre_componente}
+                          onChange={handleComponentChange}
+                          className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+                          placeholder="Ej. Inversor"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-slate-600">
+                          Categoria
+                        </label>
+                        <input
+                          type="text"
+                          name="categoria"
+                          value={componentForm.categoria}
+                          onChange={handleComponentChange}
+                          className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+                          placeholder="Control"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-slate-600">
+                          Potencia (kW)
+                        </label>
+                        <input
+                          type="text"
+                          name="potencia_kw"
+                          value={componentForm.potencia_kw}
+                          onChange={handleComponentChange}
+                          className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+                          placeholder="0.00"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-slate-600">
+                          Precio
+                        </label>
+                        <input
+                          type="text"
+                          name="precio"
+                          value={componentForm.precio}
+                          onChange={handleComponentChange}
+                          className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+                          placeholder="0.00"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-slate-600">
+                          Moneda
+                        </label>
+                        <input
+                          type="text"
+                          name="moneda"
+                          value={componentForm.moneda}
+                          onChange={handleComponentChange}
+                          className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+                          placeholder="GTQ"
+                        />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label className="text-sm font-medium text-slate-600">
+                          Detalles
+                        </label>
+                        <textarea
+                          name="detalles"
+                          value={componentForm.detalles}
+                          onChange={handleComponentChange}
+                          rows={3}
+                          className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
+                          placeholder="Detalle adicional"
+                        />
+                      </div>
+                    </>
+                  )}
                 </div>
+
+                {addError && (
+                  <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    {addError}
+                  </div>
+                )}
 
                 <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
                   <button
