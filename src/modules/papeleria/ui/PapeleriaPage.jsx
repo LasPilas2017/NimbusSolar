@@ -11,9 +11,7 @@ const PapeleriaPage = () => {
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
-    nombre: "",
     dpi: "",
-    telefono: "",
     numeroCuenta: "",
     tipoCuenta: "",
     banco: "",
@@ -72,9 +70,7 @@ const PapeleriaPage = () => {
 
   const resetForm = () => {
     setForm({
-      nombre: "",
       dpi: "",
-      telefono: "",
       numeroCuenta: "",
       tipoCuenta: "",
       banco: "",
@@ -92,8 +88,8 @@ const PapeleriaPage = () => {
   };
 
   const handleGuardar = async () => {
-    if (!form.nombre.trim()) {
-      alert("Por favor, completa el nombre del personal.");
+    if (!String(form.dpi || "").trim()) {
+      alert("Por favor, ingresa el DPI del personal.");
       return;
     }
 
@@ -122,22 +118,39 @@ const PapeleriaPage = () => {
       urlPapeleria = data?.publicUrl || null;
     }
 
-    const nuevoPersonal = {
-      nombrecompleto: form.nombre.trim(),
-      dpi: form.dpi || "",
-      telefono: form.telefono || "",
+    const dpiValue = String(form.dpi || "").trim();
+    const payload = {
       numero_cuenta: form.numeroCuenta || "",
       tipo_cuenta: form.tipoCuenta || "",
       banco: form.banco || "",
-      urlpapeleria: urlPapeleria,
+      ...(urlPapeleria ? { urlpapeleria: urlPapeleria } : {}),
     };
+
+    const { data: existing, error: lookupError } = await supabase
+      .from("registrodepersonal")
+      .select("id")
+      .eq("dpi", dpiValue)
+      .limit(1);
+
+    if (lookupError) {
+      alert("Ocurrio un error al validar el DPI.");
+      setSaving(false);
+      return;
+    }
+
+    if (!existing || existing.length === 0) {
+      alert("Ese DPI no existe en planilla. Primero debes registrarlo.");
+      setSaving(false);
+      return;
+    }
 
     const { error } = await supabase
       .from("registrodepersonal")
-      .insert([nuevoPersonal]);
+      .update(payload)
+      .eq("id", existing[0].id);
 
     if (error) {
-      alert("Ocurrio un error al guardar el personal.");
+      alert("Ocurrio un error al guardar la papeleria.");
       setSaving(false);
       return;
     }
@@ -306,19 +319,6 @@ const PapeleriaPage = () => {
                 </div>
 
                 <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div className="sm:col-span-2">
-                    <label className="text-sm font-medium text-slate-600">
-                      Nombre completo
-                    </label>
-                    <input
-                      type="text"
-                      name="nombre"
-                      value={form.nombre}
-                      onChange={handleChange}
-                      className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
-                      placeholder="Nombre completo"
-                    />
-                  </div>
                   <div>
                     <label className="text-sm font-medium text-slate-600">
                       DPI
@@ -330,19 +330,6 @@ const PapeleriaPage = () => {
                       onChange={handleChange}
                       className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
                       placeholder="No. DPI"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-slate-600">
-                      Telefono
-                    </label>
-                    <input
-                      type="number"
-                      name="telefono"
-                      value={form.telefono}
-                      onChange={handleChange}
-                      className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-200"
-                      placeholder="Telefono"
                     />
                   </div>
                   <div>
