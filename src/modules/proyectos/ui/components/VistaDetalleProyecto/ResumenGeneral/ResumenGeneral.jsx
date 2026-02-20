@@ -22,7 +22,13 @@ export default function ResumenGeneral({
   ];
 
   const dataResumen = Array.isArray(resumen) && resumen.length ? resumen : mockResumen;
-  const dataTrab = Array.isArray(trabajos) && trabajos.length ? trabajos : mockTrabajos;
+  const dataTrab = Array.isArray(trabajos) && trabajos.length
+    ? trabajos.map((t) => ({
+        trabajo: t.trabajo ?? t.nombre ?? t.nombre_trabajo ?? "",
+        cantidad: t.cantidad ?? t.unidades ?? t.unidades_totales ?? 0,
+        precioUnitario: t.precioUnitario ?? t.precio_unitario ?? 0
+      }))
+    : mockTrabajos;
 
   // % global del proyecto (elige tu regla real).
   // Si no te pasan 'avanceProyecto', usamos el promedio simple de los % mostrados (fallback).

@@ -14,7 +14,6 @@ export default function Resumen({
   // -------------------------------------
 
   const dataResumen = Array.isArray(resumen) && resumen.length ? resumen : mockResumen;
-  const dataResumen = Array.isArray(resumen) ? resumen : [];
 
   return (
     <section className="mt-6 space-y-6">

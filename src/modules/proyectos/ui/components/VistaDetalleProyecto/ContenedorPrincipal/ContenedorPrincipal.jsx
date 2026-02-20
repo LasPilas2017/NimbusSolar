@@ -10,7 +10,11 @@ import ResumenGeneral from "../ResumenGeneral/ResumenGeneral";
 
 const TABS = ["Resumen", "Producción", "Planilla", "Caja Chica"];
 
-export default function ContenedorPrincipal({ proyecto = {}, onVolver = () => {} }) {
+export default function ContenedorPrincipal({
+  proyecto = {},
+  trabajos = [],
+  onVolver = () => {}
+}) {
   const [tabActiva, setTabActiva] = useState("Resumen");
   const [quincenas, setQuincenas] = useState([]);
   const [fechasQuincenas, setFechasQuincenas] = useState([]);
@@ -166,7 +170,7 @@ export default function ContenedorPrincipal({ proyecto = {}, onVolver = () => {}
       {/* Contenido (full-bleed, sin card que limite) */}
       <div className="pb-4">
         {quincenaActivaIdx === null ? (
-          <ResumenGeneral />
+          <ResumenGeneral trabajos={trabajos} />
         ) : (
           <>
             {tabActiva === "Resumen" && <Resumen quincena={formatearRango(rangoSeleccionado)} />}
