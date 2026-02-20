@@ -20,10 +20,6 @@ export default function Proyectos() {
   const [vista, setVista] = useState("lista");
   const [cargando, setCargando] = useState(false);
   const [proyectoSeleccionado, setProyectoSeleccionado] = useState(null);
-  const [nuevoProyecto, setNuevoProyecto] = useState({
-    nombre: "",
-    descripcion: "",
-  });
 
   useEffect(() => {
     obtenerProyectos();
@@ -58,11 +54,6 @@ export default function Proyectos() {
       const datos = await cargarDatosProyecto(idProyecto);
       if (datos) {
         setProyectoSeleccionado(datos);
-        setNuevoProyecto({
-          nombre: datos.nombre,
-          descripcion: datos.descripcion,
-          categoria_id: datos.categoria_id,
-        });
         setVista("detalle");
       }
     } finally {

@@ -33,7 +33,6 @@ const InventoryPage = () => {
   const [showConfirmSave, setShowConfirmSave] = useState(false);
   const [confirmSaveMessage, setConfirmSaveMessage] = useState("");
   const [editingId, setEditingId] = useState(null);
-  const [editingCreatedAt, setEditingCreatedAt] = useState("");
   const [showMaterials, setShowMaterials] = useState(false);
   const [showPanels, setShowPanels] = useState(false);
   const [showPanelForm, setShowPanelForm] = useState(false);
@@ -272,7 +271,6 @@ const InventoryPage = () => {
       comentario: "",
     });
     setEditingId(null);
-    setEditingCreatedAt("");
     setAddCategory("materiales");
     setAddError("");
   };
@@ -686,7 +684,6 @@ const InventoryPage = () => {
 
   const handleEdit = (item) => {
     setEditingId(item.id);
-    setEditingCreatedAt(item.created_at || "");
     setForm({
       nombre: item.nombre ?? "",
       precio_compra: String(item.precio_compra ?? ""),
