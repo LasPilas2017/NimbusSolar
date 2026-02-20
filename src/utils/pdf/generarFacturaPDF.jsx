@@ -1,4 +1,4 @@
-﻿// src/utils/pdf/generarFacturaPDF.jsx
+// src/utils/pdf/generarFacturaPDF.jsx
 // -----------------------------------------------------------------------------
 // Utilidad para renderizar la plantilla de Factura y exportarla como PDF.
 // Se crea un nodo oculto en el DOM, se monta un layout de React y se captura
@@ -106,11 +106,6 @@ export const FacturaPDFLayout = forwardRef(
 
     const formatCurrency = (value) =>
       `Q ${Number(value || 0).toFixed(2)}`;
-
-    const fechaTexto =
-      typeof fecha === "string"
-        ? fecha
-        : new Date(fecha || Date.now()).toISOString().slice(0, 10);
 
     const datosFelRaw = [
       { label: "No. Autorizacion", value: datosFel?.numero_autorizacion },
@@ -590,6 +585,7 @@ export default async function generarFacturaPDF(params = {}) {
         fecha={fecha}
         resumen={resumen}
         comentarioIncluye={comentarioIncluye}
+        datosFel={datosFel}
       />
     );
     });
