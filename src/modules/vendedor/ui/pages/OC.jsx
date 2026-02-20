@@ -1,5 +1,5 @@
-﻿import React, { useEffect, useMemo, useState } from "react";
-import { Loader2, Upload, FileText, Download, X, Check } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { Loader2, Upload, FileText, X, Check } from "lucide-react";
 import { jsPDF } from "jspdf";
 import { createRoot } from "react-dom/client";
 import html2canvas from "html2canvas";
@@ -436,7 +436,7 @@ const normalizeFelDate = (dateString) => {
   const datePart = trimmed.split(/\s+/)[0];
   if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) return datePart;
 
-  const numericMatch = datePart.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})$/);
+  const numericMatch = datePart.match(/^(\d{2})[/-](\d{2})[/-](\d{4})$/);
   if (numericMatch) {
     const [, day, month, year] = numericMatch;
     return `${year}-${month}-${day}`;
@@ -456,7 +456,7 @@ const normalizeFelDate = (dateString) => {
     NOV: "11",
     DIC: "12",
   };
-  const wordMatch = datePart.match(/^(\d{2})[\/\-]([A-Z]{3})[\/\-](\d{4})$/i);
+  const wordMatch = datePart.match(/^(\d{2})[/-]([A-Z]{3})[/-](\d{4})$/i);
   if (wordMatch) {
     const [, day, wordMonth, year] = wordMatch;
     const month = monthNames[wordMonth.toUpperCase()] || "01";
@@ -496,13 +496,13 @@ const parseFelDataFromText = (text) => {
     /NUMERO\s+DE\s+DTE[::]?\s*([A-Z0-9-]+)/
   );
   const fechaEmisionMatch = sanitized.match(
-    /FECHA(?:\s+Y\s+HORA)?\s+DE\s+EMISION[::]?\s*([A-Z0-9\s:\/-]+)/
+    /FECHA(?:\s+Y\s+HORA)?\s+DE\s+EMISION[::]?\s*([A-Z0-9\s:/-]+)/
   );
   const nitReceptorMatch = sanitized.match(
     /NIT\s+(?:DEL\s+)?RECEPTOR[::]?\s*([A-Z0-9-]+)/
   );
   const nombreReceptorMatch = sanitized.match(
-    /NOMBRE\s+(?:DEL\s+)?RECEPTOR[::]?\s*([A-Z0-9\s,&.\-]{3,80})/
+    /NOMBRE\s+(?:DEL\s+)?RECEPTOR[::]?\s*([A-Z0-9\s,&.-]{3,80})/
   );
 
     if (

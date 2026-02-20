@@ -1,11 +1,11 @@
 {
   "files": {
     "main.css": "/static/css/main.592a81a2.css",
-    "main.js": "/static/js/main.27038e1f.js",
+    "main.js": "/static/js/main.8c63afbc.js",
     "static/js/977.a69ef9d7.chunk.js": "/static/js/977.a69ef9d7.chunk.js",
     "static/js/455.5e06dc60.chunk.js": "/static/js/455.5e06dc60.chunk.js",
     "static/js/990.0b274514.chunk.js": "/static/js/990.0b274514.chunk.js",
-    "static/js/981.f8a97aad.chunk.js": "/static/js/981.f8a97aad.chunk.js",
+    "static/js/981.dfff5996.chunk.js": "/static/js/981.dfff5996.chunk.js",
     "static/js/510.abd53dee.chunk.js": "/static/js/510.abd53dee.chunk.js",
     "static/js/276.f41b8e7b.chunk.js": "/static/js/276.f41b8e7b.chunk.js",
     "static/js/849.8e637fea.chunk.js": "/static/js/849.8e637fea.chunk.js",
@@ -15,17 +15,17 @@
     "static/media/fondoContabilidad.jpg": "/static/media/fondoContabilidad.b940a6561f66e79f195d.jpg",
     "index.html": "/index.html",
     "main.592a81a2.css.map": "/static/css/main.592a81a2.css.map",
-    "main.27038e1f.js.map": "/static/js/main.27038e1f.js.map",
+    "main.8c63afbc.js.map": "/static/js/main.8c63afbc.js.map",
     "977.a69ef9d7.chunk.js.map": "/static/js/977.a69ef9d7.chunk.js.map",
     "455.5e06dc60.chunk.js.map": "/static/js/455.5e06dc60.chunk.js.map",
     "990.0b274514.chunk.js.map": "/static/js/990.0b274514.chunk.js.map",
-    "981.f8a97aad.chunk.js.map": "/static/js/981.f8a97aad.chunk.js.map",
+    "981.dfff5996.chunk.js.map": "/static/js/981.dfff5996.chunk.js.map",
     "510.abd53dee.chunk.js.map": "/static/js/510.abd53dee.chunk.js.map",
     "276.f41b8e7b.chunk.js.map": "/static/js/276.f41b8e7b.chunk.js.map",
     "849.8e637fea.chunk.js.map": "/static/js/849.8e637fea.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.592a81a2.css",
-    "static/js/main.27038e1f.js"
+    "static/js/main.8c63afbc.js"
   ]
 }

@@ -117,7 +117,7 @@ export default function App() {
   const [cerrando, setCerrando] = useState(false);
 
   // (opcional) modal de transacciones
-  const [mostrarTransacciones, setMostrarTransacciones] = useState(false);
+  const [mostrarTransacciones] = useState(false);
   const [tipoTransaccion, setTipoTransaccion] = useState("");
 
   // qué pantalla de autenticación mostramos: 'login' | 'primer-ingreso'

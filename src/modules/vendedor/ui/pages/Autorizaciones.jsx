@@ -682,54 +682,6 @@ export default function Autorizaciones({ user }) {
   ]);
 
   // ---------------------------------------------------------------------------
-  // 💾 GUARDAR REVISIÓN (sin cambiar estado)
-  // ---------------------------------------------------------------------------
-  const guardar = async () => {
-    if (!editRow) return;
-    setSaving(true);
-    try {
-      const payload = {
-        supervisor_id: user?.id ? Number(user.id) : null,
-        supervisor_nombre: user?.nombreCompleto || user?.nombre || null,
-        updated_at: new Date().toISOString(),
-
-        // 🔹 Resumen numérico de la cotización en el momento de la revisión
-        subtotal_items: Number(subtotal) || 0,
-
-        porc_ganancia: Number(porcGanancia) || 0,
-        ganancia_q: Number(gananciaQ) || 0,
-
-        porc_iva: Number(porcIVA) || 0,
-        iva_q: Number(ivaQ) || 0,
-
-        porc_tarjeta: Number(porcTarjeta) || 0,
-        tarjeta_q: Number(tarjetaQ) || 0,
-
-        monto: Number(totalFinal) || 0,
-        comentario_incluy: editRow?.comentario_incluye || null,
-        generacion_prevista:
-          generacionPrevista !== ""
-            ? Number(generacionPrevista)
-            : null,
-      };
-
-      const { error } = await supabase
-        .from("cotizaciones_aprobacion")
-        .update(payload)
-        .eq("id", editRow.aprob_id); // 👈 usamos el id real de la tabla
-
-      if (error) throw error;
-
-      await cargar();
-      cerrar();
-    } catch (e) {
-      alert(e.message || "No se pudo guardar.");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // ---------------------------------------------------------------------------
   // 🔁 CAMBIAR ESTADO (rechazar / aprobar)
   // ---------------------------------------------------------------------------
   const cambiarEstado = async (nuevoEstado) => {

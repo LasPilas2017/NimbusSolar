@@ -11,7 +11,6 @@ import {
   FiUserPlus,
   FiGrid,
   FiHome,
-  FiUsers,
   FiUserCheck,
   FiCheckSquare,
   FiPhoneCall,

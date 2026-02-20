@@ -17,7 +17,6 @@ export default function VerPlanilla({ usuario }) {
   const [proyectoSeleccionado, setProyectoSeleccionado] = useState(null);
   const [reportesDiarios, setReportesDiarios] = useState([]);
   const [trabajosProyecto, setTrabajosProyecto] = useState([]);
-  const [trabajoSeleccionado, setTrabajoSeleccionado] = useState("");
   const [datosReporte, setDatosReporte] = useState({
     pagoPorDia: "",
     horasExtras: "",
@@ -499,7 +498,7 @@ return (
 
       try {
         // 🔥 Insertar el reporte diario
-        const { data, error } = await supabase
+        const { error } = await supabase
           .from("reportesdiarios")
           .insert([nuevoReporte]);
 

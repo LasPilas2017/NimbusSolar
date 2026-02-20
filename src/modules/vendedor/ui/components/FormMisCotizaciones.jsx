@@ -11,7 +11,6 @@ import FormCotizacionCliente from "./FormCotizacionCliente";
 
 /* =================== Constantes =================== */
 const TABLE_BASE = "cotizaciones_aprobacion";
-const TABLE_CONSUMOS = "cliente_consumos";
 
 /* ========== Sub-componentes UI compactos ========== */
 function InputCalcCompact({ value, suffix, placeholder = "", disabled = false, className = "" }) {
@@ -215,7 +214,7 @@ export default function FormMisCotizaciones({
   // ===== calculadora =====
   const [openCalc, setOpenCalc] = useState(false);
   const [savingProm, setSavingProm] = useState(false);
-  const [savedMessage, setSavedMessage] = useState(false);
+  const [, setSavedMessage] = useState(false);
 
   // ===== código de cotización (solo para modo editar) =====
   const [codigoCot, setCodigoCot] = useState("");
@@ -564,7 +563,7 @@ export default function FormMisCotizaciones({
   }, [calc.kwDia]);
 
   // Submit: crear o actualizar cotización
-  const [savingMain, setSavingMain] = useState(false);
+  const [, setSavingMain] = useState(false);
 
   const submit = async (e) => {
     e.preventDefault();

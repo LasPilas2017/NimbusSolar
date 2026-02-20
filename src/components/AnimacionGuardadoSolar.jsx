@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 
 // Overlay de animación solar a pantalla completa.
 // Se muestra mientras visible sea true; el padre controla cuándo ocultarlo.
